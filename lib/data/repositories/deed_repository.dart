@@ -132,6 +132,31 @@ class DeedRepository {
                 row.day.equals(dateOnly(day))))
           .go();
 
+  // ---------- Notes ----------
+
+  Stream<List<Note>> watchNotes() {
+    final query = _db.select(_db.notes)
+      ..orderBy([
+        (row) => OrderingTerm.desc(row.pinned),
+        (row) => OrderingTerm.desc(row.updatedAt),
+      ]);
+    return query.watch();
+  }
+
+  Future<Note?> noteById(int id) =>
+      (_db.select(_db.notes)..where((row) => row.id.equals(id)))
+          .getSingleOrNull();
+
+  Future<int> createNote(NotesCompanion companion) =>
+      _db.into(_db.notes).insert(companion);
+
+  Future<void> updateNote(Note note, NotesCompanion changes) =>
+      (_db.update(_db.notes)..where((row) => row.id.equals(note.id)))
+          .write(changes);
+
+  Future<void> deleteNote(int id) =>
+      (_db.delete(_db.notes)..where((row) => row.id.equals(id))).go();
+
   // ---------- Seed ----------
 
   /// Inserts starter content the first time the database is used.

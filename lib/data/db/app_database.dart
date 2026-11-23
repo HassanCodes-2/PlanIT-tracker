@@ -51,10 +51,32 @@ class DeedLogs extends Table {
       ];
 }
 
-@DriftDatabase(tables: [Categories, Deeds, DeedLogs])
+/// Quick-capture notes & ideas (Keep-style: colors, pinning, search).
+class Notes extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get title => text().withDefault(const Constant(''))();
+  TextColumn get body => text().withDefault(const Constant(''))();
+  TextColumn get color => text().withDefault(const Constant('#1B6CFF'))();
+  BoolColumn get pinned => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get createdAt =>
+      dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt =>
+      dateTime().withDefault(currentDateAndTime)();
+}
+
+@DriftDatabase(tables: [Categories, Deeds, DeedLogs, Notes])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onUpgrade: (migrator, from, to) async {
+          if (from < 2) {
+            await migrator.createTable(notes);
+          }
+        },
+      );
 }

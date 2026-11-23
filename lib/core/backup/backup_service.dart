@@ -19,10 +19,11 @@ class BackupService {
     final deeds = await repository.allDeeds();
     final logs =
         await repository.logsBetween(DateTime(2000), DateTime(2100));
+    final notes = await (repository.watchNotes().first);
 
     final payload = {
       'app': 'planit',
-      'version': 1,
+      'version': 2,
       'exportedAt': DateTime.now().toIso8601String(),
       'categories': categories
           .map((c) => {
@@ -54,6 +55,16 @@ class BackupService {
                 'date': DateFormat('yyyy-MM-dd').format(l.day),
                 'status': l.status,
                 'reason': l.reason,
+              })
+          .toList(),
+      'notes': notes
+          .map((n) => {
+                'title': n.title,
+                'body': n.body,
+                'color': n.color,
+                'pinned': n.pinned,
+                'createdAt': n.createdAt.toIso8601String(),
+                'updatedAt': n.updatedAt.toIso8601String(),
               })
           .toList(),
     };

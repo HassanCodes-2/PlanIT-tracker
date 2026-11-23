@@ -11,6 +11,7 @@ import 'package:planit/core/theme/app_theme.dart';
 import 'package:planit/data/db/app_database.dart';
 import 'package:planit/data/providers.dart';
 import 'package:planit/features/deeds/create_deed_screen.dart';
+import 'package:planit/features/notes/notes_screen.dart';
 import 'package:planit/features/onboarding/onboarding_screen.dart';
 import 'package:planit/features/settings/settings_screen.dart';
 import 'package:planit/features/stats/stats_screen.dart';
@@ -160,6 +161,46 @@ List<DeedLog> _history() {
 
 final List<DeedLog> allLogs = _history();
 
+final List<Note> notes = [
+  Note(
+    id: 1,
+    title: 'App ideas',
+    body: 'Add a weekly review screen. Maybe widgets next.',
+    color: '#1B6CFF',
+    pinned: true,
+    createdAt: todayOnly.subtract(const Duration(days: 2)),
+    updatedAt: todayOnly.subtract(const Duration(hours: 3)),
+  ),
+  Note(
+    id: 2,
+    title: 'Groceries',
+    body: 'Oats, bananas, coffee, olive oil',
+    color: '#22C55E',
+    pinned: false,
+    createdAt: todayOnly.subtract(const Duration(days: 1)),
+    updatedAt: todayOnly.subtract(const Duration(hours: 5)),
+  ),
+  Note(
+    id: 3,
+    title: 'Book notes',
+    body:
+        'Atomic Habits: systems over goals. Make it obvious, attractive, easy, satisfying.',
+    color: '#8B5CF6',
+    pinned: false,
+    createdAt: todayOnly.subtract(const Duration(days: 4)),
+    updatedAt: todayOnly.subtract(const Duration(days: 1)),
+  ),
+  Note(
+    id: 4,
+    title: 'Trip plan',
+    body: 'Weekend plan: sunrise at the wadi, seafood market, beach camp.',
+    color: '#F59E0B',
+    pinned: false,
+    createdAt: todayOnly.subtract(const Duration(days: 6)),
+    updatedAt: todayOnly.subtract(const Duration(days: 2)),
+  ),
+];
+
 ThemeData _fontTheme(ThemeData base) => base.copyWith(
       textTheme: base.textTheme.apply(fontFamily: 'Roboto'),
       primaryTextTheme: base.primaryTextTheme.apply(fontFamily: 'Roboto'),
@@ -194,6 +235,7 @@ Widget _app({
       logsForDayProvider
           .overrideWith((ref, day) => Stream.value(todayLogs)),
       allLogsProvider.overrideWith((ref) => Stream.value(allLogs)),
+      notesProvider.overrideWith((ref) => Stream.value(notes)),
       sharedPreferencesProvider
           .overrideWithValue(_prefs()),
     ],
@@ -211,6 +253,9 @@ Widget _app({
                     NavigationDestination(
                         icon: Icon(Icons.checklist_rounded),
                         label: 'Today'),
+                    NavigationDestination(
+                        icon: Icon(Icons.sticky_note_2_outlined),
+                        label: 'Notes'),
                     NavigationDestination(
                         icon: Icon(Icons.bar_chart_rounded),
                         label: 'Stats'),
@@ -289,13 +334,25 @@ void main() {
     );
   });
 
+  testWidgets('notes', (tester) async {
+    await _prepare(tester);
+    await tester.pumpWidget(
+      _app(child: const NotesScreen(), theme: AppTheme.dark, navIndex: 1),
+    );
+    await tester.pumpAndSettle();
+    await expectLater(
+      find.byKey(captureKey),
+      matchesGoldenFile('goldens/notes.png'),
+    );
+  });
+
   testWidgets('stats', (tester) async {
     await _prepare(tester);
     await tester.pumpWidget(
       _app(
         child: const StatsScreen(),
         theme: AppTheme.dark,
-        navIndex: 1,
+        navIndex: 2,
       ),
     );
     await tester.pumpAndSettle();
@@ -311,7 +368,7 @@ void main() {
       _app(
         child: const SettingsScreen(),
         theme: AppTheme.dark,
-        navIndex: 2,
+        navIndex: 3,
       ),
     );
     await tester.pumpAndSettle();

@@ -24,6 +24,11 @@ class AppShell extends StatelessWidget {
             label: 'Today',
           ),
           NavigationDestination(
+            icon: Icon(Icons.sticky_note_2_outlined),
+            selectedIcon: Icon(Icons.sticky_note_2_rounded),
+            label: 'Notes',
+          ),
+          NavigationDestination(
             icon: Icon(Icons.bar_chart_rounded),
             selectedIcon: Icon(Icons.bar_chart_rounded),
             label: 'Stats',

@@ -26,6 +26,11 @@ final allLogsProvider = StreamProvider<List<DeedLog>>(
   (ref) => ref.watch(repositoryProvider).watchAllLogs(),
 );
 
+/// Quick-capture notes & ideas, pinned first.
+final notesProvider = StreamProvider<List<Note>>(
+  (ref) => ref.watch(repositoryProvider).watchNotes(),
+);
+
 /// The day currently shown on the Today screen.
 class SelectedDay extends Notifier<DateTime> {
   @override

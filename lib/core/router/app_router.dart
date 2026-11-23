@@ -5,6 +5,8 @@ import '../../core/prefs/prefs_providers.dart';
 import '../../features/deeds/create_deed_screen.dart';
 import '../../features/deeds/deed_detail_screen.dart';
 import '../../features/focus/focus_screen.dart';
+import '../../features/notes/note_editor_screen.dart';
+import '../../features/notes/notes_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/shell/app_shell.dart';
@@ -44,6 +46,14 @@ GoRouter _createRouter({required bool onboarded}) {
           StatefulShellBranch(
             routes: [
               GoRoute(
+                path: '/notes',
+                builder: (context, state) => const NotesScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
                 path: '/stats',
                 builder: (context, state) => const StatsScreen(),
               ),
@@ -63,6 +73,12 @@ GoRouter _createRouter({required bool onboarded}) {
         path: '/create-deed',
         builder: (context, state) => CreateDeedScreen(
           deedId: int.tryParse(state.uri.queryParameters['id'] ?? ''),
+        ),
+      ),
+      GoRoute(
+        path: '/note',
+        builder: (context, state) => NoteEditorScreen(
+          noteId: int.tryParse(state.uri.queryParameters['id'] ?? ''),
         ),
       ),
       GoRoute(
