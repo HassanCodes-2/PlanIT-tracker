@@ -58,9 +58,17 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
     }
     final diff = result.donePct - prev.donePct;
     final up = diff >= 0;
-    final color = diff.abs() < 1
-        ? theme.colorScheme.onSurfaceVariant
-        : (up ? const Color(0xFF22C55E) : const Color(0xFFEF4444));
+    final digital = context.appStyle.isDigital;
+    final Color color;
+    if (diff.abs() < 1) {
+      color = theme.colorScheme.onSurfaceVariant;
+    } else if (digital) {
+      color = up
+          ? theme.colorScheme.primary
+          : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7);
+    } else {
+      color = up ? const Color(0xFF22C55E) : const Color(0xFFEF4444);
+    }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
@@ -203,7 +211,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                   physics: const NeverScrollableScrollPhysics(),
                   mainAxisSpacing: 10,
                   crossAxisSpacing: 10,
-                  childAspectRatio: 1.3,
+                  childAspectRatio: 1.22,
                   children: [
                     _RingStat(
                       percent: result.donePct,

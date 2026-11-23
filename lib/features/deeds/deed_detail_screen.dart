@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/icons.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/providers.dart';
@@ -18,6 +19,7 @@ class DeedDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final digital = context.appStyle.isDigital;
     final repository = ref.read(repositoryProvider);
     final deedFuture = repository.deedById(deedId);
     final categoriesAsync = ref.watch(categoriesProvider);
@@ -91,9 +93,17 @@ class DeedDetailScreen extends ConsumerWidget {
                           width: 52,
                           height: 52,
                           decoration: BoxDecoration(
-                            color: colorFromHex(category?.color ?? '#1B6CFF')
-                                .withValues(alpha: 0.12),
-                            shape: BoxShape.circle,
+                            color: (digital
+                                    ? theme.colorScheme.primary
+                                    : colorFromHex(
+                                        category?.color ?? '#1B6CFF'))
+                                .withValues(alpha: digital ? 0.10 : 0.12),
+                            shape: digital
+                                ? BoxShape.rectangle
+                                : BoxShape.circle,
+                            borderRadius: digital
+                                ? BorderRadius.circular(12)
+                                : null,
                           ),
                           child: Icon(
                             iconForDeed(
@@ -101,7 +111,10 @@ class DeedDetailScreen extends ConsumerWidget {
                               categoryIcon: category?.icon,
                               name: deed.name,
                             ),
-                            color: colorFromHex(category?.color ?? '#1B6CFF'),
+                            color: digital
+                                ? theme.colorScheme.primary
+                                : colorFromHex(
+                                    category?.color ?? '#1B6CFF'),
                             size: 28,
                           ),
                         ),
@@ -152,15 +165,23 @@ class DeedDetailScreen extends ConsumerWidget {
                         _MiniStat(
                             label: 'Done',
                             value: '${stats.done}',
-                            color: const Color(0xFF22C55E)),
+                            color: digital
+                                ? theme.colorScheme.onSurface
+                                : const Color(0xFF22C55E)),
                         _MiniStat(
                             label: 'Late',
                             value: '${stats.late}',
-                            color: const Color(0xFFF59E0B)),
+                            color: digital
+                                ? theme.colorScheme.onSurfaceVariant
+                                    .withValues(alpha: 0.75)
+                                : const Color(0xFFF59E0B)),
                         _MiniStat(
                             label: 'Skipped',
                             value: '${stats.skipped}',
-                            color: const Color(0xFFEF4444)),
+                            color: digital
+                                ? theme.colorScheme.onSurfaceVariant
+                                    .withValues(alpha: 0.45)
+                                : const Color(0xFFEF4444)),
                         _MiniStat(
                             label: 'Missed',
                             value: '${stats.missed}',
@@ -236,10 +257,16 @@ class DeedDetailScreen extends ConsumerWidget {
                                   },
                                   size: 18,
                                   color: switch (LogStatus.fromDb(log.status)) {
-                                    LogStatus.done => const Color(0xFF22C55E),
-                                    LogStatus.late => const Color(0xFFF59E0B),
-                                    LogStatus.skipped =>
-                                      const Color(0xFFEF4444),
+                                    LogStatus.done => digital
+                                        ? theme.colorScheme.onSurface
+                                        : const Color(0xFF22C55E),
+                                    LogStatus.late => digital
+                                        ? theme.colorScheme.onSurfaceVariant
+                                        : const Color(0xFFF59E0B),
+                                    LogStatus.skipped => digital
+                                        ? theme.colorScheme.onSurfaceVariant
+                                            .withValues(alpha: 0.6)
+                                        : const Color(0xFFEF4444),
                                   },
                                 ),
                                 const SizedBox(width: 10),
@@ -275,6 +302,7 @@ class _SingleDeedHeatmap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final digital = context.appStyle.isDigital;
     final index = <String, LogStatus>{
       for (final log in logs)
         '${log.day.year}-${log.day.month}-${log.day.day}':
@@ -294,16 +322,26 @@ class _SingleDeedHeatmap extends StatelessWidget {
             final status = index[key];
             Color? color;
             if (status != null) {
-              color = switch (status) {
-                LogStatus.done => const Color(0xFF22C55E),
-                LogStatus.late => const Color(0xFFF59E0B),
-                LogStatus.skipped => const Color(0xFFEF4444),
-              };
+              if (digital) {
+                color = switch (status) {
+                  LogStatus.done => theme.colorScheme.onSurface,
+                  LogStatus.late => theme.colorScheme.onSurfaceVariant
+                      .withValues(alpha: 0.75),
+                  LogStatus.skipped => theme.colorScheme.onSurfaceVariant
+                      .withValues(alpha: 0.45),
+                };
+              } else {
+                color = switch (status) {
+                  LogStatus.done => const Color(0xFF22C55E),
+                  LogStatus.late => const Color(0xFFF59E0B),
+                  LogStatus.skipped => const Color(0xFFEF4444),
+                };
+              }
             } else if (isScheduledOn(deed, day) &&
                 day.isBefore(today) &&
                 !frequencyOf(deed).isCountBased) {
-              color =
-                  theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.25);
+              color = theme.colorScheme.onSurfaceVariant
+                  .withValues(alpha: digital ? 0.22 : 0.25);
             }
             return Expanded(
               child: Padding(

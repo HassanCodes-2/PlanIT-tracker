@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/icons.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/providers.dart';
@@ -170,11 +171,18 @@ class _NoteGrid extends StatelessWidget {
       itemBuilder: (context, index) {
         final note = notes[index];
         final accent = colorFromHex(note.color);
+        final digital = context.appStyle.isDigital;
         return Material(
-          color: accent.withValues(alpha: 0.14),
+          color: digital
+              ? theme.cardTheme.color
+              : accent.withValues(alpha: 0.14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: accent.withValues(alpha: 0.45)),
+            side: BorderSide(
+              color: digital
+                  ? theme.colorScheme.outline
+                  : accent.withValues(alpha: 0.45),
+            ),
           ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
@@ -187,11 +195,24 @@ class _NoteGrid extends StatelessWidget {
                 children: [
                   Row(
                     children: [
+                      if (digital) ...[
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: accent,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                      ],
                       if (note.pinned) ...[
                         Icon(
                           Icons.push_pin_rounded,
                           size: 13,
-                          color: accent,
+                          color: digital
+                              ? theme.colorScheme.primary
+                              : accent,
                         ),
                         const SizedBox(width: 4),
                       ],
