@@ -9,6 +9,7 @@ import '../../data/db/app_database.dart' as db;
 import '../../data/providers.dart';
 import '../../domain/deed_schedule.dart';
 import '../../domain/enums.dart';
+import '../../domain/streak.dart';
 import '../../domain/stats.dart';
 
 class StatsScreen extends ConsumerStatefulWidget {
@@ -51,6 +52,9 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
     final from = _period == StatsPeriodType.all
         ? _earliest(deeds, logs, today)
         : today.subtract(Duration(days: _period.days - 1));
+    final loggedDays = logs.map((log) => dateOnly(log.day)).toSet();
+    final streakNow = currentStreak(loggedDays, today: today);
+    final bestRun = bestStreak(loggedDays);
     final result = computeStats(
       deeds: deeds,
       logs: logs,
@@ -97,6 +101,30 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                       today: today,
                     ),
                   ),
+                ),
+                const SizedBox(height: 24),
+                _Label('STREAKS'),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _StreakCard(
+                        icon: Icons.local_fire_department_rounded,
+                        color: const Color(0xFFF97316),
+                        label: 'Current streak',
+                        value: '$streakNow ${streakNow == 1 ? 'day' : 'days'}',
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _StreakCard(
+                        icon: Icons.emoji_events_rounded,
+                        color: const Color(0xFFF59E0B),
+                        label: 'Best streak',
+                        value: '$bestRun ${bestRun == 1 ? 'day' : 'days'}',
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 24),
                 _Label('STATUS SUMMARY'),
@@ -274,6 +302,66 @@ class _Heatmap extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+class _StreakCard extends StatelessWidget {
+  const _StreakCard({
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: theme.colorScheme.outline),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

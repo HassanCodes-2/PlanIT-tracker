@@ -1,10 +1,25 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../core/backup/backup_service.dart';
 import '../../core/prefs/prefs_providers.dart';
+import '../../data/providers.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
+
+  Future<void> _backup(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref
+          .read(backupServiceProvider)
+          .shareBackup(ref.read(repositoryProvider));
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Backup failed. Please try again.')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -47,18 +62,43 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 24),
-          _Label('ABOUT'),
+          _Label('DATA'),
           const SizedBox(height: 10),
-          _InfoTile(
-            icon: Icons.apps_rounded,
-            title: 'PlanIT',
-            subtitle: 'Habit & deed tracker · v1.0.0',
+          Material(
+            color: theme.cardTheme.color,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: theme.colorScheme.outline),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: ListTile(
+              leading: Icon(
+                Icons.file_upload_outlined,
+                color: theme.colorScheme.primary,
+              ),
+              title: const Text('Backup my data'),
+              subtitle: Text(
+                'Save a copy of every deed and your history as a file',
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+              onTap: () => _backup(context, ref),
+            ),
           ),
           const SizedBox(height: 10),
           _InfoTile(
             icon: Icons.storage_rounded,
             title: 'Data',
-            subtitle: 'Stored only on this phone. Online backup is coming later.',
+            subtitle:
+                'Stored only on this phone. Use Backup to keep a safe copy.',
+          ),
+          const SizedBox(height: 24),
+          _Label('ABOUT'),
+          const SizedBox(height: 10),
+          _InfoTile(
+            icon: Icons.apps_rounded,
+            title: 'PlanIT',
+            subtitle: 'Habit & deed tracker · v1.1.0',
           ),
           const SizedBox(height: 10),
           _InfoTile(

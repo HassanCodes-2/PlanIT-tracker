@@ -3,11 +3,13 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../core/prefs/prefs_providers.dart';
 import '../../core/utils/icons.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/providers.dart';
 import '../../domain/deed_schedule.dart';
 import '../../domain/enums.dart';
+import '../../domain/streak.dart';
 
 class TodayScreen extends ConsumerWidget {
   const TodayScreen({super.key});
@@ -19,10 +21,12 @@ class TodayScreen extends ConsumerWidget {
     final categoriesAsync = ref.watch(categoriesProvider);
     final deedsAsync = ref.watch(deedsProvider);
     final logsAsync = ref.watch(logsForDayProvider(day));
+    final allLogsAsync = ref.watch(allLogsProvider);
 
     final categories = categoriesAsync.value;
     final deeds = deedsAsync.value;
     final logs = logsAsync.value ?? const <int, db.DeedLog>{};
+    final allLogs = allLogsAsync.value ?? const <db.DeedLog>[];
 
     if (categories == null || deeds == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -33,6 +37,14 @@ class TodayScreen extends ConsumerWidget {
     final scheduled = deeds.where((deed) => isScheduledOn(deed, day)).toList();
     final doneCount =
         scheduled.where((deed) => logs[deed.id] != null).length;
+
+    final loggedDays = allLogs.map((log) => dateOnly(log.day)).toSet();
+    final streak = currentStreak(loggedDays, today: today);
+
+    final mode = ref.watch(themeModeProvider);
+    final isDark = mode == ThemeMode.dark ||
+        (mode == ThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.dark);
 
     final grouped = <db.Category, List<db.Deed>>{};
     for (final category in categories) {
@@ -53,7 +65,14 @@ class TodayScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.only(bottom: 96),
           children: [
-            _DateHeader(day: day, done: doneCount, total: scheduled.length),
+            _DateHeader(
+              day: day,
+              done: doneCount,
+              total: scheduled.length,
+              streak: streak,
+              isDark: isDark,
+              onToggleTheme: () => _toggleTheme(context, ref),
+            ),
             _DayScroller(
               today: today,
               selected: day,
@@ -87,7 +106,7 @@ class TodayScreen extends ConsumerWidget {
                   deeds: entry.value,
                   logs: logs,
                   canLog: !isFuture,
-                  onTap: (deed) => _toggle(ref, deed, day, logs[deed.id]),
+                  onTap: (deed) => _markDone(context, ref, deed, day, logs),
                   onLongPress: (deed) =>
                       _showOutcomeSheet(context, ref, deed, day, logs[deed.id]),
                 ),
@@ -98,10 +117,12 @@ class TodayScreen extends ConsumerWidget {
                   deeds: uncategorized,
                   logs: logs,
                   canLog: !isFuture,
-                  onTap: (deed) => _toggle(ref, deed, day, logs[deed.id]),
+                  onTap: (deed) => _markDone(context, ref, deed, day, logs),
                   onLongPress: (deed) =>
                       _showOutcomeSheet(context, ref, deed, day, logs[deed.id]),
                 ),
+              if (doneCount >= scheduled.length && !isFuture)
+                const _CaughtUpCard(),
             ],
           ],
         ),
@@ -109,17 +130,61 @@ class TodayScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _toggle(
+  void _toggleTheme(BuildContext context, WidgetRef ref) {
+    final mode = ref.read(themeModeProvider);
+    final isDark = mode == ThemeMode.dark ||
+        (mode == ThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.dark);
+    ref
+        .read(themeModeProvider.notifier)
+        .setMode(isDark ? ThemeMode.light : ThemeMode.dark);
+  }
+
+  void _snack(BuildContext context, String message, VoidCallback? undo) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 3),
+        action: undo == null
+            ? null
+            : SnackBarAction(label: 'Undo', onPressed: undo),
+      ));
+  }
+
+  Future<void> _markDone(
+    BuildContext context,
     WidgetRef ref,
     db.Deed deed,
     DateTime day,
-    db.DeedLog? existing,
+    Map<int, db.DeedLog> logs,
   ) async {
     final repository = ref.read(repositoryProvider);
+    final existing = logs[deed.id];
     if (existing == null) {
       await repository.setLog(deed.id, day, LogStatus.done);
+      if (context.mounted) {
+        _snack(
+          context,
+          'Marked "${deed.name}" done',
+          () => repository.clearLog(deed.id, day),
+        );
+      }
     } else {
+      final previous = existing;
       await repository.clearLog(deed.id, day);
+      if (context.mounted) {
+        _snack(
+          context,
+          'Removed log for "${deed.name}"',
+          () => repository.setLog(
+            deed.id,
+            day,
+            LogStatus.fromDb(previous.status),
+            reason: previous.reason,
+          ),
+        );
+      }
     }
   }
 
@@ -176,6 +241,13 @@ class TodayScreen extends ConsumerWidget {
                 onTap: () async {
                   await repository.setLog(deed.id, day, LogStatus.done);
                   if (sheetContext.mounted) Navigator.pop(sheetContext);
+                  if (context.mounted) {
+                    _snack(
+                      context,
+                      'Marked "${deed.name}" done',
+                      () => repository.clearLog(deed.id, day),
+                    );
+                  }
                 },
               ),
               _OutcomeTile(
@@ -186,6 +258,13 @@ class TodayScreen extends ConsumerWidget {
                 onTap: () async {
                   await repository.setLog(deed.id, day, LogStatus.late);
                   if (sheetContext.mounted) Navigator.pop(sheetContext);
+                  if (context.mounted) {
+                    _snack(
+                      context,
+                      'Logged "${deed.name}" as late',
+                      () => repository.clearLog(deed.id, day),
+                    );
+                  }
                 },
               ),
               _OutcomeTile(
@@ -195,17 +274,23 @@ class TodayScreen extends ConsumerWidget {
                 selected: existing?.status == LogStatus.skipped.dbValue,
                 onTap: () async {
                   Navigator.pop(sheetContext);
+                  String? reason;
                   if (deed.reasonsEnabled) {
-                    final reason = await _askReason(context);
+                    reason = await _askReason(context);
                     if (reason == null) return;
-                    await repository.setLog(
-                      deed.id,
-                      day,
-                      LogStatus.skipped,
-                      reason: reason.isEmpty ? null : reason,
+                  }
+                  await repository.setLog(
+                    deed.id,
+                    day,
+                    LogStatus.skipped,
+                    reason: (reason == null || reason.isEmpty) ? null : reason,
+                  );
+                  if (context.mounted) {
+                    _snack(
+                      context,
+                      'Skipped "${deed.name}"',
+                      () => repository.clearLog(deed.id, day),
                     );
-                  } else {
-                    await repository.setLog(deed.id, day, LogStatus.skipped);
                   }
                 },
               ),
@@ -216,8 +301,21 @@ class TodayScreen extends ConsumerWidget {
                   label: 'Clear today\'s log',
                   selected: false,
                   onTap: () async {
+                    final previous = existing;
                     await repository.clearLog(deed.id, day);
                     if (sheetContext.mounted) Navigator.pop(sheetContext);
+                    if (context.mounted) {
+                      _snack(
+                        context,
+                        'Cleared log for "${deed.name}"',
+                        () => repository.setLog(
+                          deed.id,
+                          day,
+                          LogStatus.fromDb(previous.status),
+                          reason: previous.reason,
+                        ),
+                      );
+                    }
                   },
                 ),
               const SizedBox(height: 12),
@@ -260,33 +358,96 @@ class _DateHeader extends StatelessWidget {
     required this.day,
     required this.done,
     required this.total,
+    required this.streak,
+    required this.isDark,
+    required this.onToggleTheme,
   });
 
   final DateTime day;
   final int done;
   final int total;
+  final int streak;
+  final bool isDark;
+  final VoidCallback onToggleTheme;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isToday =
-        day.year == DateTime.now().year &&
-        day.month == DateTime.now().month &&
-        day.day == DateTime.now().day;
+    final now = DateTime.now();
+    final isToday = day.year == now.year &&
+        day.month == now.month &&
+        day.day == now.day;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+      padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
       child: Column(
         children: [
-          Text(
-            '${isToday ? 'Today, ' : ''}${DateFormat('d MMMM, yyyy').format(day)}',
-            style:
-                theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+          Row(
+            children: [
+              const SizedBox(width: 48),
+              Expanded(
+                child: Column(
+                  children: [
+                    Text(
+                      '${isToday ? 'Today, ' : ''}${DateFormat('d MMMM, yyyy').format(day)}',
+                      style: theme.textTheme.titleLarge
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.local_fire_department_rounded,
+                          size: 16,
+                          color: Color(0xFFF97316),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$streak-day streak',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Icon(
+                          Icons.check_circle_rounded,
+                          size: 16,
+                          color: Color(0xFF22C55E),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          total == 0 ? 'No deeds' : '$done of $total done',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                tooltip: 'Switch theme',
+                onPressed: onToggleTheme,
+                icon: Icon(
+                  isDark
+                      ? Icons.light_mode_rounded
+                      : Icons.dark_mode_rounded,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            total == 0 ? DateFormat('EEEE').format(day) : '$done of $total logged',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 60),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: LinearProgressIndicator(
+                value: total == 0 ? 0 : (done / total).clamp(0.0, 1.0),
+                minHeight: 6,
+                backgroundColor:
+                    theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.15),
+              ),
             ),
           ),
         ],
@@ -501,7 +662,8 @@ class _DeedCard extends StatelessWidget {
               height: 68,
               child: Row(
                 children: [
-                  const SizedBox(width: 14),
+                  Container(width: 4, height: double.infinity, color: accent),
+                  const SizedBox(width: 12),
                   Container(
                     width: 40,
                     height: 40,
@@ -565,6 +727,55 @@ class _DeedCard extends StatelessWidget {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CaughtUpCard extends StatelessWidget {
+  const _CaughtUpCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: theme.cardTheme.color,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: theme.colorScheme.outline),
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.celebration_rounded,
+              color: Color(0xFF22C55E),
+              size: 28,
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'All caught up!',
+                    style: theme.textTheme.titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'You completed every deed for today. See you tomorrow!',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
