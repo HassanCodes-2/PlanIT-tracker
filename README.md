@@ -28,18 +28,33 @@ A general **habit / deed tracker** for Android & iOS — plan recurring deeds, l
 
 ## Setup
 
-1. Create a Supabase project → run `supabase/schema.sql`
-2. Copy the project URL + anon key
+### Local toolchain (installed Nov 2026)
+
+| Tool | Location |
+|---|---|
+| Flutter 3.50.1 (stable) | `C:\Users\fahad\AppData\Local\flutter` |
+| Android SDK 36 + platform-tools | `C:\Users\fahad\AppData\Local\Android\Sdk` |
+| JDK 17 (Microsoft) | `C:\Users\fahad\AppData\Local\Android\jdk\jdk-17.0.21.1+2` |
+
+`PATH`, `JAVA_HOME`, `ANDROID_HOME`, `ANDROID_SDK_ROOT` are set at the user level.
+Open a **new terminal** before running Flutter commands.
+
+### Database
+
+1. Create a Supabase project → run `supabase/schema.sql` in the SQL editor
+2. Copy the project URL and publishable key
 3. Run the app:
 
 ```powershell
-flutter run --dart-define=SUPABASE_URL=<url> --dart-define=SUPABASE_ANON_KEY=<anon>
+flutter run --dart-define=SUPABASE_URL=<url> --dart-define=SUPABASE_KEY=<publishable-or-anon-key>
 ```
+
+Without the defines the app runs with mock data.
 
 ## Status
 
 - [x] Research & plan
-- [ ] M0 Skeleton
+- [x] M0 Skeleton
 - [ ] M1 Auth
 - [ ] M2 Data & Today
 - [ ] M3 Logging UX

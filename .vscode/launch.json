@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "PlanIT (mock data)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart"
+    },
+    {
+      "name": "PlanIT (Supabase)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [
+        "--dart-define=SUPABASE_URL=https://YOUR-PROJECT.supabase.co",
+        "--dart-define=SUPABASE_KEY=YOUR-PUBLISHABLE-KEY"
+      ]
+    }
+  ]
+}

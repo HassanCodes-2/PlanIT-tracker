@@ -82,3 +82,6 @@ app.*.symbols
 .env.*
 *.jks
 *.keystore
+
+# Build artifacts
+dist/
