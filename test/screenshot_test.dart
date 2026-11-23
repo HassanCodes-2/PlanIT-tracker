@@ -382,6 +382,22 @@ void main() {
     );
   });
 
+  testWidgets('stats digital', (tester) async {
+    await _prepare(tester);
+    await tester.pumpWidget(
+      _app(
+        child: const StatsScreen(),
+        theme: AppTheme.digitalDark,
+        navIndex: 2,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await expectLater(
+      find.byKey(captureKey),
+      matchesGoldenFile('goldens/stats_digital.png'),
+    );
+  });
+
   testWidgets('settings', (tester) async {
     await _prepare(tester);
     await tester.pumpWidget(

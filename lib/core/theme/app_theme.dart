@@ -35,6 +35,7 @@ abstract final class AppTheme {
         onAccent: Colors.black,
         cardRadius: 10,
         radius: 12,
+        digital: true,
       );
 
   static ThemeData get digitalLight => _build(
@@ -48,6 +49,7 @@ abstract final class AppTheme {
         onAccent: Colors.white,
         cardRadius: 10,
         radius: 12,
+        digital: true,
       );
 
   static ThemeData _build({
@@ -61,6 +63,7 @@ abstract final class AppTheme {
     Color onAccent = Colors.white,
     double cardRadius = 16,
     double radius = 16,
+    bool digital = false,
   }) {
     final scheme = ColorScheme.fromSeed(
       seedColor: accent,
@@ -79,6 +82,7 @@ abstract final class AppTheme {
       brightness: brightness,
       colorScheme: scheme,
       scaffoldBackgroundColor: bg,
+      extensions: [AppStyle(isDigital: digital)],
       appBarTheme: AppBarTheme(
         backgroundColor: bg,
         surfaceTintColor: Colors.transparent,
@@ -104,7 +108,10 @@ abstract final class AppTheme {
         backgroundColor: surface,
         surfaceTintColor: Colors.transparent,
         indicatorColor: accent.withValues(alpha: 0.16),
-        height: 68,
+        indicatorShape: digital
+            ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))
+            : null,
+        height: digital ? 64 : 68,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -149,7 +156,31 @@ abstract final class AppTheme {
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: accent,
         foregroundColor: onAccent,
+        elevation: digital ? 0 : null,
+        shape: digital
+            ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))
+            : null,
       ),
     );
   }
+}
+
+/// Marks the active visual style so widgets can fine-tune details.
+class AppStyle extends ThemeExtension<AppStyle> {
+  const AppStyle({required this.isDigital});
+
+  final bool isDigital;
+
+  @override
+  AppStyle copyWith({bool? isDigital}) =>
+      AppStyle(isDigital: isDigital ?? this.isDigital);
+
+  @override
+  AppStyle lerp(ThemeExtension<AppStyle>? other, double t) => this;
+}
+
+extension AppStyleContext on BuildContext {
+  AppStyle get appStyle =>
+      Theme.of(this).extension<AppStyle>() ??
+      const AppStyle(isDigital: false);
 }

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/icons.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/providers.dart';
@@ -116,6 +117,16 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
       to: today,
     );
 
+    final digital = context.appStyle.isDigital;
+    final doneColor =
+        digital ? theme.colorScheme.primary : const Color(0xFF22C55E);
+    final lateColor =
+        digital ? theme.colorScheme.onSurfaceVariant : const Color(0xFFF59E0B);
+    final skippedColor = digital
+        ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.65)
+        : const Color(0xFFEF4444);
+    final missedColor = theme.colorScheme.onSurfaceVariant;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Stats')),
       body: deeds.isEmpty
@@ -155,8 +166,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                   children: [
                     Expanded(
                       child: _StreakCard(
-                        icon: Icons.local_fire_department_rounded,
-                        color: const Color(0xFFF97316),
+                        icon: AppIcons.fire,
+                        color: digital
+                            ? theme.colorScheme.primary
+                            : const Color(0xFFF97316),
                         label: 'Current streak',
                         value: '$streakNow ${streakNow == 1 ? 'day' : 'days'}',
                       ),
@@ -164,8 +177,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: _StreakCard(
-                        icon: Icons.emoji_events_rounded,
-                        color: const Color(0xFFF59E0B),
+                        icon: AppIcons.star,
+                        color: digital
+                            ? theme.colorScheme.onSurfaceVariant
+                            : const Color(0xFFF59E0B),
                         label: 'Best streak',
                         value: '$bestRun ${bestRun == 1 ? 'day' : 'days'}',
                       ),
@@ -192,25 +207,25 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                   children: [
                     _RingStat(
                       percent: result.donePct,
-                      color: const Color(0xFF22C55E),
+                      color: doneColor,
                       icon: AppIcons.done,
                       count: result.done,
                     ),
                     _RingStat(
                       percent: result.latePct,
-                      color: const Color(0xFFF59E0B),
+                      color: lateColor,
                       icon: AppIcons.late,
                       count: result.late,
                     ),
                     _RingStat(
                       percent: result.skippedPct,
-                      color: const Color(0xFFEF4444),
+                      color: skippedColor,
                       icon: AppIcons.skipped,
                       count: result.skipped,
                     ),
                     _RingStat(
                       percent: result.missedPct,
-                      color: theme.colorScheme.onSurfaceVariant,
+                      color: missedColor,
                       icon: AppIcons.missed,
                       count: result.missed,
                     ),
@@ -267,10 +282,21 @@ class _Heatmap extends StatelessWidget {
     Map<String, LogStatus> index,
     DeedStats stats,
     DateTime day,
+    ThemeData theme,
+    bool digital,
   ) {
     final status =
         index['${stats.deed.id}/${day.year}-${day.month}-${day.day}'];
     if (status != null) {
+      if (digital) {
+        return switch (status) {
+          LogStatus.done => theme.colorScheme.onSurface,
+          LogStatus.late => theme.colorScheme.onSurfaceVariant
+              .withValues(alpha: 0.75),
+          LogStatus.skipped => theme.colorScheme.onSurfaceVariant
+              .withValues(alpha: 0.45),
+        };
+      }
       return switch (status) {
         LogStatus.done => const Color(0xFF22C55E),
         LogStatus.late => const Color(0xFFF59E0B),
@@ -280,12 +306,14 @@ class _Heatmap extends StatelessWidget {
     if (!isScheduledOn(stats.deed, day)) return null;
     if (frequencyOf(stats.deed).isCountBased) return null;
     if (day.isBefore(today)) {
-      return const Color(0xFF6B7280).withValues(alpha: 0.35);
+      return theme.colorScheme.onSurfaceVariant.withValues(
+        alpha: digital ? 0.22 : 0.35,
+      );
     }
     if (day.year == today.year &&
         day.month == today.month &&
         day.day == today.day) {
-      return const Color(0xFF1B6CFF).withValues(alpha: 0.25);
+      return theme.colorScheme.primary.withValues(alpha: digital ? 0.30 : 0.25);
     }
     return null;
   }
@@ -293,6 +321,7 @@ class _Heatmap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final digital = context.appStyle.isDigital;
     final start = today.subtract(Duration(days: days - 1));
     final dateList = List.generate(days, (index) => start.add(Duration(days: index)));
     final index = <String, LogStatus>{
@@ -332,7 +361,7 @@ class _Heatmap extends StatelessWidget {
               Expanded(
                 child: Row(
                   children: dateList.map((day) {
-                    final color = _colorFor(index, stats, day);
+                    final color = _colorFor(index, stats, day, theme, digital);
                     return Expanded(
                       child: Padding(
                         padding: const EdgeInsets.all(1),

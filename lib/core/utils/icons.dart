@@ -47,6 +47,7 @@ abstract final class AppIcons {
   static const trendUp = Phosphor.trendUp;
   static const trendDown = Phosphor.trendDown;
   static const notePencil = Phosphor.notePencil;
+  static const star = Phosphor.star;
 }
 
 /// Maps icon names stored in the DB to Phosphor icons (bold weight).

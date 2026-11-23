@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/prefs/prefs_providers.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/icons.dart';
 import '../../core/widgets/confetti.dart';
 import '../../data/db/app_database.dart' as db;
@@ -68,7 +69,20 @@ class TodayScreen extends ConsumerWidget {
         child: const Icon(Icons.add_rounded),
       ),
       body: SafeArea(
-        child: ListView(
+        child: Stack(
+          children: [
+            if (context.appStyle.isDigital)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: CustomPaint(
+                    painter: _GridPainter(
+                      color: theme.colorScheme.onSurfaceVariant
+                          .withValues(alpha: 0.05),
+                    ),
+                  ),
+                ),
+              ),
+            ListView(
           padding: const EdgeInsets.only(bottom: 96),
           children: [
             _DateHeader(
@@ -167,7 +181,9 @@ class TodayScreen extends ConsumerWidget {
             ],
           ],
         ),
-      ),
+            ],
+          ),
+        ),
     );
   }
 
@@ -249,6 +265,13 @@ class TodayScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final repository = ref.read(repositoryProvider);
     final existing = logs[deed.id];
+    final digital = context.appStyle.isDigital;
+    final doneColor =
+        digital ? theme.colorScheme.primary : const Color(0xFF22C55E);
+    final lateColor =
+        digital ? theme.colorScheme.onSurfaceVariant : const Color(0xFFF59E0B);
+    final skippedColor =
+        digital ? theme.colorScheme.onSurfaceVariant : const Color(0xFFEF4444);
 
     await showModalBottomSheet<void>(
       context: context,
@@ -295,7 +318,7 @@ class TodayScreen extends ConsumerWidget {
               ),
               _OutcomeTile(
                 icon: Icons.check_circle_rounded,
-                color: const Color(0xFF22C55E),
+                color: doneColor,
                 label: 'Done on time',
                 selected: existing?.status == LogStatus.done.dbValue,
                 onTap: () async {
@@ -313,7 +336,7 @@ class TodayScreen extends ConsumerWidget {
               ),
               _OutcomeTile(
                 icon: Icons.schedule_rounded,
-                color: const Color(0xFFF59E0B),
+                color: lateColor,
                 label: 'Done late',
                 selected: existing?.status == LogStatus.late.dbValue,
                 onTap: () async {
@@ -330,7 +353,7 @@ class TodayScreen extends ConsumerWidget {
               ),
               _OutcomeTile(
                 icon: Icons.remove_circle_rounded,
-                color: const Color(0xFFEF4444),
+                color: skippedColor,
                 label: 'Skipped',
                 selected: existing?.status == LogStatus.skipped.dbValue,
                 onTap: () async {
@@ -461,7 +484,7 @@ class _DateHeader extends StatelessWidget {
                       timeLabel,
                       style: theme.textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.w700,
-                        letterSpacing: 1.2,
+                        letterSpacing: context.appStyle.isDigital ? 2.4 : 1.2,
                         fontFeatures: const [FontFeature.tabularFigures()],
                       ),
                     ),
@@ -495,10 +518,12 @@ class _DateHeader extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
               children: [
-                const Icon(
+                Icon(
                   AppIcons.fire,
                   size: 16,
-                  color: Color(0xFFF97316),
+                  color: context.appStyle.isDigital
+                      ? theme.colorScheme.primary
+                      : const Color(0xFFF97316),
                 ),
                 const SizedBox(width: 4),
                 Text(
@@ -508,10 +533,12 @@ class _DateHeader extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                const Icon(
+                Icon(
                   AppIcons.done,
                   size: 16,
-                  color: Color(0xFF22C55E),
+                  color: context.appStyle.isDigital
+                      ? theme.colorScheme.onSurfaceVariant
+                      : const Color(0xFF22C55E),
                 ),
                 const SizedBox(width: 4),
                 Text(
@@ -578,8 +605,9 @@ class _DayScrollerState extends State<_DayScroller> {
               day.month == widget.selected.month &&
               day.day == widget.selected.day;
           final theme = Theme.of(context);
+          final digital = context.appStyle.isDigital;
           return InkWell(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(digital ? 8 : 12),
             onTap: () => widget.onSelect(day),
             child: Container(
               width: 46,
@@ -588,7 +616,16 @@ class _DayScrollerState extends State<_DayScroller> {
                 color: isSelected
                     ? theme.colorScheme.primary
                     : Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(digital ? 8 : 12),
+                boxShadow: digital && isSelected
+                    ? [
+                        BoxShadow(
+                          color: theme.colorScheme.primary
+                              .withValues(alpha: 0.30),
+                          blurRadius: 12,
+                        ),
+                      ]
+                    : null,
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -631,6 +668,7 @@ class _SegmentBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final digital = context.appStyle.isDigital;
     final count = total <= 0 ? 12 : total.clamp(1, 24);
     final filled = total <= 0
         ? 0
@@ -643,13 +681,22 @@ class _SegmentBar extends StatelessWidget {
             padding: EdgeInsets.only(right: index == count - 1 ? 0 : 3),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 300),
-              height: 5,
+              height: digital ? 6 : 5,
               decoration: BoxDecoration(
                 color: index < filled
                     ? theme.colorScheme.primary
                     : theme.colorScheme.onSurfaceVariant
                         .withValues(alpha: 0.18),
                 borderRadius: BorderRadius.circular(2),
+                boxShadow: digital && index < filled
+                    ? [
+                        BoxShadow(
+                          color: theme.colorScheme.primary
+                              .withValues(alpha: 0.35),
+                          blurRadius: 8,
+                        ),
+                      ]
+                    : null,
               ),
             ),
           ),
@@ -763,27 +810,52 @@ class _DeedCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final accent = colorFromHex(category?.color ?? '#1B6CFF');
+    final digital = context.appStyle.isDigital;
+    final accent = digital
+        ? theme.colorScheme.primary
+        : colorFromHex(category?.color ?? '#1B6CFF');
     final status = log == null ? null : LogStatus.fromDb(log!.status);
     final completed = status != null;
 
     final (tint, icon, iconColor) = switch (status) {
-      null => (accent.withValues(alpha: 0.06), null, accent),
-      LogStatus.done => (
-          const Color(0xFF22C55E).withValues(alpha: 0.24),
-          Icons.check_rounded,
-          const Color(0xFF22C55E),
+      null => (
+          accent.withValues(alpha: digital ? 0.05 : 0.06),
+          null,
+          accent
         ),
-      LogStatus.late => (
-          const Color(0xFFF59E0B).withValues(alpha: 0.24),
-          Icons.schedule_rounded,
-          const Color(0xFFF59E0B),
-        ),
-      LogStatus.skipped => (
-          const Color(0xFFEF4444).withValues(alpha: 0.20),
-          Icons.close_rounded,
-          const Color(0xFFEF4444),
-        ),
+      LogStatus.done => digital
+          ? (
+              theme.colorScheme.primary.withValues(alpha: 0.12),
+              Icons.check_rounded,
+              theme.colorScheme.primary,
+            )
+          : (
+              const Color(0xFF22C55E).withValues(alpha: 0.24),
+              Icons.check_rounded,
+              const Color(0xFF22C55E),
+            ),
+      LogStatus.late => digital
+          ? (
+              theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.14),
+              Icons.schedule_rounded,
+              theme.colorScheme.onSurfaceVariant,
+            )
+          : (
+              const Color(0xFFF59E0B).withValues(alpha: 0.24),
+              Icons.schedule_rounded,
+              const Color(0xFFF59E0B),
+            ),
+      LogStatus.skipped => digital
+          ? (
+              theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.07),
+              Icons.close_rounded,
+              theme.colorScheme.onSurfaceVariant,
+            )
+          : (
+              const Color(0xFFEF4444).withValues(alpha: 0.20),
+              Icons.close_rounded,
+              const Color(0xFFEF4444),
+            ),
     };
 
     final hasReason = log?.reason != null && log!.reason!.isNotEmpty;
@@ -807,14 +879,19 @@ class _DeedCard extends StatelessWidget {
               height: 68,
               child: Row(
                 children: [
-                  Container(width: 4, height: double.infinity, color: accent),
+                  Container(width: 4, height: double.infinity,
+                      color: digital
+                          ? theme.colorScheme.primary.withValues(alpha: 0.45)
+                          : accent),
                   const SizedBox(width: 12),
                   Container(
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: accent.withValues(alpha: 0.12),
-                      shape: BoxShape.circle,
+                      color: accent.withValues(alpha: digital ? 0.10 : 0.12),
+                      shape: digital ? BoxShape.rectangle : BoxShape.circle,
+                      borderRadius:
+                          digital ? BorderRadius.circular(10) : null,
                     ),
                     child: Icon(
                       iconForDeed(
@@ -900,9 +977,11 @@ class _CaughtUpCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(
+            Icon(
               Icons.celebration_rounded,
-              color: Color(0xFF22C55E),
+              color: context.appStyle.isDigital
+                  ? theme.colorScheme.primary
+                  : const Color(0xFF22C55E),
               size: 28,
             ),
             const SizedBox(width: 14),
@@ -998,4 +1077,29 @@ class _OutcomeTile extends StatelessWidget {
       onTap: onTap,
     );
   }
+}
+
+/// Subtle HUD grid behind the Today screen (Digital theme only).
+class _GridPainter extends CustomPainter {
+  const _GridPainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1;
+    const step = 26.0;
+    for (var x = 0.0; x < size.width; x += step) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+    for (var y = 0.0; y < size.height; y += step) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_GridPainter oldDelegate) =>
+      oldDelegate.color != color;
 }

@@ -24,11 +24,11 @@ abstract final class AppColors {
   static const skipped = Color(0xFFEF4444);
 
   // Digital theme — monochrome HUD
-  static const digitalDarkBg = Color(0xFF050506);
-  static const digitalDarkSurface = Color(0xFF0F0F11);
-  static const digitalDarkBorder = Color(0xFF26262B);
-  static const digitalDarkText = Color(0xFFF5F5F7);
-  static const digitalDarkMuted = Color(0xFF8B8B93);
+  static const digitalDarkBg = Color(0xFF000000);
+  static const digitalDarkSurface = Color(0xFF0A0A0C);
+  static const digitalDarkBorder = Color(0xFF1F1F24);
+  static const digitalDarkText = Color(0xFFF6F6F8);
+  static const digitalDarkMuted = Color(0xFF8A8A92);
 
   static const digitalLightBg = Color(0xFFF6F6F7);
   static const digitalLightSurface = Color(0xFFFFFFFF);
