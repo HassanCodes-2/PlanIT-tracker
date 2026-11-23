@@ -11,6 +11,7 @@ import 'package:planit/core/theme/app_theme.dart';
 import 'package:planit/data/db/app_database.dart';
 import 'package:planit/data/providers.dart';
 import 'package:planit/features/deeds/create_deed_screen.dart';
+import 'package:planit/features/onboarding/onboarding_screen.dart';
 import 'package:planit/features/settings/settings_screen.dart';
 import 'package:planit/features/stats/stats_screen.dart';
 import 'package:planit/features/today/today_screen.dart';
@@ -317,6 +318,30 @@ void main() {
     await expectLater(
       find.byKey(captureKey),
       matchesGoldenFile('goldens/settings.png'),
+    );
+  });
+
+  testWidgets('welcome', (tester) async {
+    await _prepare(tester);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(_prefs()),
+        ],
+        child: RepaintBoundary(
+          key: captureKey,
+          child: MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: _fontTheme(AppTheme.dark),
+            home: const OnboardingScreen(),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await expectLater(
+      find.byKey(captureKey),
+      matchesGoldenFile('goldens/welcome.png'),
     );
   });
 }

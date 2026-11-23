@@ -1,0 +1,382 @@
+import 'dart:async';
+
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart';
+
+import '../../core/utils/icons.dart';
+import '../../core/widgets/confetti.dart';
+import '../../data/db/app_database.dart' as db;
+import '../../data/providers.dart';
+import '../../domain/enums.dart';
+
+class FocusScreen extends ConsumerStatefulWidget {
+  const FocusScreen({super.key, required this.deedId});
+
+  final int deedId;
+
+  @override
+  ConsumerState<FocusScreen> createState() => _FocusScreenState();
+}
+
+class _FocusScreenState extends ConsumerState<FocusScreen> {
+  static const _choices = [5, 15, 25, 45];
+
+  db.Deed? _deed;
+  bool _loading = true;
+
+  int _totalSeconds = 25 * 60;
+  int _remaining = 25 * 60;
+  bool _running = false;
+  bool _finished = false;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final deed = await ref.read(repositoryProvider).deedById(widget.deedId);
+    if (!mounted) return;
+    setState(() {
+      _deed = deed;
+      _loading = false;
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _startPause() {
+    HapticFeedback.selectionClick();
+    if (_running) {
+      _timer?.cancel();
+      setState(() => _running = false);
+      return;
+    }
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+    setState(() => _running = true);
+  }
+
+  void _tick() {
+    if (_remaining <= 1) {
+      _timer?.cancel();
+      setState(() {
+        _remaining = 0;
+        _running = false;
+        _finished = true;
+      });
+      _onComplete();
+      return;
+    }
+    setState(() => _remaining--);
+  }
+
+  Future<void> _onComplete() async {
+    HapticFeedback.heavyImpact();
+    if (!mounted) return;
+    showConfetti(context);
+    final deed = _deed;
+    if (deed == null) return;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Session complete!'),
+        content: Text('Great focus. Mark "${deed.name}" as done?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Not now'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              await ref
+                  .read(repositoryProvider)
+                  .setLog(deed.id, dateOnly(DateTime.now()), LogStatus.done);
+              if (dialogContext.mounted) Navigator.pop(dialogContext);
+              if (mounted && context.mounted) context.pop();
+            },
+            child: const Text('Mark done'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmExit() async {
+    final untouched = !_running && _remaining == _totalSeconds;
+    if (untouched) {
+      if (mounted) context.pop();
+      return;
+    }
+    final leave = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('End session?'),
+        content: const Text('Your timer will stop.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Keep going'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('End session'),
+          ),
+        ],
+      ),
+    );
+    if (leave == true && mounted) context.pop();
+  }
+
+  Future<void> _markDoneNow() async {
+    final deed = _deed;
+    if (deed == null) return;
+    _timer?.cancel();
+    HapticFeedback.mediumImpact();
+    await ref
+        .read(repositoryProvider)
+        .setLog(deed.id, dateOnly(DateTime.now()), LogStatus.done);
+    if (mounted) context.pop();
+  }
+
+  void _choose(int minutes) {
+    if (_running || _finished || _remaining != _totalSeconds) return;
+    setState(() {
+      _totalSeconds = minutes * 60;
+      _remaining = _totalSeconds;
+    });
+  }
+
+  void _addFive() {
+    setState(() {
+      _totalSeconds += 5 * 60;
+      _remaining += 5 * 60;
+      _finished = false;
+    });
+  }
+
+  String get _timeLabel {
+    final minutes = (_remaining / 60).floor();
+    final seconds = _remaining % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  String get _statusLabel {
+    if (_finished) return 'Complete!';
+    if (_running) return 'Focusing…';
+    if (_remaining == _totalSeconds) return 'Ready when you are';
+    return 'Paused';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    if (_loading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final deed = _deed;
+    if (deed == null) {
+      return Scaffold(
+        appBar: AppBar(),
+        body: Center(
+          child: Text(
+            'This deed no longer exists.',
+            style: theme.textTheme.bodyMedium
+                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          ),
+        ),
+      );
+    }
+
+    final progress =
+        _totalSeconds == 0 ? 0.0 : 1 - _remaining / _totalSeconds;
+    final canPickMinutes = !_running && !_finished && _remaining == _totalSeconds;
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _confirmExit();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.close_rounded),
+            onPressed: _confirmExit,
+          ),
+          title: const Text('Focus'),
+        ),
+        body: SafeArea(
+          child: Column(
+            children: [
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    iconForName(deed.icon, fallback: Icons.timer_rounded),
+                    color: theme.colorScheme.primary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      deed.name,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 28),
+              SizedBox(
+                width: 248,
+                height: 248,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SizedBox(
+                      width: 248,
+                      height: 248,
+                      child: CustomPaint(
+                        painter: _RingPainter(
+                          progress: progress,
+                          color: theme.colorScheme.primary,
+                          track:
+                              theme.colorScheme.onSurfaceVariant.withValues(
+                            alpha: 0.15,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _timeLabel,
+                          style: theme.textTheme.displaySmall
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          _statusLabel,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              if (canPickMinutes)
+                Wrap(
+                  spacing: 8,
+                  children: _choices
+                      .map(
+                        (minutes) => ChoiceChip(
+                          label: Text('$minutes min'),
+                          selected: _totalSeconds == minutes * 60,
+                          showCheckmark: false,
+                          onSelected: (_) => _choose(minutes),
+                        ),
+                      )
+                      .toList(),
+                )
+              else
+                TextButton.icon(
+                  onPressed: _finished ? null : _addFive,
+                  icon: const Icon(Icons.add_rounded, size: 18),
+                  label: const Text('Add 5 minutes'),
+                ),
+              const Spacer(),
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: _finished ? null : _startPause,
+                        icon: Icon(
+                          _running
+                              ? Icons.pause_rounded
+                              : Icons.play_arrow_rounded,
+                        ),
+                        label: Text(
+                          _running
+                              ? 'Pause'
+                              : (_remaining == _totalSeconds
+                                  ? 'Start'
+                                  : 'Resume'),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _markDoneNow,
+                        icon: const Icon(Icons.check_rounded),
+                        label: const Text('Done'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RingPainter extends CustomPainter {
+  const _RingPainter({
+    required this.progress,
+    required this.color,
+    required this.track,
+  });
+
+  final double progress;
+  final Color color;
+  final Color track;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    const strokeWidth = 16.0;
+    final inset = strokeWidth / 2 + 2;
+    final arcRect = rect.deflate(inset);
+
+    final trackPaint = Paint()
+      ..color = track
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+    canvas.drawArc(arcRect, 0, 2 * 3.141592653589793, false, trackPaint);
+
+    if (progress <= 0) return;
+    final progressPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(arcRect, -1.5707963267948966,
+        2 * 3.141592653589793 * progress.clamp(0.0, 1.0), false,
+        progressPaint);
+  }
+
+  @override
+  bool shouldRepaint(_RingPainter oldDelegate) =>
+      oldDelegate.progress != progress || oldDelegate.color != color;
+}

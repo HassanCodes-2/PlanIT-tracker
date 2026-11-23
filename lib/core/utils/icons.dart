@@ -23,6 +23,14 @@ IconData iconForName(String? name, {IconData fallback = Icons.check_rounded}) {
       return Icons.call_rounded;
     case 'school':
       return Icons.school_rounded;
+    case 'chat_bubble':
+      return Icons.chat_bubble_rounded;
+    case 'self_improvement':
+      return Icons.self_improvement_rounded;
+    case 'savings':
+      return Icons.savings_rounded;
+    case 'sports_esports':
+      return Icons.sports_esports_rounded;
     case 'favorite':
       return Icons.favorite_rounded;
     case 'star':

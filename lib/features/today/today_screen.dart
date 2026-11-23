@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -5,10 +6,12 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/prefs/prefs_providers.dart';
 import '../../core/utils/icons.dart';
+import '../../core/widgets/confetti.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/providers.dart';
 import '../../domain/deed_schedule.dart';
 import '../../domain/enums.dart';
+import '../../domain/quotes.dart';
 import '../../domain/streak.dart';
 
 class TodayScreen extends ConsumerWidget {
@@ -46,6 +49,10 @@ class TodayScreen extends ConsumerWidget {
         (mode == ThemeMode.system &&
             MediaQuery.platformBrightnessOf(context) == Brightness.dark);
 
+    final userName = ref.watch(userNameProvider);
+    final greeting = '${greetingForHour(DateTime.now().hour)}'
+        '${userName.isEmpty ? '' : ', $userName'}';
+
     final grouped = <db.Category, List<db.Deed>>{};
     for (final category in categories) {
       final items =
@@ -66,10 +73,11 @@ class TodayScreen extends ConsumerWidget {
           padding: const EdgeInsets.only(bottom: 96),
           children: [
             _DateHeader(
-              day: day,
+              greeting: greeting,
+              dateLabel: DateFormat('EEEE, d MMMM').format(day),
+              streak: streak,
               done: doneCount,
               total: scheduled.length,
-              streak: streak,
               isDark: isDark,
               onToggleTheme: () => _toggleTheme(context, ref),
             ),
@@ -79,20 +87,34 @@ class TodayScreen extends ConsumerWidget {
               onSelect: (value) =>
                   ref.read(selectedDayProvider.notifier).select(value),
             ),
+            if (!isFuture)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 10, 24, 0),
+                child: Text(
+                  '“${quoteForDay(today)}”',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
             if (isFuture)
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
                 child: Text(
                   'Planning view — logging opens on the day.',
+                  textAlign: TextAlign.center,
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
               )
             else if (scheduled.isNotEmpty && logs.isEmpty)
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
                 child: Text(
                   'Tap a deed to mark it done · long-press for more options',
+                  textAlign: TextAlign.center,
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
@@ -105,10 +127,20 @@ class TodayScreen extends ConsumerWidget {
                   category: entry.key,
                   deeds: entry.value,
                   logs: logs,
+                  allLogs: allLogs,
+                  selectedDay: day,
                   canLog: !isFuture,
-                  onTap: (deed) => _markDone(context, ref, deed, day, logs),
+                  onTap: (deed) => _markDone(
+                    context,
+                    ref,
+                    deed,
+                    day,
+                    logs,
+                    doneCount,
+                    scheduled.length,
+                  ),
                   onLongPress: (deed) =>
-                      _showOutcomeSheet(context, ref, deed, day, logs[deed.id]),
+                      _showOutcomeSheet(context, ref, deed, day, logs),
                 ),
               ),
               if (uncategorized.isNotEmpty)
@@ -116,10 +148,20 @@ class TodayScreen extends ConsumerWidget {
                   category: null,
                   deeds: uncategorized,
                   logs: logs,
+                  allLogs: allLogs,
+                  selectedDay: day,
                   canLog: !isFuture,
-                  onTap: (deed) => _markDone(context, ref, deed, day, logs),
+                  onTap: (deed) => _markDone(
+                    context,
+                    ref,
+                    deed,
+                    day,
+                    logs,
+                    doneCount,
+                    scheduled.length,
+                  ),
                   onLongPress: (deed) =>
-                      _showOutcomeSheet(context, ref, deed, day, logs[deed.id]),
+                      _showOutcomeSheet(context, ref, deed, day, logs),
                 ),
               if (doneCount >= scheduled.length && !isFuture)
                 const _CaughtUpCard(),
@@ -131,6 +173,7 @@ class TodayScreen extends ConsumerWidget {
   }
 
   void _toggleTheme(BuildContext context, WidgetRef ref) {
+    HapticFeedback.selectionClick();
     final mode = ref.read(themeModeProvider);
     final isDark = mode == ThemeMode.dark ||
         (mode == ThemeMode.system &&
@@ -158,12 +201,19 @@ class TodayScreen extends ConsumerWidget {
     db.Deed deed,
     DateTime day,
     Map<int, db.DeedLog> logs,
+    int doneCount,
+    int total,
   ) async {
     final repository = ref.read(repositoryProvider);
     final existing = logs[deed.id];
     if (existing == null) {
       await repository.setLog(deed.id, day, LogStatus.done);
+      HapticFeedback.mediumImpact();
       if (context.mounted) {
+        if (doneCount + 1 >= total && total > 0) {
+          HapticFeedback.heavyImpact();
+          showConfetti(context);
+        }
         _snack(
           context,
           'Marked "${deed.name}" done',
@@ -193,12 +243,13 @@ class TodayScreen extends ConsumerWidget {
     WidgetRef ref,
     db.Deed deed,
     DateTime day,
-    db.DeedLog? existing,
+    Map<int, db.DeedLog> logs,
   ) async {
     if (day.isAfter(dateOnly(DateTime.now()))) return;
 
     final theme = Theme.of(context);
     final repository = ref.read(repositoryProvider);
+    final existing = logs[deed.id];
 
     await showModalBottomSheet<void>(
       context: context,
@@ -234,6 +285,16 @@ class TodayScreen extends ConsumerWidget {
                 ),
               ),
               _OutcomeTile(
+                icon: Icons.timer_rounded,
+                color: theme.colorScheme.primary,
+                label: 'Start focus session',
+                selected: false,
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  context.push('/focus?id=${deed.id}');
+                },
+              ),
+              _OutcomeTile(
                 icon: Icons.check_circle_rounded,
                 color: const Color(0xFF22C55E),
                 label: 'Done on time',
@@ -241,6 +302,7 @@ class TodayScreen extends ConsumerWidget {
                 onTap: () async {
                   await repository.setLog(deed.id, day, LogStatus.done);
                   if (sheetContext.mounted) Navigator.pop(sheetContext);
+                  HapticFeedback.mediumImpact();
                   if (context.mounted) {
                     _snack(
                       context,
@@ -292,6 +354,16 @@ class TodayScreen extends ConsumerWidget {
                       () => repository.clearLog(deed.id, day),
                     );
                   }
+                },
+              ),
+              _OutcomeTile(
+                icon: Icons.bar_chart_rounded,
+                color: theme.colorScheme.onSurfaceVariant,
+                label: 'View history & stats',
+                selected: false,
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  context.push('/deed?id=${deed.id}');
                 },
               ),
               if (existing != null)
@@ -355,28 +427,26 @@ class TodayScreen extends ConsumerWidget {
 
 class _DateHeader extends StatelessWidget {
   const _DateHeader({
-    required this.day,
+    required this.greeting,
+    required this.dateLabel,
+    required this.streak,
     required this.done,
     required this.total,
-    required this.streak,
     required this.isDark,
     required this.onToggleTheme,
   });
 
-  final DateTime day;
+  final String greeting;
+  final String dateLabel;
+  final int streak;
   final int done;
   final int total;
-  final int streak;
   final bool isDark;
   final VoidCallback onToggleTheme;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final now = DateTime.now();
-    final isToday = day.year == now.year &&
-        day.month == now.month &&
-        day.day == now.day;
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
       child: Column(
@@ -386,42 +456,18 @@ class _DateHeader extends StatelessWidget {
               const SizedBox(width: 48),
               Expanded(
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${isToday ? 'Today, ' : ''}${DateFormat('d MMMM, yyyy').format(day)}',
+                      greeting,
                       style: theme.textTheme.titleLarge
-                          ?.copyWith(fontWeight: FontWeight.w600),
+                          ?.copyWith(fontWeight: FontWeight.w700),
                     ),
-                    const SizedBox(height: 4),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.local_fire_department_rounded,
-                          size: 16,
-                          color: Color(0xFFF97316),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '$streak-day streak',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Icon(
-                          Icons.check_circle_rounded,
-                          size: 16,
-                          color: Color(0xFF22C55E),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          total == 0 ? 'No deeds' : '$done of $total done',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
+                    Text(
+                      dateLabel,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -437,9 +483,9 @@ class _DateHeader extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 60),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(3),
               child: LinearProgressIndicator(
@@ -448,6 +494,39 @@ class _DateHeader extends StatelessWidget {
                 backgroundColor:
                     theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.15),
               ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.local_fire_department_rounded,
+                  size: 16,
+                  color: Color(0xFFF97316),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '$streak-day streak',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const Spacer(),
+                const Icon(
+                  Icons.check_circle_rounded,
+                  size: 16,
+                  color: Color(0xFF22C55E),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  total == 0 ? 'No deeds' : '$done of $total done',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -554,6 +633,8 @@ class _CategorySection extends StatelessWidget {
     required this.category,
     required this.deeds,
     required this.logs,
+    required this.allLogs,
+    required this.selectedDay,
     required this.canLog,
     required this.onTap,
     required this.onLongPress,
@@ -562,9 +643,36 @@ class _CategorySection extends StatelessWidget {
   final db.Category? category;
   final List<db.Deed> deeds;
   final Map<int, db.DeedLog> logs;
+  final List<db.DeedLog> allLogs;
+  final DateTime selectedDay;
   final bool canLog;
   final ValueChanged<db.Deed> onTap;
   final ValueChanged<db.Deed> onLongPress;
+
+  String? _progressFor(db.Deed deed) {
+    final frequency = frequencyOf(deed);
+    if (!frequency.isCountBased) return null;
+    final target = deed.timesPerPeriod ?? 1;
+    final DateTime start;
+    final DateTime end;
+    if (frequency == FrequencyType.timesPerWeek) {
+      start = selectedDay.subtract(Duration(days: selectedDay.weekday - 1));
+      end = start.add(const Duration(days: 6));
+    } else {
+      start = DateTime(selectedDay.year, selectedDay.month, 1);
+      end = DateTime(selectedDay.year, selectedDay.month + 1, 1)
+          .subtract(const Duration(days: 1));
+    }
+    final done = allLogs
+        .where((log) =>
+            log.deedId == deed.id &&
+            !dateOnly(log.day).isBefore(start) &&
+            !dateOnly(log.day).isAfter(end))
+        .length;
+    final period =
+        frequency == FrequencyType.timesPerWeek ? 'this week' : 'this month';
+    return '$done/$target $period';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -590,6 +698,7 @@ class _CategorySection extends StatelessWidget {
               deed: deed,
               category: category,
               log: logs[deed.id],
+              progressText: _progressFor(deed),
               canLog: canLog,
               onTap: () => onTap(deed),
               onLongPress: () => onLongPress(deed),
@@ -606,6 +715,7 @@ class _DeedCard extends StatelessWidget {
     required this.deed,
     required this.category,
     required this.log,
+    required this.progressText,
     required this.canLog,
     required this.onTap,
     required this.onLongPress,
@@ -614,6 +724,7 @@ class _DeedCard extends StatelessWidget {
   final db.Deed deed;
   final db.Category? category;
   final db.DeedLog? log;
+  final String? progressText;
   final bool canLog;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
@@ -643,6 +754,9 @@ class _DeedCard extends StatelessWidget {
           const Color(0xFFEF4444),
         ),
     };
+
+    final hasReason = log?.reason != null && log!.reason!.isNotEmpty;
+    final subtitle = hasReason ? log!.reason! : progressText;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
@@ -696,13 +810,15 @@ class _DeedCard extends StatelessWidget {
                                 : theme.colorScheme.onSurface,
                           ),
                         ),
-                        if (log?.reason != null && log!.reason!.isNotEmpty)
+                        if (subtitle != null && subtitle.isNotEmpty)
                           Text(
-                            log!.reason!,
+                            subtitle,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
+                              color: hasReason
+                                  ? theme.colorScheme.onSurfaceVariant
+                                  : theme.colorScheme.primary,
                             ),
                           ),
                       ],

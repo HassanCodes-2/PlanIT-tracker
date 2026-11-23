@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -33,6 +34,57 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
     ];
     if (dates.isEmpty) return fallback;
     return dates.reduce((a, b) => a.isBefore(b) ? a : b);
+  }
+
+  Widget _deltaChip(
+    StatsResult result,
+    List<db.Deed> deeds,
+    List<db.DeedLog> logs,
+    DateTime from,
+    StatsPeriodType period,
+  ) {
+    final theme = Theme.of(context);
+    final prevFrom = from.subtract(Duration(days: period.days));
+    final prevTo = from.subtract(const Duration(days: 1));
+    final prev = computeStats(
+      deeds: deeds,
+      logs: logs,
+      from: prevFrom,
+      to: prevTo,
+    );
+    if (prev.expected == 0 && result.expected == 0) {
+      return const SizedBox.shrink();
+    }
+    final diff = result.donePct - prev.donePct;
+    final up = diff >= 0;
+    final color = diff.abs() < 1
+        ? theme.colorScheme.onSurfaceVariant
+        : (up ? const Color(0xFF22C55E) : const Color(0xFFEF4444));
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            up ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+            size: 13,
+            color: color,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '${diff.abs().round()}% vs prev',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -127,7 +179,14 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                   ],
                 ),
                 const SizedBox(height: 24),
-                _Label('STATUS SUMMARY'),
+                Row(
+                  children: [
+                    _Label('STATUS SUMMARY'),
+                    const Spacer(),
+                    if (_period != StatsPeriodType.all)
+                      _deltaChip(result, deeds, logs, from, _period),
+                  ],
+                ),
                 const SizedBox(height: 10),
                 GridView.count(
                   crossAxisCount: 2,
@@ -170,7 +229,13 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                 const SizedBox(height: 24),
                 _Label('STATS BY DEEDS'),
                 const SizedBox(height: 6),
-                ...result.deeds.map((stats) => _DeedStatsRow(stats: stats)),
+                ...result.deeds.map(
+                  (stats) => _DeedStatsRow(
+                    stats: stats,
+                    onTap: () =>
+                        context.push('/deed?id=${stats.deed.id}'),
+                  ),
+                ),
                 if (result.deeds.isEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 12),
@@ -427,55 +492,70 @@ class _SummaryCard extends StatelessWidget {
 }
 
 class _DeedStatsRow extends StatelessWidget {
-  const _DeedStatsRow({required this.stats});
+  const _DeedStatsRow({required this.stats, required this.onTap});
 
   final DeedStats stats;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final percent = (stats.completionRate * 100).round();
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
         color: theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: theme.colorScheme.outline),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            iconForName(stats.deed.icon, fallback: Icons.check_rounded),
-            color: theme.colorScheme.primary,
-            size: 20,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(color: theme.colorScheme.outline),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
               children: [
-                Text(
-                  stats.deed.name,
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w500),
+                Icon(
+                  iconForName(stats.deed.icon, fallback: Icons.check_rounded),
+                  color: theme.colorScheme.primary,
+                  size: 20,
                 ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        stats.deed.name,
+                        style: theme.textTheme.bodyMedium
+                            ?.copyWith(fontWeight: FontWeight.w500),
+                      ),
+                      Text(
+                        '${stats.done} done · ${stats.late} late · ${stats.skipped} skipped · ${stats.missed} missed',
+                        style: theme.textTheme.labelSmall
+                            ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 18,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 4),
                 Text(
-                  '${stats.done} done · ${stats.late} late · ${stats.skipped} skipped · ${stats.missed} missed',
-                  style: theme.textTheme.labelSmall
-                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  '$percent%',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.primary,
+                  ),
                 ),
               ],
             ),
           ),
-          Text(
-            '$percent%',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.primary,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

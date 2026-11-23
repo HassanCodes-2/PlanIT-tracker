@@ -27,3 +27,35 @@ class ThemeModeNotifier extends Notifier<ThemeMode> {
 
 final themeModeProvider =
     NotifierProvider<ThemeModeNotifier, ThemeMode>(ThemeModeNotifier.new);
+
+/// Whether the welcome/onboarding flow has been completed.
+class OnboardedNotifier extends Notifier<bool> {
+  @override
+  bool build() =>
+      ref.watch(sharedPreferencesProvider).getBool('onboarding_done') ?? false;
+
+  Future<void> complete() async {
+    await ref
+        .read(sharedPreferencesProvider)
+        .setBool('onboarding_done', true);
+    state = true;
+  }
+}
+
+final onboardedProvider =
+    NotifierProvider<OnboardedNotifier, bool>(OnboardedNotifier.new);
+
+/// The name the user chose during onboarding (used for greetings).
+class UserNameNotifier extends Notifier<String> {
+  @override
+  String build() =>
+      ref.watch(sharedPreferencesProvider).getString('user_name') ?? '';
+
+  Future<void> set(String name) async {
+    await ref.read(sharedPreferencesProvider).setString('user_name', name);
+    state = name;
+  }
+}
+
+final userNameProvider =
+    NotifierProvider<UserNameNotifier, String>(UserNameNotifier.new);

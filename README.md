@@ -66,14 +66,15 @@ adb install -r dist\planit-release.apk
 ## Features in the current build
 
 - **Local-first data** — SQLite (Drift) with starter categories and deeds on first launch
-- **Today** — day scroller, category sections with color stripes, tap to log "done", long-press for "done late / skipped (+ reason) / clear", **undo** on every action
-- **Progress & streaks** — flame streak counter, daily progress bar, "All caught up!" celebration
-- **Deeds** — create, edit, archive; frequency (daily / weekdays / times per week / times per month), optional parent deed, reasons tracking, reminder time, icon; add custom categories
-- **Stats** — current & best streak, status heatmap, Weeks/Months/Years/All filters, Done/Late/Skipped/Missed summary, per-deed breakdown
+- **Onboarding** — first-launch welcome: your name, focus areas, starter deeds
+- **Today** — personal greeting, quote of the day, streak 🔥, progress bar, category sections with color stripes; tap to log "done" (with confetti when you clear the day), long-press for focus timer / done late / skipped (+ reason) / history / clear — all with undo
+- **Focus timer** — 5/15/25/45 minute sessions with a live progress ring; finish → mark the deed done
+- **Deed history** — per-deed 30-day heatmap, summary, skip reasons and recent logs
+- **Stats** — current & best streak, trend arrows vs previous period, status heatmap, period filters, per-deed breakdown
 - **Reminders** — local notifications scheduled from each deed's reminder time
 - **Theme** — dark / light / system, persisted; one-tap sun/moon switch on the Today header
 - **Backup** — export everything to a JSON file via the Android share sheet
-- **Polish** — custom app icon and splash screen
+- **Polish** — custom app icon, splash screen, haptic feedback
 
 > Accounts & cloud sync (Supabase) are scaffolded but not enabled until a Supabase project is connected.
 

@@ -21,6 +21,10 @@ class DeedRepository {
             ..orderBy([(row) => OrderingTerm.asc(row.sortOrder)]))
           .get();
 
+  Future<Category?> categoryById(int id) =>
+      (_db.select(_db.categories)..where((row) => row.id.equals(id)))
+          .getSingleOrNull();
+
   Future<int> createCategory({
     required String name,
     String icon = 'star',
@@ -82,6 +86,12 @@ class DeedRepository {
 
   Stream<List<DeedLog>> watchAllLogs() {
     final query = _db.select(_db.deedLogs);
+    return query.watch();
+  }
+
+  Stream<List<DeedLog>> watchLogsForDeed(int deedId) {
+    final query = _db.select(_db.deedLogs)
+      ..where((row) => row.deedId.equals(deedId));
     return query.watch();
   }
 

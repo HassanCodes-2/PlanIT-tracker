@@ -8,6 +8,38 @@ import '../../data/providers.dart';
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
+  Future<void> _editName(BuildContext context, WidgetRef ref) async {
+    final controller =
+        TextEditingController(text: ref.read(userNameProvider));
+    final name = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Your name'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          decoration:
+              const InputDecoration(hintText: 'How should we greet you?'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.pop(dialogContext, controller.text.trim()),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (name == null) return;
+    await ref.read(userNameProvider.notifier).set(name);
+  }
+
   Future<void> _backup(BuildContext context, WidgetRef ref) async {
     final messenger = ScaffoldMessenger.of(context);
     try {
@@ -59,6 +91,32 @@ class SettingsScreen extends ConsumerWidget {
               showSelectedIcon: false,
               onSelectionChanged: (selection) =>
                   ref.read(themeModeProvider.notifier).setMode(selection.first),
+            ),
+          ),
+          const SizedBox(height: 24),
+          _Label('YOU'),
+          const SizedBox(height: 10),
+          Material(
+            color: theme.cardTheme.color,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: theme.colorScheme.outline),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: ListTile(
+              leading: Icon(
+                Icons.person_outline_rounded,
+                color: theme.colorScheme.primary,
+              ),
+              title: const Text('Your name'),
+              subtitle: Text(
+                ref.watch(userNameProvider).isEmpty
+                    ? 'Not set'
+                    : ref.watch(userNameProvider),
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+              onTap: () => _editName(context, ref),
             ),
           ),
           const SizedBox(height: 24),
