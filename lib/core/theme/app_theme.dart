@@ -2,7 +2,9 @@ import 'package:material_ui/material_ui.dart';
 
 import 'app_colors.dart';
 
-/// Material 3 themes for PlanIT (dark-first, light supported).
+/// Material 3 themes for PlanIT.
+/// Two styles: Midnight (blue accent) and Digital (monochrome HUD),
+/// each with a dark and a light variant.
 abstract final class AppTheme {
   static ThemeData get dark => _build(
         brightness: Brightness.dark,
@@ -22,6 +24,32 @@ abstract final class AppTheme {
         muted: AppColors.lightMuted,
       );
 
+  static ThemeData get digitalDark => _build(
+        brightness: Brightness.dark,
+        bg: AppColors.digitalDarkBg,
+        surface: AppColors.digitalDarkSurface,
+        border: AppColors.digitalDarkBorder,
+        text: AppColors.digitalDarkText,
+        muted: AppColors.digitalDarkMuted,
+        accent: Colors.white,
+        onAccent: Colors.black,
+        cardRadius: 10,
+        radius: 12,
+      );
+
+  static ThemeData get digitalLight => _build(
+        brightness: Brightness.light,
+        bg: AppColors.digitalLightBg,
+        surface: AppColors.digitalLightSurface,
+        border: AppColors.digitalLightBorder,
+        text: AppColors.digitalLightText,
+        muted: AppColors.digitalLightMuted,
+        accent: Colors.black,
+        onAccent: Colors.white,
+        cardRadius: 10,
+        radius: 12,
+      );
+
   static ThemeData _build({
     required Brightness brightness,
     required Color bg,
@@ -29,13 +57,17 @@ abstract final class AppTheme {
     required Color border,
     required Color text,
     required Color muted,
+    Color accent = AppColors.accent,
+    Color onAccent = Colors.white,
+    double cardRadius = 16,
+    double radius = 16,
   }) {
     final scheme = ColorScheme.fromSeed(
-      seedColor: AppColors.accent,
+      seedColor: accent,
       brightness: brightness,
     ).copyWith(
-      primary: AppColors.accent,
-      onPrimary: Colors.white,
+      primary: accent,
+      onPrimary: onAccent,
       surface: surface,
       onSurface: text,
       outline: border,
@@ -64,24 +96,24 @@ abstract final class AppTheme {
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(cardRadius),
           side: BorderSide(color: border),
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: surface,
         surfaceTintColor: Colors.transparent,
-        indicatorColor: AppColors.accent.withValues(alpha: 0.16),
+        indicatorColor: accent.withValues(alpha: 0.16),
         height: 68,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: AppColors.accent,
-          foregroundColor: Colors.white,
+          backgroundColor: accent,
+          foregroundColor: onAccent,
           minimumSize: const Size.fromHeight(52),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(radius - 2),
           ),
           textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
@@ -93,16 +125,16 @@ abstract final class AppTheme {
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(radius - 4),
           borderSide: BorderSide(color: border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(radius - 4),
           borderSide: BorderSide(color: border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
+          borderRadius: BorderRadius.circular(radius - 4),
+          borderSide: BorderSide(color: accent, width: 1.5),
         ),
       ),
       dividerTheme: DividerThemeData(color: border, thickness: 1),
@@ -111,12 +143,12 @@ abstract final class AppTheme {
         contentTextStyle: TextStyle(color: text),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(radius - 4),
         ),
       ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: AppColors.accent,
-        foregroundColor: Colors.white,
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: accent,
+        foregroundColor: onAccent,
       ),
     );
   }

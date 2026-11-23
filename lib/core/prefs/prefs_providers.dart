@@ -28,6 +28,40 @@ class ThemeModeNotifier extends Notifier<ThemeMode> {
 final themeModeProvider =
     NotifierProvider<ThemeModeNotifier, ThemeMode>(ThemeModeNotifier.new);
 
+/// Visual styles offered by the app.
+enum AppThemeStyle {
+  midnight('midnight'),
+  digital('digital');
+
+  const AppThemeStyle(this.prefValue);
+
+  final String prefValue;
+
+  static AppThemeStyle fromPrefs(String? value) => values.firstWhere(
+        (style) => style.prefValue == value,
+        orElse: () => AppThemeStyle.midnight,
+      );
+}
+
+class ThemeStyleNotifier extends Notifier<AppThemeStyle> {
+  static const _key = 'theme_style';
+
+  @override
+  AppThemeStyle build() => AppThemeStyle.fromPrefs(
+        ref.watch(sharedPreferencesProvider).getString(_key),
+      );
+
+  Future<void> setStyle(AppThemeStyle style) async {
+    await ref.read(sharedPreferencesProvider).setString(_key, style.prefValue);
+    state = style;
+  }
+}
+
+final themeStyleProvider =
+    NotifierProvider<ThemeStyleNotifier, AppThemeStyle>(
+  ThemeStyleNotifier.new,
+);
+
 /// Whether the welcome/onboarding flow has been completed.
 class OnboardedNotifier extends Notifier<bool> {
   @override

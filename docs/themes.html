@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PlanIT — Theme Directions</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 44px 24px 80px;
+    background: #0a0a0c; color: #ededf0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+  }
+  header { text-align: center; max-width: 720px; margin: 0 auto 44px; }
+  h1 { margin: 0 0 10px; font-size: 30px; letter-spacing: -0.6px; }
+  h1 span { color: #1b6cff; }
+  header p { margin: 0; color: #9a9aa5; font-size: 15px; line-height: 1.5; }
+  .grid {
+    display: grid; gap: 30px 24px;
+    grid-template-columns: repeat(auto-fit, minmax(286px, 1fr));
+    max-width: 1380px; margin: 0 auto;
+  }
+
+  /* ---- Digital hero concept ---- */
+  .hero {
+    max-width: 1380px; margin: 0 auto 54px;
+    border: 1px solid #202024; border-radius: 26px;
+    padding: 30px; display: grid;
+    grid-template-columns: 300px 1fr; gap: 34px; align-items: center;
+    background:
+      radial-gradient(circle at 12% 18%, #141418 0, transparent 55%),
+      radial-gradient(circle at 88% 82%, #0e0e11 0, transparent 60%),
+      #08080a;
+  }
+  @media (max-width: 720px) { .hero { grid-template-columns: 1fr; } }
+  .hero .phone.digital {
+    background: #050506; border: 1px solid #26262b;
+    box-shadow: 0 0 60px rgba(255,255,255,.05), inset 0 0 0 1px rgba(255,255,255,.02);
+    position: relative; overflow: hidden;
+  }
+  .hero .phone.digital::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background:
+      linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+    background-size: 22px 22px;
+    mask-image: linear-gradient(180deg, #000 0%, transparent 75%);
+  }
+  .digital .status { color: #6c6c74; font-family: 'Consolas', ui-monospace, monospace; }
+  .digital .head .time {
+    font-family: 'Consolas', ui-monospace, monospace;
+    font-size: 27px; letter-spacing: 2.5px; color: #fff;
+    text-shadow: 0 0 18px rgba(255,255,255,.35);
+  }
+  .digital .head .date { color: #7d7d85; font-size: 8.5px; letter-spacing: 1.6px; text-transform: uppercase; }
+  .digital .segments { display: flex; gap: 3px; margin: 8px 2px 7px; }
+  .digital .segments i { flex: 1; height: 4px; border-radius: 1px; background: #202025; }
+  .digital .segments i.on { background: #fff; box-shadow: 0 0 8px rgba(255,255,255,.45); }
+  .digital .meta { color: #8b8b93; font-family: 'Consolas', ui-monospace, monospace; font-size: 8.5px; letter-spacing: .8px; text-transform: uppercase; }
+  .digital .meta b { color: #fff; font-weight: 600; }
+  .digital .deed { border-radius: 8px; border-color: #24242a; }
+  .digital .deed .ic { border-radius: 6px; background: #161619; color: #e9e9ee; }
+  .digital .deed b { letter-spacing: .2px; }
+  .digital .deed.done { background: #101012; border-color: #3a3a42; }
+  .digital .deed.done em { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,.5); }
+  .digital .box {
+    width: 13px; height: 13px; border: 1px solid #4a4a52; border-radius: 3px;
+    display: grid; place-items: center; font-size: 9px; color: #fff;
+  }
+  .digital .box.on { border-color: #fff; background: rgba(255,255,255,.08); box-shadow: 0 0 8px rgba(255,255,255,.25); }
+  .digital .nav { border-top-color: #202025; color: #6c6c74; }
+  .digital .nav .on { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,.6); }
+  .hero-copy h2 { margin: 0 0 10px; font-size: 26px; letter-spacing: -0.3px; }
+  .hero-copy h2 span { color: #ffffff; }
+  .hero-copy .tag {
+    display: inline-block; font-family: 'Consolas', ui-monospace, monospace;
+    font-size: 10px; letter-spacing: 2px; color: #b7b7bf;
+    border: 1px solid #2c2c33; border-radius: 999px; padding: 5px 12px; margin-bottom: 16px;
+    text-transform: uppercase;
+  }
+  .hero-copy p { color: #9a9aa5; font-size: 14px; line-height: 1.65; max-width: 560px; margin: 0 0 18px; }
+  .hero-copy ul { margin: 0 0 22px; padding-left: 18px; color: #9a9aa5; font-size: 13px; line-height: 1.8; }
+  .hero-copy ul b { color: #e9e9ee; font-weight: 600; }
+  .hero-palette { display: flex; gap: 10px; flex-wrap: wrap; }
+  .hero-palette .sw { text-align: center; font-size: 8.5px; color: #8f8f9a; }
+  .hero-palette .dot { width: 34px; height: 34px; border-radius: 10px; border: 1px solid rgba(255,255,255,.14); margin-bottom: 4px; }
+  .theme {
+    border: 1px solid #26262d; border-radius: 22px;
+    padding: 18px 18px 20px; background: #111114;
+  }
+  .phone {
+    background: var(--bg); border-radius: 24px; padding: 14px 12px 10px;
+    border: 1px solid var(--line); overflow: hidden;
+  }
+  .status { display: flex; justify-content: space-between; color: var(--muted); font-size: 9px; letter-spacing: .5px; }
+  .head { display: flex; justify-content: space-between; align-items: flex-end; margin: 10px 2px 6px; }
+  .head .time { color: var(--text); font-size: 24px; font-weight: 700; letter-spacing: .3px; }
+  .head .date { color: var(--muted); font-size: 9px; }
+  .progress { height: 5px; border-radius: 3px; background: color-mix(in srgb, var(--muted) 22%, transparent); overflow: hidden; margin: 6px 2px 6px; }
+  .progress i { display: block; height: 100%; width: 62%; background: var(--accent); border-radius: 3px; }
+  .meta { display: flex; justify-content: space-between; color: var(--muted); font-size: 9px; margin: 0 2px 10px; }
+  .deed {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 12px; padding: 9px 10px; margin-bottom: 7px; position: relative;
+  }
+  .deed .ic { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; background: color-mix(in srgb, var(--accent) 14%, transparent); font-size: 12px; }
+  .deed b { display: block; color: var(--text); font-size: 10.5px; font-weight: 600; }
+  .deed small { color: var(--muted); font-size: 8.5px; }
+  .deed em { margin-left: auto; color: var(--accent); font-size: 11px; font-style: normal; }
+  .deed.done b { color: var(--muted); text-decoration: line-through; }
+  .deed.done { background: linear-gradient(90deg, var(--surface), color-mix(in srgb, var(--accent) 14%, var(--surface))); }
+  .nav { display: flex; justify-content: space-around; color: var(--muted); font-size: 13px; padding: 8px 0 2px; border-top: 1px solid var(--line); margin-top: 4px; }
+  .nav .on { color: var(--accent); }
+  .theme h2 { margin: 16px 0 4px; font-size: 17px; letter-spacing: .2px; }
+  .theme p { margin: 0 0 12px; color: #9a9aa5; font-size: 12.5px; line-height: 1.5; min-height: 38px; }
+  .swatches { display: flex; gap: 6px; flex-wrap: wrap; }
+  .swatches .sw { text-align: center; font-size: 8px; color: #8f8f9a; }
+  .swatches .dot { width: 26px; height: 26px; border-radius: 8px; border: 1px solid rgba(255,255,255,.12); margin-bottom: 3px; }
+</style>
+</head>
+<body>
+  <header>
+    <h1><span>PlanIT</span> · Theme directions</h1>
+    <p>Sleek, minimal options built around one accent color and calm surfaces.<br>
+    Tell me a name and I'll turn it into the app's selectable theme.</p>
+  </header>
+
+  <!-- HERO: Digital Futurism -->
+  <section class="hero">
+    <div class="phone digital">
+      <div class="status"><span>09:41</span><span>PLANIT // OS</span></div>
+      <div class="head"><span class="time">09:41</span><span class="date">SUN · 24 NOV · 2026</span></div>
+      <div class="segments">
+        <i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i>
+        <i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i>
+      </div>
+      <div class="meta"><span>STREAK <b>05</b></span><span>LOG <b>03/05</b></span></div>
+      <div class="deed done">
+        <span class="box on">✓</span>
+        <div><b>Exercise 20 min</b><small>LOGGED · 06:30</small></div>
+        <em>✓</em>
+      </div>
+      <div class="deed">
+        <span class="box"> </span>
+        <div><b>Read 20 pages</b><small>02/03 THIS WEEK</small></div>
+      </div>
+      <div class="deed">
+        <span class="box"> </span>
+        <div><b>Drink 2L water</b><small>DAILY</small></div>
+      </div>
+      <div class="nav"><span class="on">▣</span><span>◍</span><span>▥</span><span>⚙</span></div>
+    </div>
+
+    <div class="hero-copy">
+      <span class="tag">New concept</span>
+      <h2><span>Digital</span> Futurism</h2>
+      <p>A monochrome HUD for your habits. True black, soft graphite surfaces, pure white light —
+      no color anywhere, so the design speaks through structure, spacing and glow.</p>
+      <ul>
+        <li><b>Monospace clock</b> + uppercase date for the terminal feel</li>
+        <li><b>Segmented progress</b> — 12 white ticks instead of a soft bar</li>
+        <li><b>Square checkboxes</b> instead of circles — precision over playfulness</li>
+        <li><b>Thin 1px lines, 8–12px corners</b>, subtle grid texture behind the header</li>
+        <li><b>White glow accents</b> on active states, streak and checkmarks</li>
+        <li><b>Two modes:</b> Blackout (black/gray/white) and Paper (white/gray/black)</li>
+      </ul>
+      <div class="hero-palette">
+        <div class="sw"><div class="dot" style="background:#050506"></div>#050506</div>
+        <div class="sw"><div class="dot" style="background:#0f0f11"></div>#0F0F11</div>
+        <div class="sw"><div class="dot" style="background:#26262b"></div>#26262B</div>
+        <div class="sw"><div class="dot" style="background:#8b8b93"></div>#8B8B93</div>
+        <div class="sw"><div class="dot" style="background:#f5f5f7"></div>#F5F5F7</div>
+        <div class="sw"><div class="dot" style="background:#ffffff"></div>#FFFFFF</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid">
+
+    <!-- 1. Midnight (current) -->
+    <article class="theme" style="--bg:#121214; --surface:#1e1e22; --accent:#1b6cff; --text:#ededf0; --muted:#8e8e96; --line:#2a2a30;">
+      <div class="phone">
+        <div class="status"><span>09:41</span><span>PlanIT</span></div>
+        <div class="head"><span class="time">09:41</span><span class="date">Sunday, 24 Nov</span></div>
+        <div class="progress"><i></i></div>
+        <div class="meta"><span>🔥 5-day streak</span><span>3 of 5 done</span></div>
+        <div class="deed done"><span class="ic">🏋️</span><div><b>Exercise 20 min</b><small>done</small></div><em>✓</em></div>
+        <div class="deed"><span class="ic">📖</span><div><b>Read 20 pages</b><small>2/3 this week</small></div></div>
+        <div class="deed"><span class="ic">💧</span><div><b>Drink 2L water</b></div></div>
+        <div class="nav"><span class="on">▣</span><span>◍</span><span>▥</span><span>⚙</span></div>
+      </div>
+      <h2>Midnight</h2>
+      <p>The current look. Deep charcoal + electric blue — sharp, techy, focused.</p>
+      <div class="swatches">
+        <div class="sw"><div class="dot" style="background:#121214"></div>#121214</div>
+        <div class="sw"><div class="dot" style="background:#1e1e22"></div>#1E1E22</div>
+        <div class="sw"><div class="dot" style="background:#1b6cff"></div>#1B6CFF</div>
+        <div class="sw"><div class="dot" style="background:#ededf0"></div>#EDEDF0</div>
+      </div>
+    </article>
+
+    <!-- 2. Obsidian -->
+    <article class="theme" style="--bg:#0b0f0e; --surface:#151b19; --accent:#10b981; --text:#e8f0ec; --muted:#7e8a85; --line:#232c29;">
+      <div class="phone">
+        <div class="status"><span>09:41</span><span>PlanIT</span></div>
+        <div class="head"><span class="time">09:41</span><span class="date">Sunday, 24 Nov</span></div>
+        <div class="progress"><i></i></div>
+        <div class="meta"><span>🔥 5-day streak</span><span>3 of 5 done</span></div>
+        <div class="deed done"><span class="ic">🏋️</span><div><b>Exercise 20 min</b><small>done</small></div><em>✓</em></div>
+        <div class="deed"><span class="ic">📖</span><div><b>Read 20 pages</b><small>2/3 this week</small></div></div>
+        <div class="deed"><span class="ic">💧</span><div><b>Drink 2L water</b></div></div>
+        <div class="nav"><span class="on">▣</span><span>◍</span><span>▥</span><span>⚙</span></div>
+      </div>
+      <h2>Obsidian</h2>
+      <p>Near-black green + emerald. Quiet, premium, wellness-calm — like a private club.</p>
+      <div class="swatches">
+        <div class="sw"><div class="dot" style="background:#0b0f0e"></div>#0B0F0E</div>
+        <div class="sw"><div class="dot" style="background:#151b19"></div>#151B19</div>
+        <div class="sw"><div class="dot" style="background:#10b981"></div>#10B981</div>
+        <div class="sw"><div class="dot" style="background:#e8f0ec"></div>#E8F0EC</div>
+      </div>
+    </article>
+
+    <!-- 3. Ink & Violet -->
+    <article class="theme" style="--bg:#0f0e1a; --surface:#1a1830; --accent:#8b5cf6; --text:#efecff; --muted:#8c86a8; --line:#282544;">
+      <div class="phone">
+        <div class="status"><span>09:41</span><span>PlanIT</span></div>
+        <div class="head"><span class="time">09:41</span><span class="date">Sunday, 24 Nov</span></div>
+        <div class="progress"><i></i></div>
+        <div class="meta"><span>🔥 5-day streak</span><span>3 of 5 done</span></div>
+        <div class="deed done"><span class="ic">🏋️</span><div><b>Exercise 20 min</b><small>done</small></div><em>✓</em></div>
+        <div class="deed"><span class="ic">📖</span><div><b>Read 20 pages</b><small>2/3 this week</small></div></div>
+        <div class="deed"><span class="ic">💧</span><div><b>Drink 2L water</b></div></div>
+        <div class="nav"><span class="on">▣</span><span>◍</span><span>▥</span><span>⚙</span></div>
+      </div>
+      <h2>Ink &amp; Violet</h2>
+      <p>Deep indigo with violet. Modern AI-tool energy — creative and slightly mysterious.</p>
+      <div class="swatches">
+        <div class="sw"><div class="dot" style="background:#0f0e1a"></div>#0F0E1A</div>
+        <div class="sw"><div class="dot" style="background:#1a1830"></div>#1A1830</div>
+        <div class="sw"><div class="dot" style="background:#8b5cf6"></div>#8B5CF6</div>
+        <div class="sw"><div class="dot" style="background:#efecff"></div>#EFECFF</div>
+      </div>
+    </article>
+
+    <!-- 4. Nord -->
+    <article class="theme" style="--bg:#242933; --surface:#2e3440; --accent:#88c0d0; --text:#eceff4; --muted:#9aa5b1; --line:#3b4252;">
+      <div class="phone">
+        <div class="status"><span>09:41</span><span>PlanIT</span></div>
+        <div class="head"><span class="time">09:41</span><span class="date">Sunday, 24 Nov</span></div>
+        <div class="progress"><i></i></div>
+        <div class="meta"><span>🔥 5-day streak</span><span>3 of 5 done</span></div>
+        <div class="deed done"><span class="ic">🏋️</span><div><b>Exercise 20 min</b><small>done</small></div><em>✓</em></div>
+        <div class="deed"><span class="ic">📖</span><div><b>Read 20 pages</b><small>2/3 this week</small></div></div>
+        <div class="deed"><span class="ic">💧</span><div><b>Drink 2L water</b></div></div>
+        <div class="nav"><span class="on">▣</span><span>◍</span><span>▥</span><span>⚙</span></div>
+      </div>
+      <h2>Nord Mist</h2>
+      <p>Slate blue-gray with frost accents. Famous “developer calm” palette — soft and airy.</p>
+      <div class="swatches">
+        <div class="sw"><div class="dot" style="background:#242933"></div>#242933</div>
+        <div class="sw"><div class="dot" style="background:#2e3440"></div>#2E3440</div>
+        <div class="sw"><div class="dot" style="background:#88c0d0"></div>#88C0D0</div>
+        <div class="sw"><div class="dot" style="background:#eceff4"></div>#ECEFF4</div>
+      </div>
+    </article>
+
+    <!-- 5. Porcelain -->
+    <article class="theme" style="--bg:#fafaf8; --surface:#ffffff; --accent:#0ea5e9; --text:#17181a; --muted:#6b7280; --line:#e7e7e3;">
+      <div class="phone">
+        <div class="status"><span>09:41</span><span>PlanIT</span></div>
+        <div class="head"><span class="time">09:41</span><span class="date">Sunday, 24 Nov</span></div>
+        <div class="progress"><i></i></div>
+        <div class="meta"><span>🔥 5-day streak</span><span>3 of 5 done</span></div>
+        <div class="deed done"><span class="ic">🏋️</span><div><b>Exercise 20 min</b><small>done</small></div><em>✓</em></div>
+        <div class="deed"><span class="ic">📖</span><div><b>Read 20 pages</b><small>2/3 this week</small></div></div>
+        <div class="deed"><span class="ic">💧</span><div><b>Drink 2L water</b></div></div>
+        <div class="nav"><span class="on">▣</span><span>◍</span><span>▥</span><span>⚙</span></div>
+      </div>
+      <h2>Porcelain</h2>
+      <p>Off-white paper with sky blue. Apple-clean minimalism — bright without being loud.</p>
+      <div class="swatches">
+        <div class="sw"><div class="dot" style="background:#fafaf8"></div>#FAFAF8</div>
+        <div class="sw"><div class="dot" style="background:#ffffff"></div>#FFFFFF</div>
+        <div class="sw"><div class="dot" style="background:#0ea5e9"></div>#0EA5E9</div>
+        <div class="sw"><div class="dot" style="background:#17181a"></div>#17181A</div>
+      </div>
+    </article>
+
+    <!-- 6. Sandstone -->
+    <article class="theme" style="--bg:#f6f1e9; --surface:#fffdf8; --accent:#c96f4a; --text:#2b2420; --muted:#857a6e; --line:#e9e1d5;">
+      <div class="phone">
+        <div class="status"><span>09:41</span><span>PlanIT</span></div>
+        <div class="head"><span class="time">09:41</span><span class="date">Sunday, 24 Nov</span></div>
+        <div class="progress"><i></i></div>
+        <div class="meta"><span>🔥 5-day streak</span><span>3 of 5 done</span></div>
+        <div class="deed done"><span class="ic">🏋️</span><div><b>Exercise 20 min</b><small>done</small></div><em>✓</em></div>
+        <div class="deed"><span class="ic">📖</span><div><b>Read 20 pages</b><small>2/3 this week</small></div></div>
+        <div class="deed"><span class="ic">💧</span><div><b>Drink 2L water</b></div></div>
+        <div class="nav"><span class="on">▣</span><span>◍</span><span>▥</span><span>⚙</span></div>
+      </div>
+      <h2>Sandstone</h2>
+      <p>Warm paper + terracotta. Journal / editorial feel — cozy and human, less “software”.</p>
+      <div class="swatches">
+        <div class="sw"><div class="dot" style="background:#f6f1e9"></div>#F6F1E9</div>
+        <div class="sw"><div class="dot" style="background:#fffdf8"></div>#FFFDF8</div>
+        <div class="sw"><div class="dot" style="background:#c96f4a"></div>#C96F4A</div>
+        <div class="sw"><div class="dot" style="background:#2b2420"></div>#2B2420</div>
+      </div>
+    </article>
+
+    <!-- 7. Neo Mono -->
+    <article class="theme" style="--bg:#000000; --surface:#0c0c0c; --accent:#a3e635; --text:#f5f5f5; --muted:#808080; --line:#1e1e1e;">
+      <div class="phone">
+        <div class="status"><span>09:41</span><span>PlanIT</span></div>
+        <div class="head"><span class="time">09:41</span><span class="date">Sunday, 24 Nov</span></div>
+        <div class="progress"><i></i></div>
+        <div class="meta"><span>🔥 5-day streak</span><span>3 of 5 done</span></div>
+        <div class="deed done"><span class="ic">🏋️</span><div><b>Exercise 20 min</b><small>done</small></div><em>✓</em></div>
+        <div class="deed"><span class="ic">📖</span><div><b>Read 20 pages</b><small>2/3 this week</small></div></div>
+        <div class="deed"><span class="ic">💧</span><div><b>Drink 2L water</b></div></div>
+        <div class="nav"><span class="on">▣</span><span>◍</span><span>▥</span><span>⚙</span></div>
+      </div>
+      <h2>Neo Mono</h2>
+      <p>True OLED black + electric lime. Maximum contrast, zero decoration — pure focus.</p>
+      <div class="swatches">
+        <div class="sw"><div class="dot" style="background:#000000"></div>#000000</div>
+        <div class="sw"><div class="dot" style="background:#0c0c0c"></div>#0C0C0C</div>
+        <div class="sw"><div class="dot" style="background:#a3e635"></div>#A3E635</div>
+        <div class="sw"><div class="dot" style="background:#f5f5f5"></div>#F5F5F5</div>
+      </div>
+    </article>
+
+    <!-- 8. Sakura Light -->
+    <article class="theme" style="--bg:#fdf6f8; --surface:#ffffff; --accent:#ec4899; --text:#231a1e; --muted:#8a7580; --line:#f0e0e7;">
+      <div class="phone">
+        <div class="status"><span>09:41</span><span>PlanIT</span></div>
+        <div class="head"><span class="time">09:41</span><span class="date">Sunday, 24 Nov</span></div>
+        <div class="progress"><i></i></div>
+        <div class="meta"><span>🔥 5-day streak</span><span>3 of 5 done</span></div>
+        <div class="deed done"><span class="ic">🏋️</span><div><b>Exercise 20 min</b><small>done</small></div><em>✓</em></div>
+        <div class="deed"><span class="ic">📖</span><div><b>Read 20 pages</b><small>2/3 this week</small></div></div>
+        <div class="deed"><span class="ic">💧</span><div><b>Drink 2L water</b></div></div>
+        <div class="nav"><span class="on">▣</span><span>◍</span><span>▥</span><span>⚙</span></div>
+      </div>
+      <h2>Sakura</h2>
+      <p>Soft blush white + rose. Gentle and friendly — a lighter mood for daytime use.</p>
+      <div class="swatches">
+        <div class="sw"><div class="dot" style="background:#fdf6f8"></div>#FDF6F8</div>
+        <div class="sw"><div class="dot" style="background:#ffffff"></div>#FFFFFF</div>
+        <div class="sw"><div class="dot" style="background:#ec4899"></div>#EC4899</div>
+        <div class="sw"><div class="dot" style="background:#231a1e"></div>#231A1E</div>
+      </div>
+    </article>
+
+  </div>
+</body>
+</html>

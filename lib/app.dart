@@ -28,11 +28,14 @@ class _PlanItAppState extends ConsumerState<PlanItApp> {
 
   @override
   Widget build(BuildContext context) {
+    final style = ref.watch(themeStyleProvider);
+    final isDigital = style == AppThemeStyle.digital;
+
     return MaterialApp.router(
       title: 'PlanIT',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
+      theme: isDigital ? AppTheme.digitalLight : AppTheme.light,
+      darkTheme: isDigital ? AppTheme.digitalDark : AppTheme.dark,
       themeMode: ref.watch(themeModeProvider),
       routerConfig: ref.watch(appRouterProvider),
     );

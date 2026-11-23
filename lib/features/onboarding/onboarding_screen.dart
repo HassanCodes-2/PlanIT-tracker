@@ -243,9 +243,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 color: theme.colorScheme.primary,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.check_rounded,
-                color: Colors.white,
+                color: theme.colorScheme.onPrimary,
                 size: 56,
               ),
             ),
@@ -396,8 +396,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           ),
                         ),
                         child: selected
-                            ? const Icon(Icons.check_rounded,
-                                size: 16, color: Colors.white)
+                            ? Icon(Icons.check_rounded,
+                                size: 16, color: theme.colorScheme.onPrimary)
                             : null,
                       ),
                       const SizedBox(width: 12),

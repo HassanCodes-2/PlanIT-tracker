@@ -73,6 +73,7 @@ adb install -r dist\planit-release.apk
 - **Deed history** — per-deed 30-day heatmap, summary, skip reasons and recent logs
 - **Stats** — current & best streak, trend arrows vs previous period, status heatmap, period filters, per-deed breakdown
 - **Stats glow-up (v1.4)** — animated percentage rings, sliding Week/Month/Year/All bar, icon-only status cards, Phosphor icon set app-wide, trend arrows
+- **Digital theme (v1.5)** — futuristic monochrome HUD: black/gray/white, segmented progress, mono clock, selectable in Settings alongside Midnight blue
 - **Reminders** — local notifications scheduled from each deed's reminder time
 - **Theme** — dark / light / system, persisted; one-tap sun/moon switch on the Today header
 - **Backup** — export everything to a JSON file via the Android share sheet

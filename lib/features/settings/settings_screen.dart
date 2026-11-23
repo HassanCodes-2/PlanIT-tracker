@@ -94,6 +94,38 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 24),
+          _Label('THEME STYLE'),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _StyleCard(
+                  title: 'Midnight',
+                  subtitle: 'Blue accent',
+                  selected:
+                      ref.watch(themeStyleProvider) == AppThemeStyle.midnight,
+                  previewColor: const Color(0xFF1B6CFF),
+                  onTap: () => ref
+                      .read(themeStyleProvider.notifier)
+                      .setStyle(AppThemeStyle.midnight),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _StyleCard(
+                  title: 'Digital',
+                  subtitle: 'Monochrome HUD',
+                  selected:
+                      ref.watch(themeStyleProvider) == AppThemeStyle.digital,
+                  previewColor: Colors.white,
+                  onTap: () => ref
+                      .read(themeStyleProvider.notifier)
+                      .setStyle(AppThemeStyle.digital),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
           _Label('YOU'),
           const SizedBox(height: 10),
           Material(
@@ -165,6 +197,102 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: 'Per-deed reminder times are saved with each deed.',
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _StyleCard extends StatelessWidget {
+  const _StyleCard({
+    required this.title,
+    required this.subtitle,
+    required this.selected,
+    required this.previewColor,
+    required this.onTap,
+  });
+
+  final String title;
+  final String subtitle;
+  final bool selected;
+  final Color previewColor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: theme.cardTheme.color,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(
+          color: selected ? theme.colorScheme.primary : theme.colorScheme.outline,
+          width: selected ? 1.5 : 1,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF050506),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFF26262B)),
+                ),
+                child: Center(
+                  child: Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      color: previewColor,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                title,
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(fontWeight: FontWeight.w600),
+              ),
+              Text(
+                subtitle,
+                style: theme.textTheme.labelSmall
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(
+                    selected
+                        ? Icons.check_circle_rounded
+                        : Icons.circle_outlined,
+                    size: 14,
+                    color: selected
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    selected ? 'Active' : 'Use',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: selected
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

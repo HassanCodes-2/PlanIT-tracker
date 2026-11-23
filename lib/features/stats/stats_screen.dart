@@ -619,7 +619,7 @@ class _SlidingPeriodBar extends StatelessWidget {
                               .copyWith(
                             fontWeight: FontWeight.w700,
                             color: period == selected
-                                ? Colors.white
+                                ? theme.colorScheme.onPrimary
                                 : theme.colorScheme.onSurfaceVariant,
                           ),
                           child: Text(period.label),

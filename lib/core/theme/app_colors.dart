@@ -22,4 +22,17 @@ abstract final class AppColors {
   static const done = Color(0xFF22C55E);
   static const late = Color(0xFFF59E0B);
   static const skipped = Color(0xFFEF4444);
+
+  // Digital theme — monochrome HUD
+  static const digitalDarkBg = Color(0xFF050506);
+  static const digitalDarkSurface = Color(0xFF0F0F11);
+  static const digitalDarkBorder = Color(0xFF26262B);
+  static const digitalDarkText = Color(0xFFF5F5F7);
+  static const digitalDarkMuted = Color(0xFF8B8B93);
+
+  static const digitalLightBg = Color(0xFFF6F6F7);
+  static const digitalLightSurface = Color(0xFFFFFFFF);
+  static const digitalLightBorder = Color(0xFFE1E1E5);
+  static const digitalLightText = Color(0xFF0A0A0B);
+  static const digitalLightMuted = Color(0xFF6E6E76);
 }

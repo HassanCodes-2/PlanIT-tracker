@@ -461,7 +461,8 @@ class _DateHeader extends StatelessWidget {
                       timeLabel,
                       style: theme.textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
+                        letterSpacing: 1.2,
+                        fontFeatures: const [FontFeature.tabularFigures()],
                       ),
                     ),
                     Text(
@@ -487,15 +488,7 @@ class _DateHeader extends StatelessWidget {
           const SizedBox(height: 12),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(3),
-              child: LinearProgressIndicator(
-                value: total == 0 ? 0 : (done / total).clamp(0.0, 1.0),
-                minHeight: 6,
-                backgroundColor:
-                    theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.15),
-              ),
-            ),
+            child: _SegmentBar(done: done, total: total),
           ),
           const SizedBox(height: 8),
           Padding(
@@ -604,7 +597,7 @@ class _DayScrollerState extends State<_DayScroller> {
                     DateFormat('EEE').format(day).toUpperCase(),
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: isSelected
-                          ? Colors.white70
+                          ? theme.colorScheme.onPrimary.withValues(alpha: 0.75)
                           : theme.colorScheme.onSurfaceVariant,
                       letterSpacing: 0.5,
                     ),
@@ -614,7 +607,7 @@ class _DayScrollerState extends State<_DayScroller> {
                     '${day.day}',
                     style: theme.textTheme.titleMedium?.copyWith(
                       color: isSelected
-                          ? Colors.white
+                          ? theme.colorScheme.onPrimary
                           : theme.colorScheme.onSurface,
                       fontWeight: FontWeight.w600,
                     ),
@@ -625,6 +618,43 @@ class _DayScrollerState extends State<_DayScroller> {
           );
         },
       ),
+    );
+  }
+}
+
+class _SegmentBar extends StatelessWidget {
+  const _SegmentBar({required this.done, required this.total});
+
+  final int done;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final count = total <= 0 ? 12 : total.clamp(1, 24);
+    final filled = total <= 0
+        ? 0
+        : ((done / total) * count).round().clamp(0, count);
+
+    return Row(
+      children: List.generate(count, (index) {
+        return Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(right: index == count - 1 ? 0 : 3),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              height: 5,
+              decoration: BoxDecoration(
+                color: index < filled
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onSurfaceVariant
+                        .withValues(alpha: 0.18),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+        );
+      }),
     );
   }
 }

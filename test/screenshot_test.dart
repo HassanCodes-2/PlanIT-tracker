@@ -326,6 +326,18 @@ void main() {
     );
   });
 
+  testWidgets('today digital', (tester) async {
+    await _prepare(tester);
+    await tester.pumpWidget(
+      _app(child: const TodayScreen(), theme: AppTheme.digitalDark),
+    );
+    await tester.pumpAndSettle();
+    await expectLater(
+      find.byKey(captureKey),
+      matchesGoldenFile('goldens/today_digital.png'),
+    );
+  });
+
   testWidgets('create deed', (tester) async {
     await _prepare(tester);
     await tester.pumpWidget(
