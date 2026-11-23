@@ -92,9 +92,11 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
     final theme = Theme.of(context);
     final deedsAsync = ref.watch(deedsProvider);
     final logsAsync = ref.watch(allLogsProvider);
+    final categoriesAsync = ref.watch(categoriesProvider);
 
     final deeds = deedsAsync.value;
     final logs = logsAsync.value;
+    final categories = categoriesAsync.value ?? const <db.Category>[];
 
     if (deeds == null || logs == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -140,6 +142,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                     child: _Heatmap(
                       deeds: result.deeds,
                       logs: logs,
+                      categories: categories,
                       days: math.min(30, _period.days),
                       today: today,
                     ),
@@ -242,14 +245,23 @@ class _Heatmap extends StatelessWidget {
   const _Heatmap({
     required this.deeds,
     required this.logs,
+    required this.categories,
     required this.days,
     required this.today,
   });
 
   final List<DeedStats> deeds;
   final List<db.DeedLog> logs;
+  final List<db.Category> categories;
   final int days;
   final DateTime today;
+
+  String? _categoryIcon(int? categoryId) {
+    for (final category in categories) {
+      if (category.id == categoryId) return category.icon;
+    }
+    return null;
+  }
 
   Color? _colorFor(
     Map<String, LogStatus> index,
@@ -307,8 +319,11 @@ class _Heatmap extends StatelessWidget {
                 child: Tooltip(
                   message: stats.deed.name,
                   child: Icon(
-                    iconForName(stats.deed.icon,
-                        fallback: Icons.check_rounded),
+                    iconForDeed(
+                      deedIcon: stats.deed.icon,
+                      categoryIcon: _categoryIcon(stats.deed.categoryId),
+                      name: stats.deed.name,
+                    ),
                     size: 18,
                     color: theme.colorScheme.primary,
                   ),
@@ -647,7 +662,10 @@ class _DeedStatsRow extends StatelessWidget {
             child: Row(
               children: [
                 Icon(
-                  iconForName(stats.deed.icon, fallback: Icons.check_rounded),
+                  iconForDeed(
+                    deedIcon: stats.deed.icon,
+                    name: stats.deed.name,
+                  ),
                   color: theme.colorScheme.primary,
                   size: 20,
                 ),

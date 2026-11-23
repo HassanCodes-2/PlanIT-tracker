@@ -96,8 +96,11 @@ class DeedDetailScreen extends ConsumerWidget {
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
-                            iconForName(deed.icon ?? category?.icon,
-                                fallback: Icons.check_rounded),
+                            iconForDeed(
+                              deedIcon: deed.icon,
+                              categoryIcon: category?.icon,
+                              name: deed.name,
+                            ),
                             color: colorFromHex(category?.color ?? '#1B6CFF'),
                             size: 28,
                           ),

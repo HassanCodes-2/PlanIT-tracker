@@ -196,22 +196,26 @@ class DeedRepository {
           categoryId: Value(health),
           frequencyType: Value(FrequencyType.weekdays.dbValue),
           weekdays: const Value('1,2,3,4,5'),
+          icon: const Value('fitness_center'),
           reminderTime: const Value('06:30'),
         ),
         DeedsCompanion.insert(
           name: 'Read 20 pages',
           categoryId: Value(learning),
+          icon: const Value('menu_book'),
         ),
         DeedsCompanion.insert(
           name: 'Deep work 90 min',
           categoryId: Value(work),
           frequencyType: Value(FrequencyType.weekdays.dbValue),
           weekdays: const Value('1,2,3,4,5'),
+          icon: const Value('timer'),
           reminderTime: const Value('09:00'),
         ),
         DeedsCompanion.insert(
           name: 'Plan tomorrow',
           categoryId: Value(work),
+          icon: const Value('edit_calendar'),
           reminderTime: const Value('21:00'),
         ),
       ]);

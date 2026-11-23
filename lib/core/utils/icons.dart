@@ -90,6 +90,53 @@ IconData iconForName(String? name, {IconData? fallback}) {
   }
 }
 
+/// Resolves an icon for a deed: saved deed icon → inferred from the name →
+/// category icon → star.
+IconData iconForDeed({
+  String? deedIcon,
+  String? categoryIcon,
+  required String name,
+}) {
+  if (deedIcon != null && deedIcon.isNotEmpty) {
+    final icon = iconForName(deedIcon, fallback: Phosphor.star);
+    if (icon != Phosphor.star || deedIcon == 'star') return icon;
+  }
+
+  final lower = name.toLowerCase();
+  bool has(List<String> words) => words.any(lower.contains);
+
+  if (has(['exercise', 'workout', 'gym', 'walk', 'run', 'pushup', 'steps', 'barbell', 'strength'])) {
+    return Phosphor.barbell;
+  }
+  if (has(['read', 'book', 'study', 'learn', 'pages', 'language'])) {
+    return Phosphor.bookOpen;
+  }
+  if (has(['water', 'drink', 'hydrat'])) return Phosphor.drop;
+  if (has(['sleep', 'bed', 'rest', 'nap'])) return Phosphor.moon;
+  if (has(['deep work', 'focus', 'work', 'project', 'office', 'write'])) {
+    return Phosphor.briefcase;
+  }
+  if (has(['plan', 'review', 'tomorrow', 'calendar', 'journal', 'reflect'])) {
+    return Phosphor.calendarCheck;
+  }
+  if (has(['call', 'phone', 'family'])) return Phosphor.phone;
+  if (has(['message', 'text', 'friend', 'chat', 'social'])) {
+    return Phosphor.chatCircle;
+  }
+  if (has(['meditat', 'pray', 'mindful', 'faith'])) return Phosphor.flowerLotus;
+  if (has(['money', 'expense', 'save', 'budget', 'spend', 'finance'])) {
+    return Phosphor.wallet;
+  }
+  if (has(['game', 'hobby', 'play', 'fun'])) return Phosphor.gameController;
+  if (has(['love', 'heart', 'gratitude', 'kind'])) return Phosphor.heart;
+
+  if (categoryIcon != null && categoryIcon.isNotEmpty) {
+    final icon = iconForName(categoryIcon, fallback: Phosphor.star);
+    if (icon != Phosphor.star || categoryIcon == 'star') return icon;
+  }
+  return Phosphor.star;
+}
+
 /// Parses a `#RRGGBB` color string.
 Color colorFromHex(String hex) {
   final value = hex.replaceAll('#', '');
