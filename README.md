@@ -51,6 +51,17 @@ flutter run --dart-define=SUPABASE_URL=<url> --dart-define=SUPABASE_KEY=<publish
 
 Without the defines the app runs with mock data.
 
+### Install on Android (sideload)
+
+- `dist\planit-release.apk` — recommended (smaller, faster)
+- `dist\planit-debug.apk` — debug build
+
+Copy the APK to your phone and tap it (allow "Install unknown apps" for your file manager), or install over USB:
+
+```powershell
+adb install -r dist\planit-release.apk
+```
+
 ## Status
 
 - [x] Research & plan
