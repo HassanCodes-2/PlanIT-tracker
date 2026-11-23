@@ -332,14 +332,17 @@ class _Heatmap extends StatelessWidget {
                     return Expanded(
                       child: Padding(
                         padding: const EdgeInsets.all(1),
+                        child: AspectRatio(
+                        aspectRatio: 1,
                         child: Container(
-                          height: 12,
                           decoration: BoxDecoration(
                             color: color ??
-                                theme.colorScheme.outline.withValues(alpha: 0.18),
+                                theme.colorScheme.outline
+                                    .withValues(alpha: 0.18),
                             borderRadius: BorderRadius.circular(3),
                           ),
                         ),
+                      ),
                       ),
                     );
                   }).toList(),

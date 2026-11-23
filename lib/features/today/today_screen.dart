@@ -300,8 +300,8 @@ class TodayScreen extends ConsumerWidget {
                 label: 'Done on time',
                 selected: existing?.status == LogStatus.done.dbValue,
                 onTap: () async {
+                  Navigator.of(sheetContext).pop();
                   await repository.setLog(deed.id, day, LogStatus.done);
-                  if (sheetContext.mounted) Navigator.pop(sheetContext);
                   HapticFeedback.mediumImpact();
                   if (context.mounted) {
                     _snack(
@@ -318,8 +318,8 @@ class TodayScreen extends ConsumerWidget {
                 label: 'Done late',
                 selected: existing?.status == LogStatus.late.dbValue,
                 onTap: () async {
+                  Navigator.of(sheetContext).pop();
                   await repository.setLog(deed.id, day, LogStatus.late);
-                  if (sheetContext.mounted) Navigator.pop(sheetContext);
                   if (context.mounted) {
                     _snack(
                       context,
@@ -335,7 +335,7 @@ class TodayScreen extends ConsumerWidget {
                 label: 'Skipped',
                 selected: existing?.status == LogStatus.skipped.dbValue,
                 onTap: () async {
-                  Navigator.pop(sheetContext);
+                  Navigator.of(sheetContext).pop();
                   String? reason;
                   if (deed.reasonsEnabled) {
                     reason = await _askReason(context);
@@ -374,8 +374,8 @@ class TodayScreen extends ConsumerWidget {
                   selected: false,
                   onTap: () async {
                     final previous = existing;
+                    Navigator.of(sheetContext).pop();
                     await repository.clearLog(deed.id, day);
-                    if (sheetContext.mounted) Navigator.pop(sheetContext);
                     if (context.mounted) {
                       _snack(
                         context,

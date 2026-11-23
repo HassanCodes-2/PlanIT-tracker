@@ -101,7 +101,8 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
   }
 
   Future<void> _exit() async {
-    await _save();
+    // Save without popping here — this method owns the single pop.
+    await _save(popAfter: false);
     if (mounted) context.pop();
   }
 

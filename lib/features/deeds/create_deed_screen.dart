@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -132,10 +134,11 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
       await repository.updateDeed(_existing!, companion);
     }
 
-    final deeds = await repository.allDeeds();
-    await ref.read(notificationServiceProvider).syncAll(deeds);
-
+    // Close first, then refresh reminders in the background.
+    final notifications = ref.read(notificationServiceProvider);
     if (mounted) context.pop();
+    final deeds = await repository.allDeeds();
+    unawaited(notifications.syncAll(deeds));
   }
 
   Future<void> _addCategory() async {

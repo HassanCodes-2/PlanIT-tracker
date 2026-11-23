@@ -306,7 +306,7 @@ class _SingleDeedHeatmap extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(1.5),
                 child: AspectRatio(
-                  aspectRatio: 0.8,
+                  aspectRatio: 1,
                   child: Container(
                     decoration: BoxDecoration(
                       color: color ??
