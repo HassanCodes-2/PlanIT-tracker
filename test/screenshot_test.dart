@@ -237,6 +237,9 @@ Widget _app({
           .overrideWith((ref, day) => Stream.value(todayLogs)),
       allLogsProvider.overrideWith((ref) => Stream.value(allLogs)),
       notesProvider.overrideWith((ref) => Stream.value(notes)),
+      clockProvider.overrideWith(
+        (ref) => Stream.value(DateTime(2026, 11, 24, 9, 41)),
+      ),
       sharedPreferencesProvider
           .overrideWithValue(_prefs()),
     ],

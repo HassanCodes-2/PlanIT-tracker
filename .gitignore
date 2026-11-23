@@ -85,3 +85,5 @@ app.*.symbols
 
 # Build artifacts
 dist/
+# Golden test failure artifacts
+test/failures/
