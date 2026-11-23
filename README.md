@@ -62,15 +62,26 @@ Copy the APK to your phone and tap it (allow "Install unknown apps" for your fil
 adb install -r dist\planit-release.apk
 ```
 
+## Features in the current build
+
+- **Local-first data** — SQLite (Drift) with starter categories and deeds on first launch
+- **Today** — day scroller, category sections, tap to log "done", long-press for "done late / skipped (+ reason) / clear"
+- **Deeds** — create, edit, archive; frequency (daily / weekdays / times per week / times per month), optional parent deed, reasons tracking, reminder time, icon; add custom categories
+- **Stats** — status heatmap, Weeks/Months/Years/All filters, Done/Late/Skipped/Missed summary, per-deed breakdown
+- **Reminders** — local notifications scheduled from each deed's reminder time
+- **Theme** — dark / light / system, persisted
+
+> Accounts & cloud sync (Supabase) are scaffolded but not enabled until a Supabase project is connected.
+
 ## Status
 
 - [x] Research & plan
 - [x] M0 Skeleton
-- [ ] M1 Auth
-- [ ] M2 Data & Today
-- [ ] M3 Logging UX
-- [ ] M4 Create/Edit Deed
-- [ ] M5 Stats
-- [ ] M6 Reminders & Settings
-- [ ] M7 Sync & Offline
+- [ ] M1 Auth (needs Supabase project)
+- [x] M2 Data & Today (local)
+- [x] M3 Logging UX
+- [x] M4 Create/Edit Deed
+- [x] M5 Stats
+- [x] M6 Reminders & Settings (core)
+- [ ] M7 Sync & Offline (needs Supabase)
 - [ ] M8 Polish

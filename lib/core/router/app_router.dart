@@ -41,7 +41,9 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/create-deed',
-      builder: (context, state) => const CreateDeedScreen(),
+      builder: (context, state) => CreateDeedScreen(
+        deedId: int.tryParse(state.uri.queryParameters['id'] ?? ''),
+      ),
     ),
   ],
 );
