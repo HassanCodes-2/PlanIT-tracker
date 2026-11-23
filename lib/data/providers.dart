@@ -46,3 +46,14 @@ final logsForDayProvider =
     StreamProvider.family<Map<int, DeedLog>, DateTime>((ref, day) {
   return ref.watch(repositoryProvider).watchLogsForDay(day);
 });
+
+/// Ticks every 30 seconds so the Today header clock stays fresh.
+Stream<DateTime> _clockStream() async* {
+  yield DateTime.now();
+  yield* Stream.periodic(
+    const Duration(seconds: 30),
+    (_) => DateTime.now(),
+  );
+}
+
+final clockProvider = StreamProvider<DateTime>((ref) => _clockStream());

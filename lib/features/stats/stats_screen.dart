@@ -138,7 +138,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                   child: Padding(
                     padding: const EdgeInsets.all(14),
                     child: _Heatmap(
-                      deeds: result.deeds.take(6).toList(),
+                      deeds: result.deeds,
                       logs: logs,
                       days: math.min(30, _period.days),
                       today: today,
@@ -303,13 +303,15 @@ class _Heatmap extends StatelessWidget {
           Row(
             children: [
               SizedBox(
-                width: 92,
-                child: Text(
-                  stats.deed.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelSmall
-                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                width: 34,
+                child: Tooltip(
+                  message: stats.deed.name,
+                  child: Icon(
+                    iconForName(stats.deed.icon,
+                        fallback: Icons.check_rounded),
+                    size: 18,
+                    color: theme.colorScheme.primary,
+                  ),
                 ),
               ),
               Expanded(
@@ -342,7 +344,7 @@ class _Heatmap extends StatelessWidget {
         const SizedBox(height: 6),
         Row(
           children: [
-            const SizedBox(width: 92),
+            const SizedBox(width: 34),
             Text(
               DateFormat('d MMM').format(dateList.first),
               style: theme.textTheme.labelSmall

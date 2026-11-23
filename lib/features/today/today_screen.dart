@@ -49,9 +49,8 @@ class TodayScreen extends ConsumerWidget {
         (mode == ThemeMode.system &&
             MediaQuery.platformBrightnessOf(context) == Brightness.dark);
 
-    final userName = ref.watch(userNameProvider);
-    final greeting = '${greetingForHour(DateTime.now().hour)}'
-        '${userName.isEmpty ? '' : ', $userName'}';
+    final now = ref.watch(clockProvider).value ?? DateTime.now();
+    final timeLabel = DateFormat('HH:mm').format(now);
 
     final grouped = <db.Category, List<db.Deed>>{};
     for (final category in categories) {
@@ -73,7 +72,7 @@ class TodayScreen extends ConsumerWidget {
           padding: const EdgeInsets.only(bottom: 96),
           children: [
             _DateHeader(
-              greeting: greeting,
+              timeLabel: timeLabel,
               dateLabel: DateFormat('EEEE, d MMMM').format(day),
               streak: streak,
               done: doneCount,
@@ -427,7 +426,7 @@ class TodayScreen extends ConsumerWidget {
 
 class _DateHeader extends StatelessWidget {
   const _DateHeader({
-    required this.greeting,
+    required this.timeLabel,
     required this.dateLabel,
     required this.streak,
     required this.done,
@@ -436,7 +435,7 @@ class _DateHeader extends StatelessWidget {
     required this.onToggleTheme,
   });
 
-  final String greeting;
+  final String timeLabel;
   final String dateLabel;
   final int streak;
   final int done;
@@ -459,9 +458,11 @@ class _DateHeader extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      greeting,
-                      style: theme.textTheme.titleLarge
-                          ?.copyWith(fontWeight: FontWeight.w700),
+                      timeLabel,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                     Text(
                       dateLabel,
