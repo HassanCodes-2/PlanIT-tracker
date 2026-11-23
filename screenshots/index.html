@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PlanIT — App Screens</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 40px 24px 64px;
+    background: #0d0d0f;
+    color: #ededf0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+  }
+  header { text-align: center; margin-bottom: 36px; }
+  h1 { margin: 0 0 8px; font-size: 30px; letter-spacing: -0.5px; }
+  h1 span { color: #1b6cff; }
+  p.sub { margin: 0; color: #9a9aa5; font-size: 15px; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 36px 28px;
+    max-width: 1500px;
+    margin: 0 auto;
+    align-items: start;
+  }
+  figure { margin: 0; text-align: center; }
+  .phone {
+    display: inline-block;
+    padding: 10px;
+    border-radius: 34px;
+    background: #1a1a1e;
+    border: 1px solid #2c2c33;
+    box-shadow: 0 24px 60px rgba(0,0,0,.55);
+  }
+  .phone img {
+    display: block;
+    width: 100%;
+    max-width: 390px;
+    border-radius: 24px;
+  }
+  figcaption { margin-top: 14px; font-size: 14px; color: #c3c3cb; }
+  figcaption b { color: #ffffff; display: block; margin-bottom: 2px; font-size: 15px; }
+  .note {
+    max-width: 760px;
+    margin: 48px auto 0;
+    padding: 18px 22px;
+    border: 1px solid #2c2c33;
+    border-radius: 16px;
+    background: #16161a;
+    color: #a6a6b0;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .note b { color: #ededf0; }
+</style>
+</head>
+<body>
+  <header>
+    <h1><span>PlanIT</span> — App Screens</h1>
+    <p class="sub">Real screens rendered from the actual app code · November 2026</p>
+  </header>
+
+  <div class="grid">
+    <figure>
+      <div class="phone"><img src="today-dark.png" alt="Today screen, dark theme"></div>
+      <figcaption><b>Today (dark)</b>Your daily deeds grouped by category — tick, defer, or skip them</figcaption>
+    </figure>
+    <figure>
+      <div class="phone"><img src="today-light.png" alt="Today screen, light theme"></div>
+      <figcaption><b>Today (light)</b>The same screen with the light theme enabled</figcaption>
+    </figure>
+    <figure>
+      <div class="phone"><img src="stats.png" alt="Stats screen"></div>
+      <figcaption><b>Stats</b>Heatmap, done/late/skipped/missed percentages and per-deed scores</figcaption>
+    </figure>
+    <figure>
+      <div class="phone"><img src="create-deed.png" alt="Create deed screen"></div>
+      <figcaption><b>Create a deed</b>Name, icon, category, frequency, reminder and reasons tracking</figcaption>
+    </figure>
+    <figure>
+      <div class="phone"><img src="settings.png" alt="Settings screen"></div>
+      <figcaption><b>Settings</b>Appearance (dark / light / system) and app info</figcaption>
+    </figure>
+  </div>
+
+  <div class="note">
+    <b>What you are looking at:</b> these are not mockups — they are screenshots generated
+    directly from the app's real screens and data. The installable app file is
+    <b>PlanIT.apk</b> in your Downloads folder. Install it on an Android phone to try it.
+  </div>
+</body>
+</html>

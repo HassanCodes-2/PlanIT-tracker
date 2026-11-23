@@ -66,7 +66,7 @@ class TodayScreen extends ConsumerWidget {
                 child: Text(
                   'Planning view — logging opens on the day.',
                   style: theme.textTheme.bodySmall
-                      ?.copyWith(color: theme.colorScheme.outline),
+                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
               )
             else if (scheduled.isNotEmpty && logs.isEmpty)
@@ -75,7 +75,7 @@ class TodayScreen extends ConsumerWidget {
                 child: Text(
                   'Tap a deed to mark it done · long-press for more options',
                   style: theme.textTheme.bodySmall
-                      ?.copyWith(color: theme.colorScheme.outline),
+                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
               ),
             if (scheduled.isEmpty)
@@ -212,7 +212,7 @@ class TodayScreen extends ConsumerWidget {
               if (existing != null)
                 _OutcomeTile(
                   icon: Icons.restart_alt_rounded,
-                  color: theme.colorScheme.outline,
+                  color: theme.colorScheme.onSurfaceVariant,
                   label: 'Clear today\'s log',
                   selected: false,
                   onTap: () async {
@@ -286,7 +286,7 @@ class _DateHeader extends StatelessWidget {
           Text(
             total == 0 ? DateFormat('EEEE').format(day) : '$done of $total logged',
             style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.outline,
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -295,7 +295,7 @@ class _DateHeader extends StatelessWidget {
   }
 }
 
-class _DayScroller extends StatelessWidget {
+class _DayScroller extends StatefulWidget {
   const _DayScroller({
     required this.today,
     required this.selected,
@@ -307,27 +307,46 @@ class _DayScroller extends StatelessWidget {
   final ValueChanged<DateTime> onSelect;
 
   @override
+  State<_DayScroller> createState() => _DayScrollerState();
+}
+
+class _DayScrollerState extends State<_DayScroller> {
+  final ScrollController _controller =
+      ScrollController(initialScrollOffset: 172);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final days = List.generate(
       15,
-      (index) => DateTime(today.year, today.month, today.day - 6 + index),
+      (index) => DateTime(
+        widget.today.year,
+        widget.today.month,
+        widget.today.day - 6 + index,
+      ),
     );
     return SizedBox(
       height: 64,
       child: ListView.separated(
+        controller: _controller,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         scrollDirection: Axis.horizontal,
         itemCount: days.length,
         separatorBuilder: (_, _) => const SizedBox(width: 6),
         itemBuilder: (context, index) {
           final day = days[index];
-          final isSelected = day.year == selected.year &&
-              day.month == selected.month &&
-              day.day == selected.day;
+          final isSelected = day.year == widget.selected.year &&
+              day.month == widget.selected.month &&
+              day.day == widget.selected.day;
           final theme = Theme.of(context);
           return InkWell(
             borderRadius: BorderRadius.circular(12),
-            onTap: () => onSelect(day),
+            onTap: () => widget.onSelect(day),
             child: Container(
               width: 46,
               padding: const EdgeInsets.symmetric(vertical: 8),
@@ -345,7 +364,7 @@ class _DayScroller extends StatelessWidget {
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: isSelected
                           ? Colors.white70
-                          : theme.colorScheme.outline,
+                          : theme.colorScheme.onSurfaceVariant,
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -399,7 +418,7 @@ class _CategorySection extends StatelessWidget {
             child: Text(
               (category?.name ?? 'Other').toUpperCase(),
               style: theme.textTheme.labelMedium?.copyWith(
-                color: theme.colorScheme.outline,
+                color: theme.colorScheme.onSurfaceVariant,
                 letterSpacing: 1.2,
                 fontWeight: FontWeight.w600,
               ),
@@ -510,7 +529,8 @@ class _DeedCard extends StatelessWidget {
                             decoration:
                                 completed ? TextDecoration.lineThrough : null,
                             color: completed
-                                ? theme.colorScheme.outline
+                                ? theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.45)
                                 : theme.colorScheme.onSurface,
                           ),
                         ),
@@ -520,7 +540,7 @@ class _DeedCard extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.outline,
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
                       ],
@@ -576,7 +596,7 @@ class _EmptyState extends StatelessWidget {
             'Create a deed to start tracking your daily habits.',
             textAlign: TextAlign.center,
             style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.outline),
+                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 20),
           FilledButton.tonalIcon(

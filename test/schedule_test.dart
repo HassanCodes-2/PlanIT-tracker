@@ -117,7 +117,7 @@ void main() {
       expect(result.late, 1);
       expect(result.skipped, 1);
       expect(result.missed, 4);
-      expect(result.deeds.single.completionRate, closeTo(3 / 7, 0.0001));
+      expect(result.deeds.single.completionRate, closeTo(2 / 7, 0.0001));
     });
 
     test('ignores logs outside the period', () {

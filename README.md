@@ -15,6 +15,7 @@ A general **habit / deed tracker** for Android & iOS — plan recurring deeds, l
 
 | File | Contents |
 |---|---|
+| `screenshots/index.html` | Visual gallery of the app's screens |
 | `docs/RESEARCH.md` | Market research, feature rationale, stack decision |
 | `docs/PLAN.md` | Product spec, design tokens, data model, milestones |
 | `supabase/schema.sql` | Database schema + RLS + signup seeding |

@@ -58,7 +58,7 @@ class SettingsScreen extends ConsumerWidget {
           _InfoTile(
             icon: Icons.storage_rounded,
             title: 'Data',
-            subtitle: 'Stored locally on this device. Sync arrives with Supabase.',
+            subtitle: 'Stored only on this phone. Online backup is coming later.',
           ),
           const SizedBox(height: 10),
           _InfoTile(
@@ -98,7 +98,7 @@ class _InfoTile extends StatelessWidget {
         subtitle: Text(
           subtitle,
           style: theme.textTheme.bodySmall
-              ?.copyWith(color: theme.colorScheme.outline),
+              ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
       ),
     );
@@ -116,7 +116,7 @@ class _Label extends StatelessWidget {
     return Text(
       text,
       style: theme.textTheme.labelMedium?.copyWith(
-        color: theme.colorScheme.outline,
+        color: theme.colorScheme.onSurfaceVariant,
         letterSpacing: 1.2,
         fontWeight: FontWeight.w600,
       ),

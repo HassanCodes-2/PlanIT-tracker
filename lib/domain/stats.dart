@@ -33,7 +33,7 @@ class DeedStats {
 
   int get logged => done + late + skipped;
 
-  double get completionRate => expected == 0 ? 0 : logged / expected;
+  double get completionRate => expected == 0 ? 0 : (done + late) / expected;
 
   double get onTimeRate => expected == 0 ? 0 : done / expected;
 }

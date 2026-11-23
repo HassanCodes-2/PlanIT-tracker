@@ -65,22 +65,22 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
               child: Text(
                 'Create a deed to see your stats.',
                 style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: theme.colorScheme.outline),
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
             )
           : ListView(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
               children: [
-                Row(
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
                   children: StatsPeriodType.values.map((period) {
-                    final selected = period == _period;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: ChoiceChip(
-                        label: Text(period.label),
-                        selected: selected,
-                        onSelected: (_) => setState(() => _period = period),
-                      ),
+                    return ChoiceChip(
+                      label: Text(period.label),
+                      selected: period == _period,
+                      showCheckmark: false,
+                      visualDensity: VisualDensity.compact,
+                      onSelected: (_) => setState(() => _period = period),
                     );
                   }).toList(),
                 ),
@@ -133,7 +133,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                     _SummaryCard(
                       label: 'Missed',
                       icon: Icons.highlight_off_rounded,
-                      color: theme.colorScheme.outline,
+                      color: theme.colorScheme.onSurfaceVariant,
                       percent: result.missedPct,
                       count: result.missed,
                     ),
@@ -149,7 +149,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                     child: Text(
                       'Nothing scheduled in this period.',
                       style: theme.textTheme.bodySmall
-                          ?.copyWith(color: theme.colorScheme.outline),
+                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                     ),
                   ),
               ],
@@ -186,6 +186,7 @@ class _Heatmap extends StatelessWidget {
       };
     }
     if (!isScheduledOn(stats.deed, day)) return null;
+    if (frequencyOf(stats.deed).isCountBased) return null;
     if (day.isBefore(today)) {
       return const Color(0xFF6B7280).withValues(alpha: 0.35);
     }
@@ -212,7 +213,7 @@ class _Heatmap extends StatelessWidget {
       return Text(
         'No scheduled deeds.',
         style: theme.textTheme.bodySmall
-            ?.copyWith(color: theme.colorScheme.outline),
+            ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
       );
     }
 
@@ -228,7 +229,7 @@ class _Heatmap extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.labelSmall
-                      ?.copyWith(color: theme.colorScheme.outline),
+                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
               ),
               Expanded(
@@ -262,13 +263,13 @@ class _Heatmap extends StatelessWidget {
             Text(
               DateFormat('d MMM').format(dateList.first),
               style: theme.textTheme.labelSmall
-                  ?.copyWith(color: theme.colorScheme.outline),
+                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
             const Spacer(),
             Text(
               'Today',
               style: theme.textTheme.labelSmall
-                  ?.copyWith(color: theme.colorScheme.outline),
+                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -316,7 +317,7 @@ class _SummaryCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.labelMedium
-                      ?.copyWith(color: theme.colorScheme.outline),
+                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
               ),
             ],
@@ -329,7 +330,7 @@ class _SummaryCard extends StatelessWidget {
           Text(
             '$count times',
             style: theme.textTheme.labelSmall
-                ?.copyWith(color: theme.colorScheme.outline),
+                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
         ],
       ),
@@ -374,7 +375,7 @@ class _DeedStatsRow extends StatelessWidget {
                 Text(
                   '${stats.done} done · ${stats.late} late · ${stats.skipped} skipped · ${stats.missed} missed',
                   style: theme.textTheme.labelSmall
-                      ?.copyWith(color: theme.colorScheme.outline),
+                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
               ],
             ),
@@ -403,7 +404,7 @@ class _Label extends StatelessWidget {
     return Text(
       text,
       style: theme.textTheme.labelMedium?.copyWith(
-        color: theme.colorScheme.outline,
+        color: theme.colorScheme.onSurfaceVariant,
         letterSpacing: 1.2,
         fontWeight: FontWeight.w600,
       ),

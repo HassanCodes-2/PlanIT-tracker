@@ -39,6 +39,7 @@ abstract final class AppTheme {
       surface: surface,
       onSurface: text,
       outline: border,
+      onSurfaceVariant: muted,
     );
 
     return ThemeData(

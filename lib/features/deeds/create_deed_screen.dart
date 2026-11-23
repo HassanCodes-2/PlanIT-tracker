@@ -265,14 +265,14 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
                         border: Border.all(
                           color: selected
                               ? theme.colorScheme.primary
-                              : theme.colorScheme.outline,
+                              : theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                       child: Icon(
                         iconForName(name, fallback: Icons.star_rounded),
                         color: selected
                             ? theme.colorScheme.primary
-                            : theme.colorScheme.outline,
+                            : theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                   );
@@ -369,12 +369,13 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
             const SizedBox(height: 20),
             _Label('REMINDER'),
             const SizedBox(height: 8),
-            Container(
-              decoration: BoxDecoration(
-                color: theme.cardTheme.color,
+            Material(
+              color: theme.cardTheme.color,
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: theme.colorScheme.outline),
+                side: BorderSide(color: theme.colorScheme.outline),
               ),
+              clipBehavior: Clip.antiAlias,
               child: ListTile(
                 leading: Icon(
                   Icons.notifications_none_rounded,
@@ -427,7 +428,7 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
               subtitle: Text(
                 'Ask why when this deed is skipped.',
                 style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.outline),
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
               value: _reasonsEnabled,
               onChanged: (value) => setState(() => _reasonsEnabled = value),
@@ -471,7 +472,7 @@ class _Label extends StatelessWidget {
     return Text(
       text,
       style: theme.textTheme.labelMedium?.copyWith(
-        color: theme.colorScheme.outline,
+        color: theme.colorScheme.onSurfaceVariant,
         letterSpacing: 1.2,
         fontWeight: FontWeight.w600,
       ),
