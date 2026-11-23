@@ -70,7 +70,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            up ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+            up ? AppIcons.trendUp : AppIcons.trendDown,
             size: 13,
             color: color,
           ),
@@ -127,18 +127,9 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
           : ListView(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
               children: [
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: StatsPeriodType.values.map((period) {
-                    return ChoiceChip(
-                      label: Text(period.label),
-                      selected: period == _period,
-                      showCheckmark: false,
-                      visualDensity: VisualDensity.compact,
-                      onSelected: (_) => setState(() => _period = period),
-                    );
-                  }).toList(),
+                _SlidingPeriodBar(
+                  selected: _period,
+                  onSelect: (period) => setState(() => _period = period),
                 ),
                 const SizedBox(height: 20),
                 _Label('HEATMAP — LAST ${math.min(30, _period.days)} DAYS'),
@@ -194,34 +185,30 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                   physics: const NeverScrollableScrollPhysics(),
                   mainAxisSpacing: 10,
                   crossAxisSpacing: 10,
-                  childAspectRatio: 1.7,
+                  childAspectRatio: 1.3,
                   children: [
-                    _SummaryCard(
-                      label: 'Done',
-                      icon: Icons.check_circle_rounded,
-                      color: const Color(0xFF22C55E),
+                    _RingStat(
                       percent: result.donePct,
+                      color: const Color(0xFF22C55E),
+                      icon: AppIcons.done,
                       count: result.done,
                     ),
-                    _SummaryCard(
-                      label: 'Done late',
-                      icon: Icons.schedule_rounded,
-                      color: const Color(0xFFF59E0B),
+                    _RingStat(
                       percent: result.latePct,
+                      color: const Color(0xFFF59E0B),
+                      icon: AppIcons.late,
                       count: result.late,
                     ),
-                    _SummaryCard(
-                      label: 'Skipped',
-                      icon: Icons.remove_circle_rounded,
-                      color: const Color(0xFFEF4444),
+                    _RingStat(
                       percent: result.skippedPct,
+                      color: const Color(0xFFEF4444),
+                      icon: AppIcons.skipped,
                       count: result.skipped,
                     ),
-                    _SummaryCard(
-                      label: 'Missed',
-                      icon: Icons.highlight_off_rounded,
-                      color: theme.colorScheme.onSurfaceVariant,
+                    _RingStat(
                       percent: result.missedPct,
+                      color: theme.colorScheme.onSurfaceVariant,
+                      icon: AppIcons.missed,
                       count: result.missed,
                     ),
                   ],
@@ -434,19 +421,17 @@ class _StreakCard extends StatelessWidget {
   }
 }
 
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({
-    required this.label,
-    required this.icon,
-    required this.color,
+class _RingStat extends StatelessWidget {
+  const _RingStat({
     required this.percent,
+    required this.color,
+    required this.icon,
     required this.count,
   });
 
-  final String label;
-  final IconData icon;
-  final Color color;
   final double percent;
+  final Color color;
+  final IconData icon;
   final int count;
 
   @override
@@ -460,33 +445,173 @@ class _SummaryCard extends StatelessWidget {
         border: Border.all(color: theme.colorScheme.outline),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: (percent / 100).clamp(0.0, 1.0)),
+            duration: const Duration(milliseconds: 900),
+            curve: Curves.easeOutCubic,
+            builder: (context, value, _) {
+              return SizedBox(
+                width: 76,
+                height: 76,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    CustomPaint(
+                      size: const Size(76, 76),
+                      painter: _RingPainter(
+                        progress: value,
+                        color: color,
+                        track: color.withValues(alpha: 0.12),
+                      ),
+                    ),
+                    Text(
+                      '${(value * 100).round()}%',
+                      style: theme.textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 10),
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 16, color: color),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelMedium
-                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              Icon(icon, size: 14, color: color),
+              const SizedBox(width: 5),
+              Text(
+                '$count',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
           ),
-          Text(
-            '${percent.round()}%',
-            style: theme.textTheme.headlineSmall
-                ?.copyWith(fontWeight: FontWeight.w600),
+        ],
+      ),
+    );
+  }
+}
+
+class _RingPainter extends CustomPainter {
+  const _RingPainter({
+    required this.progress,
+    required this.color,
+    required this.track,
+  });
+
+  final double progress;
+  final Color color;
+  final Color track;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const strokeWidth = 7.0;
+    final rect = Offset.zero & size;
+    final arcRect = rect.deflate(strokeWidth / 2 + 1);
+
+    final trackPaint = Paint()
+      ..color = track
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+    canvas.drawArc(arcRect, 0, 6.283185307179586, false, trackPaint);
+
+    if (progress <= 0) return;
+    final progressPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(
+      arcRect,
+      -1.5707963267948966,
+      6.283185307179586 * progress.clamp(0.0, 1.0),
+      false,
+      progressPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_RingPainter oldDelegate) =>
+      oldDelegate.progress != progress || oldDelegate.color != color;
+}
+
+class _SlidingPeriodBar extends StatelessWidget {
+  const _SlidingPeriodBar({
+    required this.selected,
+    required this.onSelect,
+  });
+
+  final StatsPeriodType selected;
+  final ValueChanged<StatsPeriodType> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final periods = StatsPeriodType.values;
+    final index = periods.indexOf(selected);
+
+    return Container(
+      height: 46,
+      decoration: BoxDecoration(
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(23),
+        border: Border.all(color: theme.colorScheme.outline),
+      ),
+      child: Stack(
+        children: [
+          AnimatedAlign(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOutCubic,
+            alignment: Alignment(index * 2 / (periods.length - 1) - 1, 0),
+            child: FractionallySizedBox(
+              widthFactor: 1 / periods.length,
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary,
+                    borderRadius: BorderRadius.circular(19),
+                    boxShadow: [
+                      BoxShadow(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.35),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ),
-          Text(
-            '$count times',
-            style: theme.textTheme.labelSmall
-                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          Row(
+            children: periods
+                .map(
+                  (period) => Expanded(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => onSelect(period),
+                      child: Center(
+                        child: AnimatedDefaultTextStyle(
+                          duration: const Duration(milliseconds: 200),
+                          style: (theme.textTheme.labelMedium ?? const TextStyle())
+                              .copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: period == selected
+                                ? Colors.white
+                                : theme.colorScheme.onSurfaceVariant,
+                          ),
+                          child: Text(period.label),
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
           ),
         ],
       ),
@@ -543,8 +668,8 @@ class _DeedStatsRow extends StatelessWidget {
                   ),
                 ),
                 Icon(
-                  Icons.chevron_right_rounded,
-                  size: 18,
+                  AppIcons.caretRight,
+                  size: 14,
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
                 const SizedBox(width: 4),

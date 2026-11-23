@@ -21,7 +21,8 @@ const _fontDir =
     'C:/Users/fahad/AppData/Local/flutter/bin/cache/artifacts/material_fonts';
 
 Future<void> _loadFont(String family, String file) async {
-  final bytes = File('$_fontDir/$file').readAsBytesSync();
+  final path = file.contains(':') ? file : '$_fontDir/$file';
+  final bytes = File(path).readAsBytesSync();
   final loader = FontLoader(family)
     ..addFont(Future.value(ByteData.view(bytes.buffer)));
   await loader.load();
@@ -290,6 +291,10 @@ void main() {
     await _loadFont('Roboto', 'roboto-medium.ttf');
     await _loadFont('Roboto', 'roboto-bold.ttf');
     await _loadFont('MaterialIcons', 'MaterialIcons-Regular.otf');
+    await _loadFont(
+      'PhosphorBold',
+      'D:/Projects/PlanIT/assets/fonts/Phosphor-Bold.ttf',
+    );
     SharedPreferences.setMockInitialValues({});
     _prefsCache = await SharedPreferences.getInstance();
   });

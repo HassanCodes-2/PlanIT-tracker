@@ -3,10 +3,10 @@ import 'deed_schedule.dart';
 import 'enums.dart';
 
 enum StatsPeriodType {
-  weeks('Weeks', 7),
-  months('Months', 30),
-  years('Years', 365),
-  all('All time', 3650);
+  weeks('Week', 7),
+  months('Month', 30),
+  years('Year', 365),
+  all('All', 3650);
 
   const StatsPeriodType(this.label, this.days);
 

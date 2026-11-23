@@ -502,7 +502,7 @@ class _DateHeader extends StatelessWidget {
             child: Row(
               children: [
                 const Icon(
-                  Icons.local_fire_department_rounded,
+                  AppIcons.fire,
                   size: 16,
                   color: Color(0xFFF97316),
                 ),
@@ -515,7 +515,7 @@ class _DateHeader extends StatelessWidget {
                 ),
                 const Spacer(),
                 const Icon(
-                  Icons.check_circle_rounded,
+                  AppIcons.done,
                   size: 16,
                   color: Color(0xFF22C55E),
                 ),

@@ -72,6 +72,7 @@ adb install -r dist\planit-release.apk
 - **Focus timer** — 5/15/25/45 minute sessions with a live progress ring; finish → mark the deed done
 - **Deed history** — per-deed 30-day heatmap, summary, skip reasons and recent logs
 - **Stats** — current & best streak, trend arrows vs previous period, status heatmap, period filters, per-deed breakdown
+- **Stats glow-up (v1.4)** — animated percentage rings, sliding Week/Month/Year/All bar, icon-only status cards, Phosphor icon set app-wide, trend arrows
 - **Reminders** — local notifications scheduled from each deed's reminder time
 - **Theme** — dark / light / system, persisted; one-tap sun/moon switch on the Today header
 - **Backup** — export everything to a JSON file via the Android share sheet
