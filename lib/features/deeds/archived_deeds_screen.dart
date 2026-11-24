@@ -68,7 +68,7 @@ class ArchivedDeedsScreen extends ConsumerWidget {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
                         side: BorderSide(
-                            color: theme.colorScheme.outlineVariant),
+                            color: theme.colorScheme.outline),
                       ),
                       clipBehavior: Clip.antiAlias,
                       child: ListTile(

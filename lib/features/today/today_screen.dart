@@ -15,7 +15,7 @@ import '../../data/db/app_database.dart' as db;
 import '../../data/providers.dart';
 import '../../domain/deed_schedule.dart';
 import '../../domain/enums.dart';
-import '../../domain/quotes.dart';
+
 import '../../domain/streak.dart';
 
 class TodayScreen extends ConsumerWidget {
@@ -60,12 +60,16 @@ class TodayScreen extends ConsumerWidget {
     final scheduled = deeds.where((deed) => isScheduledOn(deed, day)).toList();
     final doneCount = scheduled.where((deed) {
       final log = logs[deed.id];
-      return log != null &&
-          LogStatus.fromDb(log.status) == LogStatus.done;
+      if (log == null) return false;
+      final status = LogStatus.fromDb(log.status);
+      return status == LogStatus.done || status == LogStatus.late;
     }).length;
 
     final loggedDays = allLogs
-        .where((log) => LogStatus.fromDb(log.status) == LogStatus.done)
+        .where((log) {
+          final status = LogStatus.fromDb(log.status);
+          return status == LogStatus.done || status == LogStatus.late;
+        })
         .map((log) => dateOnly(log.day))
         .toSet();
     final streak = currentStreak(loggedDays, today: today);
@@ -147,17 +151,7 @@ class TodayScreen extends ConsumerWidget {
               },
             ),
             if (!isFuture)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 10, 24, 0),
-                child: Text(
-                  '“${quoteForDay(day)}”',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ),
+              const SizedBox.shrink(),
             if (isFuture)
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
@@ -202,7 +196,7 @@ class TodayScreen extends ConsumerWidget {
                   ),
                   onLongPress: (deed) =>
                       _showOutcomeSheet(context, ref, deed, day, logs),
-                  onFocus: (deed) => _openFocus(context, deed, day),
+
                 ),
               ),
               if (uncategorized.isNotEmpty)
@@ -224,7 +218,7 @@ class TodayScreen extends ConsumerWidget {
                   ),
                   onLongPress: (deed) =>
                       _showOutcomeSheet(context, ref, deed, day, logs),
-                  onFocus: (deed) => _openFocus(context, deed, day),
+
                 ),
               if (doneCount >= scheduled.length && !isFuture)
                 const _CaughtUpCard(),
@@ -247,12 +241,6 @@ class TodayScreen extends ConsumerWidget {
             ? null
             : SnackBarAction(label: 'Undo', onPressed: undo),
       ));
-  }
-
-  void _openFocus(BuildContext context, db.Deed deed, DateTime day) {
-    context.push(
-      '/focus?id=${deed.id}&day=${DateFormat('yyyy-MM-dd').format(day)}',
-    );
   }
 
   Future<void> _onTapDeed(
@@ -895,7 +883,6 @@ class _CategorySection extends StatelessWidget {
     required this.canLog,
     required this.onTap,
     required this.onLongPress,
-    required this.onFocus,
   });
 
   final db.Category? category;
@@ -906,7 +893,7 @@ class _CategorySection extends StatelessWidget {
   final bool canLog;
   final ValueChanged<db.Deed> onTap;
   final ValueChanged<db.Deed> onLongPress;
-  final ValueChanged<db.Deed> onFocus;
+
 
   String? _progressFor(db.Deed deed) {
     final frequency = frequencyOf(deed);
@@ -965,7 +952,7 @@ class _CategorySection extends StatelessWidget {
               canLog: canLog,
               onTap: () => onTap(deed),
               onLongPress: () => onLongPress(deed),
-              onFocus: () => onFocus(deed),
+
             ),
           ),
         ],
@@ -983,7 +970,6 @@ class _DeedCard extends StatelessWidget {
     required this.canLog,
     required this.onTap,
     required this.onLongPress,
-    required this.onFocus,
   });
 
   final db.Deed deed;
@@ -993,7 +979,7 @@ class _DeedCard extends StatelessWidget {
   final bool canLog;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
-  final VoidCallback onFocus;
+
 
   @override
   Widget build(BuildContext context) {
@@ -1074,12 +1060,12 @@ class _DeedCard extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(
             AppSpacing.screen, 0, AppSpacing.screen, AppSpacing.sm + 2),
         child: Opacity(
-        opacity: canLog ? 1 : 0.6,
+        opacity: 1,
         child: Material(
           color: theme.cardTheme.color,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
-            side: BorderSide(color: theme.colorScheme.outlineVariant),
+            side: BorderSide(color: theme.colorScheme.outline),
           ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
@@ -1122,7 +1108,7 @@ class _DeedCard extends StatelessWidget {
                       children: [
                         Text(
                           deed.name,
-                          maxLines: 1,
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodyLarge?.copyWith(
                             fontWeight: FontWeight.w500,
@@ -1147,15 +1133,6 @@ class _DeedCard extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    onPressed: canLog ? onFocus : null,
-                    tooltip: 'Start focus session',
-                    iconSize: 20,
-                    icon: Icon(
-                      AppIcons.timer,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  IconButton(
                     onPressed: canLog ? onLongPress : null,
                     tooltip: 'More actions',
                     iconSize: 20,
@@ -1166,7 +1143,7 @@ class _DeedCard extends StatelessWidget {
                   ),
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
-                    width: logged ? 56 : 84,
+                    width: logged ? 56 : 64,
                     height: double.infinity,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
@@ -1178,7 +1155,9 @@ class _DeedCard extends StatelessWidget {
                     ),
                     child: icon == null
                         ? Icon(
-                            Icons.radio_button_unchecked_rounded,
+                            context.appStyle.isDigital
+                                ? Icons.check_box_outline_blank_rounded
+                                : Icons.radio_button_unchecked_rounded,
                             size: 20,
                             color: theme.colorScheme.onSurfaceVariant,
                           )
@@ -1209,7 +1188,7 @@ class _CaughtUpCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: theme.cardTheme.color,
           borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
-          border: Border.all(color: theme.colorScheme.outlineVariant),
+          border: Border.all(color: theme.colorScheme.outline),
         ),
         child: Row(
           children: [

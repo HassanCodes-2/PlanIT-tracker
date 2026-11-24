@@ -70,7 +70,7 @@ adb install -r dist\planit-release.apk
 - **Onboarding** — first-launch welcome: your name, focus areas, starter deeds
 - **Today** — personal greeting, quote of the day, streak 🔥, progress bar, category sections with color stripes; tap to log "done" (with confetti when you clear the day), long-press for focus timer / done late / skipped (+ reason) / history / clear — all with undo
 - **Focus timer** — 5/15/25/45 minute sessions with a live progress ring; finish → mark the deed done
-- **Deed history** — per-deed 30-day heatmap, summary, skip reasons and recent logs
+- **Deed history** — per-deed 14-day heatmap, summary, skip reasons and recent logs
 - **Stats** — current & best streak, trend arrows vs previous period, status heatmap, period filters, per-deed breakdown
 - **Stats glow-up (v1.4)** — animated percentage rings, sliding Week/Month/Year/All bar, icon-only status cards, Phosphor icon set app-wide, trend arrows
 - **Digital theme (v1.5)** — futuristic monochrome HUD: black/gray/white, segmented progress, mono clock, selectable in Settings alongside Midnight blue

@@ -46,6 +46,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
   bool _loading = false;
   bool _saving = false;
   bool _dirty = false;
+  int _revision = 0;
   Timer? _autosaveTimer;
   bool _pinned = false;
   int _colorIndex = 0;
@@ -101,6 +102,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
 
   void _onChanged() {
     _dirty = true;
+    _revision++;
     _autosaveTimer?.cancel();
     _autosaveTimer = Timer(const Duration(milliseconds: 800), () {
       _save(silent: true);
@@ -108,11 +110,14 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
   }
 
   Future<void> _save({bool popAfter = false, bool silent = false}) async {
-    if (_saving) return;
+    while (_saving) {
+      await Future.delayed(const Duration(milliseconds: 30));
+    }
     if (_existing != null && !_dirty) {
       if (popAfter && mounted) context.pop();
       return;
     }
+    if (!mounted) return;
     if (_isEmpty) {
       if (_existing != null && silent) return;
       if (_existing != null && !silent) {
@@ -150,6 +155,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
     }
 
     setState(() => _saving = true);
+    final revision = _revision;
     final repository = ref.read(repositoryProvider);
     try {
       final changes = db.NotesCompanion(
@@ -167,7 +173,9 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
       } else {
         await repository.updateNote(_existing!, changes);
       }
-      _dirty = false;
+      if (_revision == revision) {
+        _dirty = false;
+      }
       if (popAfter && mounted) {
         context.pop();
       } else if (!silent && mounted) {
@@ -261,6 +269,21 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
           ),
           title: Text(_existing == null ? 'New note' : 'Note'),
           actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: Center(
+                child: Text(
+                  _saving
+                      ? 'Saving…'
+                      : (_dirty
+                          ? 'Unsaved'
+                          : (_existing != null ? 'Saved' : '')),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ),
             IconButton(
               tooltip: _pinned ? 'Unpin' : 'Pin to top',
               onPressed: () {

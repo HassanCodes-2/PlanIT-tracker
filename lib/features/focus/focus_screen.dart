@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/notifications/notification_service.dart';
@@ -310,10 +311,19 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
                   ),
                 ],
               ),
+              const SizedBox(height: 4),
+              Text(
+                DateFormat('EEEE, d MMM')
+                    .format(dateOnly(widget.date ?? DateTime.now())),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
               const SizedBox(height: 28),
               Semantics(
-                liveRegion: true,
-                label: '$_timeLabel remaining, $_statusLabel',
+                label: 'Focus timer',
+                value: '$_timeLabel remaining',
+                child: ExcludeSemantics(
                 child: SizedBox(
                 width: 248,
                 height: 248,
@@ -343,6 +353,8 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
                             _timeLabel,
                             style: theme.textTheme.displaySmall?.copyWith(
                               fontWeight: FontWeight.w700,
+                              fontSize: 56,
+                              height: 1.05,
                               fontFamily: context.appStyle.isDigital
                                   ? 'RobotoMono'
                                   : null,
@@ -363,6 +375,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
                     ),
                   ],
                 ),
+              ),
               ),
               ),
               const SizedBox(height: 24),

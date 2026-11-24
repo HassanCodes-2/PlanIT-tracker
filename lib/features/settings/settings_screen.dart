@@ -105,7 +105,7 @@ class SettingsScreen extends ConsumerWidget {
             decoration: BoxDecoration(
               color: theme.cardTheme.color,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: theme.colorScheme.outlineVariant),
+              border: Border.all(color: theme.colorScheme.outline),
             ),
             child: SegmentedButton<ThemeMode>(
               segments: const [
@@ -245,7 +245,7 @@ class SettingsScreen extends ConsumerWidget {
             color: theme.cardTheme.color,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
-              side: BorderSide(color: theme.colorScheme.outlineVariant),
+              side: BorderSide(color: theme.colorScheme.outline),
             ),
             clipBehavior: Clip.antiAlias,
             child: ListTile(
@@ -271,7 +271,7 @@ class SettingsScreen extends ConsumerWidget {
             color: theme.cardTheme.color,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
-              side: BorderSide(color: theme.colorScheme.outlineVariant),
+              side: BorderSide(color: theme.colorScheme.outline),
             ),
             clipBehavior: Clip.antiAlias,
             child: ListTile(
@@ -293,7 +293,7 @@ class SettingsScreen extends ConsumerWidget {
             color: theme.cardTheme.color,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
-              side: BorderSide(color: theme.colorScheme.outlineVariant),
+              side: BorderSide(color: theme.colorScheme.outline),
             ),
             clipBehavior: Clip.antiAlias,
             child: ListTile(
@@ -323,7 +323,7 @@ class SettingsScreen extends ConsumerWidget {
           _InfoTile(
             icon: Icons.apps_rounded,
             title: 'PlanIT',
-            subtitle: 'Habit & deed tracker v1.5.0',
+            subtitle: 'Habit & deed tracker v1.6.0',
           ),
           const SizedBox(height: 10),
           _InfoTile(
@@ -451,7 +451,7 @@ class _InfoTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
+        border: Border.all(color: theme.colorScheme.outline),
       ),
       child: ListTile(
         leading: Icon(icon, color: theme.colorScheme.primary),

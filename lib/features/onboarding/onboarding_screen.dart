@@ -356,6 +356,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               height: 1.4,
             ),
           ),
+          const SizedBox(height: 10),
+          Text(
+            'A deed is any habit or task you want to repeat.',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
           const SizedBox(height: 36),
           TextField(
             controller: _nameController,

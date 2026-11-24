@@ -494,7 +494,7 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
               color: theme.cardTheme.color,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: theme.colorScheme.outlineVariant),
+                side: BorderSide(color: theme.colorScheme.outline),
               ),
               clipBehavior: Clip.antiAlias,
               child: ListTile(

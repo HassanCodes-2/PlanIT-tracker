@@ -275,10 +275,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                   physics: const NeverScrollableScrollPhysics(),
                   mainAxisSpacing: 10,
                   crossAxisSpacing: 10,
-                  childAspectRatio: 1.0,
+                  childAspectRatio: 1.25,
                   children: [
                     _RingStat(
-                      label: 'Done',
+                      label: 'On time',
                       percent: result.donePct,
                       color: doneColor,
                       icon: AppIcons.done,
@@ -619,7 +619,7 @@ class _StreakCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
+        border: Border.all(color: theme.colorScheme.outline),
       ),
       child: Row(
         children: [
@@ -679,12 +679,13 @@ class _RingStat extends StatelessWidget {
     return Semantics(
       label: label,
       value: '${percent.round()} percent, $count times',
+      excludeSemantics: true,
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: theme.cardTheme.color,
           borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
-          border: Border.all(color: theme.colorScheme.outlineVariant),
+          border: Border.all(color: theme.colorScheme.outline),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -695,13 +696,13 @@ class _RingStat extends StatelessWidget {
               curve: Curves.easeOutCubic,
               builder: (context, value, _) {
                 return SizedBox(
-                  width: 76,
-                  height: 76,
+                  width: 56,
+                  height: 56,
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
                       CustomPaint(
-                        size: const Size(76, 76),
+                        size: const Size(56, 56),
                         painter: _RingPainter(
                           progress: value,
                           color: color,
@@ -710,7 +711,7 @@ class _RingStat extends StatelessWidget {
                       ),
                       Text(
                         '${(value * 100).round()}%',
-                        style: theme.textTheme.titleMedium
+                        style: theme.textTheme.titleSmall
                             ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                     ],
@@ -718,7 +719,7 @@ class _RingStat extends StatelessWidget {
                 );
               },
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -732,6 +733,12 @@ class _RingStat extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: theme.textTheme.labelSmall
+                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -803,7 +810,7 @@ class _SlidingPeriodBar extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(23),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
+        border: Border.all(color: theme.colorScheme.outline),
       ),
       child: Stack(
         children: [
@@ -883,7 +890,7 @@ class _DeedStatsRow extends StatelessWidget {
         color: theme.cardTheme.color,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
-          side: BorderSide(color: theme.colorScheme.outlineVariant),
+          side: BorderSide(color: theme.colorScheme.outline),
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(

@@ -100,7 +100,7 @@ class DeedDetailScreen extends ConsumerWidget {
             builder: (context, logsSnapshot) {
               final logs = logsSnapshot.data ?? const <db.DeedLog>[];
               final today = dateOnly(DateTime.now());
-              final from = today.subtract(const Duration(days: 29));
+              final from = today.subtract(const Duration(days: 13));
               final stats = computeStats(
                 deeds: [deed],
                 logs: logs,
@@ -122,7 +122,7 @@ class DeedDetailScreen extends ConsumerWidget {
                     decoration: BoxDecoration(
                       color: theme.cardTheme.color,
                       borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
-                      border: Border.all(color: theme.colorScheme.outlineVariant),
+                      border: Border.all(color: theme.colorScheme.outline),
                     ),
                     child: Row(
                       children: [
@@ -173,7 +173,7 @@ class DeedDetailScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  _Label('LAST 30 DAYS'),
+                  _Label('LAST 14 DAYS'),
                   const SizedBox(height: 10),
                   Card(
                     child: Padding(
@@ -187,7 +187,7 @@ class DeedDetailScreen extends ConsumerWidget {
                   ),
                   if (stats != null) ...[
                     const SizedBox(height: 20),
-                    _Label('30-DAY SUMMARY'),
+                    _Label('14-DAY SUMMARY'),
                     const SizedBox(height: 10),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
