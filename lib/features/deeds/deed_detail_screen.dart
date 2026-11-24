@@ -3,7 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../core/notifications/notification_service.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/icons.dart';
 import '../../data/db/app_database.dart' as db;
@@ -22,23 +24,49 @@ class DeedDetailScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final digital = context.appStyle.isDigital;
     final repository = ref.read(repositoryProvider);
-    final deedFuture = ref.watch(deedByIdProvider(deedId).future);
+    final deedAsync = ref.watch(deedByIdProvider(deedId));
+    final cachedDeed = deedAsync.value;
+    final archived = cachedDeed?.archivedAt != null;
+    final deedFuture = deedAsync.hasValue
+        ? Future<db.Deed?>.value(cachedDeed)
+        : ref.watch(deedByIdProvider(deedId).future);
     final categoriesAsync = ref.watch(categoriesProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Deed'),
         actions: [
-          IconButton(
-            tooltip: 'Start focus session',
-            icon: const Icon(AppIcons.timer),
-            onPressed: () => context.push('/focus?id=$deedId'),
-          ),
-          IconButton(
-            tooltip: 'Edit deed',
-            icon: const Icon(Icons.edit_rounded),
-            onPressed: () => context.push('/create-deed?id=$deedId'),
-          ),
+          if (cachedDeed == null)
+            const SizedBox.shrink()
+          else if (archived)
+            IconButton(
+              tooltip: 'Restore deed',
+              icon: const Icon(AppIcons.restore),
+              onPressed: () async {
+                await repository.unarchiveDeed(deedId);
+                await ref
+                    .read(notificationServiceProvider)
+                    .syncAll(await repository.allDeeds());
+                ref.invalidate(deedByIdProvider(deedId));
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Deed restored to Today')),
+                  );
+                }
+              },
+            )
+          else ...[
+            IconButton(
+              tooltip: 'Start focus session',
+              icon: const Icon(AppIcons.focus),
+              onPressed: () => context.push('/focus?id=$deedId'),
+            ),
+            IconButton(
+              tooltip: 'Edit deed',
+              icon: const Icon(AppIcons.edit),
+              onPressed: () => context.push('/create-deed?id=$deedId'),
+            ),
+          ],
         ],
       ),
       body: FutureBuilder<db.Deed?>(
@@ -121,6 +149,63 @@ class DeedDetailScreen extends ConsumerWidget {
               return ListView(
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
                 children: [
+                  if (deed.archivedAt != null) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHigh,
+                        borderRadius:
+                            BorderRadius.circular(context.appStyle.cardRadius),
+                        border: Border.all(color: theme.colorScheme.outline),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            AppIcons.history,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Archived deed',
+                                  style: theme.textTheme.titleSmall
+                                      ?.copyWith(fontWeight: FontWeight.w700),
+                                ),
+                                Text(
+                                  'Archived ${DateFormat('d MMM yyyy').format(deed.archivedAt!)}. Restore it to log again.',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () async {
+                              await repository.unarchiveDeed(deedId);
+                              await ref
+                                  .read(notificationServiceProvider)
+                                  .syncAll(await repository.allDeeds());
+                              ref.invalidate(deedByIdProvider(deedId));
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Deed restored to Today'),
+                                  ),
+                                );
+                              }
+                            },
+                            child: const Text('Restore'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                   Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
@@ -181,7 +266,7 @@ class DeedDetailScreen extends ConsumerWidget {
                   const SizedBox(height: 10),
                   Card(
                     child: Padding(
-                      padding: const EdgeInsets.all(14),
+                      padding: const EdgeInsets.all(AppSpacing.card),
                       child: _SingleDeedHeatmap(
                         deed: deed,
                         logs: logs,

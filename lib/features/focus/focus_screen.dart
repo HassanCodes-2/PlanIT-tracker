@@ -118,6 +118,41 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
     });
   }
 
+  Future<void> _logDoneAndLeave(db.Deed deed) async {
+    final day = dateOnly(widget.date ?? DateTime.now());
+    final repository = ref.read(repositoryProvider);
+    db.DeedLog? previous;
+    for (final log in await repository.logsBetween(day, day)) {
+      if (log.deedId == deed.id) previous = log;
+    }
+    await repository.setLog(deed.id, day, LogStatus.done);
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text('"${deed.name}" marked done'),
+        duration: const Duration(seconds: 5),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: () async {
+            if (previous == null) {
+              await repository.clearLog(deed.id, day);
+            } else {
+              await repository.setLog(
+                deed.id,
+                day,
+                LogStatus.fromDb(previous.status),
+                reason: previous.reason,
+              );
+            }
+          },
+        ),
+      ),
+    );
+    if (mounted) context.pop();
+  }
+
   Future<void> _onComplete() async {
     HapticFeedback.heavyImpact();
     if (!mounted) return;
@@ -137,12 +172,8 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
           ),
           FilledButton(
             onPressed: () async {
-              await ref
-                  .read(repositoryProvider)
-                  .setLog(deed.id, dateOnly(widget.date ?? DateTime.now()),
-                      LogStatus.done);
               if (dialogContext.mounted) Navigator.pop(dialogContext);
-              if (mounted && context.mounted) context.pop();
+              await _logDoneAndLeave(deed);
             },
             child: const Text('Mark done'),
           ),
@@ -204,11 +235,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
     _timer?.cancel();
     unawaited(ref.read(notificationServiceProvider).cancelFocusNotification());
     HapticFeedback.mediumImpact();
-    await ref
-        .read(repositoryProvider)
-        .setLog(deed.id, dateOnly(widget.date ?? DateTime.now()),
-                      LogStatus.done);
-    if (mounted) context.pop();
+    await _logDoneAndLeave(deed);
   }
 
   void _choose(int minutes) {
@@ -294,7 +321,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
         appBar: AppBar(
           leading: IconButton(
             tooltip: 'Close focus session',
-            icon: const Icon(Icons.close_rounded),
+            icon: const Icon(AppIcons.close),
             onPressed: _confirmExit,
           ),
           title: const Text('Focus'),
@@ -401,8 +428,8 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
                           return ChoiceChip(
                             label: Text('$minutes min'),
                             selected: selected,
-                            showCheckmark: false,
                             selectedColor: theme.colorScheme.primary,
+                            checkmarkColor: theme.colorScheme.onPrimary,
                             labelStyle: TextStyle(
                               color: selected
                                   ? theme.colorScheme.onPrimary
@@ -421,7 +448,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
                   style: TextButton.styleFrom(
                     foregroundColor: theme.colorScheme.secondary,
                   ),
-                  icon: const Icon(Icons.add_rounded, size: 18),
+                  icon: const Icon(AppIcons.add, size: 18),
                   label: const Text('Add 5 minutes'),
                 ),
               const SizedBox(height: AppSpacing.xxl),

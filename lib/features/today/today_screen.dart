@@ -33,8 +33,8 @@ class TodayScreen extends ConsumerWidget {
 
     final categories = categoriesAsync.value;
     final deeds = deedsAsync.value;
-    final logs = logsAsync.value ?? const <int, db.DeedLog>{};
-    final allLogs = allLogsAsync.value ?? const <db.DeedLog>[];
+    final logs = logsAsync.value;
+    final allLogs = allLogsAsync.value;
 
     if (categoriesAsync.hasError ||
         deedsAsync.hasError ||
@@ -52,7 +52,10 @@ class TodayScreen extends ConsumerWidget {
       );
     }
 
-    if (categories == null || deeds == null) {
+    if (categories == null ||
+        deeds == null ||
+        logs == null ||
+        allLogs == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
@@ -100,7 +103,7 @@ class TodayScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/create-deed'),
         tooltip: 'Create new deed',
-        child: const Icon(Icons.add_rounded),
+        child: const Icon(AppIcons.add),
       ),
       body: SafeArea(
         child: Stack(
@@ -136,6 +139,7 @@ class TodayScreen extends ConsumerWidget {
               streak: streak,
               done: doneCount,
               total: dailyScheduled.length,
+              isFuture: isFuture,
               showToday: !(day.year == today.year &&
                   day.month == today.month &&
                   day.day == today.day),
@@ -364,7 +368,7 @@ class TodayScreen extends ConsumerWidget {
                 ),
               ),
               _OutcomeTile(
-                icon: AppIcons.timer,
+                icon: AppIcons.focus,
                 color: theme.colorScheme.primary,
                 label: 'Start focus session',
                 selected: false,
@@ -541,6 +545,7 @@ class _DateHeader extends StatelessWidget {
     required this.streak,
     required this.done,
     required this.total,
+    required this.isFuture,
     required this.showToday,
     required this.onToday,
   });
@@ -551,6 +556,7 @@ class _DateHeader extends StatelessWidget {
   final int streak;
   final int done;
   final int total;
+  final bool isFuture;
   final bool showToday;
   final VoidCallback onToday;
 
@@ -606,9 +612,12 @@ class _DateHeader extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          _SegmentBar(done: done, total: total),
-          const SizedBox(height: 8),
+          if (!isFuture && total > 0) ...[
+            const SizedBox(height: 12),
+            _SegmentBar(done: done, total: total),
+            const SizedBox(height: 8),
+          ] else
+            const SizedBox(height: 8),
           Wrap(
               alignment: WrapAlignment.spaceBetween,
               crossAxisAlignment: WrapCrossAlignment.center,
@@ -645,18 +654,19 @@ class _DateHeader extends StatelessWidget {
                     Icon(
                       AppIcons.done,
                       size: 16,
-                      color: context.appStyle.isDigital
-                          ? theme.colorScheme.onSurfaceVariant
-                          : AppTheme.ensureVisible(
-                              const Color(0xFF22C55E),
-                              theme.colorScheme.surface,
-                              theme.brightness,
-                              ratio: 3.0,
-                            ),
+                      color: AppColors.outcome(
+                        LogStatus.done,
+                        theme,
+                        digital: context.appStyle.isDigital,
+                      ),
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      total == 0 ? 'No daily deeds' : '$done of $total done',
+                      isFuture
+                          ? (total == 0 ? 'No daily deeds' : '$total planned')
+                          : (total == 0
+                              ? 'No daily deeds'
+                              : '$done of $total done'),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -705,7 +715,7 @@ class _DayScrollerState extends State<_DayScroller> {
   void _centerSelected({required bool animate}) {
     final index =
         widget.selected.difference(dateOnly(widget.today)).inDays + _window;
-    final scale = MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.6);
+    final scale = MediaQuery.textScalerOf(context).scale(1);
     final tileWidth = 48.0 * scale;
     final itemExtent = tileWidth + 6;
     final leadingItems =
@@ -754,9 +764,9 @@ class _DayScrollerState extends State<_DayScroller> {
       ),
     );
     final scale = MediaQuery.textScalerOf(context).scale(1.0);
-    final tileWidth = 48.0 * scale.clamp(1.0, 1.6);
+    final tileWidth = 48.0 * scale;
     return SizedBox(
-      height: 68 + 80 * (scale - 1).clamp(0, 1.5),
+      height: 68 + 80 * (scale - 1),
       child: ListView.separated(
         controller: _controller,
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
@@ -904,6 +914,16 @@ class _CategorySection extends StatelessWidget {
     final frequency = frequencyOf(deed);
     if (!frequency.isCountBased) return null;
     final target = deed.timesPerPeriod ?? 1;
+    final done = _goalDoneFor(deed) ?? 0;
+    final period =
+        frequency == FrequencyType.timesPerWeek ? 'this week' : 'this month';
+    final capped = done > target ? target : done;
+    return '$capped/$target $period';
+  }
+
+  int? _goalDoneFor(db.Deed deed) {
+    final frequency = frequencyOf(deed);
+    if (!frequency.isCountBased) return null;
     final DateTime start;
     final DateTime end;
     if (frequency == FrequencyType.timesPerWeek) {
@@ -914,7 +934,7 @@ class _CategorySection extends StatelessWidget {
       end = DateTime(selectedDay.year, selectedDay.month + 1, 1)
           .subtract(const Duration(days: 1));
     }
-    final done = allLogs
+    return allLogs
         .where((log) =>
             log.deedId == deed.id &&
             (LogStatus.fromDb(log.status) == LogStatus.done ||
@@ -922,10 +942,35 @@ class _CategorySection extends StatelessWidget {
             !dateOnly(log.day).isBefore(start) &&
             !dateOnly(log.day).isAfter(end))
         .length;
-    final period =
-        frequency == FrequencyType.timesPerWeek ? 'this week' : 'this month';
-    final capped = done > target ? target : done;
-    return '$capped/$target $period';
+  }
+
+  bool _goalMet(db.Deed deed) {
+    final frequency = frequencyOf(deed);
+    if (!frequency.isCountBased) return false;
+    final target = deed.timesPerPeriod ?? 1;
+    return (_goalDoneFor(deed) ?? 0) >= target;
+  }
+
+  void _goalAlreadyMet(
+    BuildContext context,
+    db.Deed deed,
+    String? progress,
+  ) {
+    HapticFeedback.selectionClick();
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            '${deed.name}: goal met${progress == null ? '' : ' · $progress'}.',
+          ),
+          duration: const Duration(seconds: 5),
+          action: SnackBarAction(
+            label: 'History',
+            onPressed: () => context.push('/deed?id=${deed.id}'),
+          ),
+        ),
+      );
   }
 
   @override
@@ -948,18 +993,24 @@ class _CategorySection extends StatelessWidget {
               ),
             ),
           ),
-          ...deeds.map(
-            (deed) => _DeedCard(
+          ...deeds.map((deed) {
+            final goalMet = _goalMet(deed);
+            final progress = _progressFor(deed);
+            final hasTodayLog = logs[deed.id] != null;
+            return _DeedCard(
               deed: deed,
               category: category,
               log: logs[deed.id],
-              progressText: _progressFor(deed),
+              progressText: progress,
+              goalMet: goalMet,
               canLog: canLog,
-              onTap: () => onTap(deed),
+              onTap: goalMet && !hasTodayLog
+                  ? () => _goalAlreadyMet(context, deed, progress)
+                  : () => onTap(deed),
               onLongPress: () => onLongPress(deed),
               onFocus: () => onFocus(deed),
-            ),
-          ),
+            );
+          }),
         ],
       ),
     );
@@ -972,6 +1023,7 @@ class _DeedCard extends StatelessWidget {
     required this.category,
     required this.log,
     required this.progressText,
+    required this.goalMet,
     required this.canLog,
     required this.onTap,
     required this.onLongPress,
@@ -982,6 +1034,7 @@ class _DeedCard extends StatelessWidget {
   final db.Category? category;
   final db.DeedLog? log;
   final String? progressText;
+  final bool goalMet;
   final bool canLog;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
@@ -1014,15 +1067,20 @@ class _DeedCard extends StatelessWidget {
     final logged = status != null;
     final succeeded =
         status == LogStatus.done || status == LogStatus.late;
+    final completedGoal = goalMet && status == null;
+    final goalColor = AppColors.outcome(LogStatus.done, theme, digital: digital);
 
-    final statusColor = status == null
-        ? accent
-        : AppColors.outcome(status, theme, digital: digital);
-    final tint = status == null
+    final statusColor = status != null
+        ? AppColors.outcome(status, theme, digital: digital)
+        : (goalMet ? goalColor : accent);
+    final tint = status == null && !goalMet
         ? accent.withValues(alpha: digital ? 0.05 : 0.06)
         : statusColor.withValues(alpha: digital ? 0.12 : 0.18);
     final (Color iconTint, IconData? icon) = switch (status) {
-      null => (accent, null),
+      null => (
+          statusColor,
+          goalMet ? statusIcon(LogStatus.done, digital: digital) : null
+        ),
       LogStatus.done => (statusColor, statusIcon(status, digital: digital)),
       LogStatus.late => (statusColor, statusIcon(status, digital: digital)),
       LogStatus.skipped => (statusColor, statusIcon(status, digital: digital)),
@@ -1031,8 +1089,12 @@ class _DeedCard extends StatelessWidget {
     final hasReason = log?.reason != null && log!.reason!.isNotEmpty;
     final reminder = deed.reminderTime;
     final reminderLabel = _reminderLabel(context, reminder);
-    final subtitle = hasReason ? log!.reason! : (progressText ?? reminderLabel);
-    final statusLabel = status?.label;
+    final subtitle = hasReason
+        ? log!.reason!
+        : (completedGoal
+            ? 'Goal met${progressText == null ? '' : ' · $progressText'}'
+            : (progressText ?? reminderLabel));
+    final statusLabel = status?.label ?? (completedGoal ? 'goal met' : null);
     final semanticsLabel = '${deed.name}'
         '${statusLabel != null ? ', $statusLabel' : (!canLog ? ', planned' : ', not logged')}'
         '${subtitle != null && subtitle.isNotEmpty ? ', $subtitle' : ''}';
@@ -1130,7 +1192,7 @@ class _DeedCard extends StatelessWidget {
                       tooltip: 'Start focus session',
                       iconSize: 20,
                       icon: Icon(
-                        AppIcons.timer,
+                        AppIcons.focus,
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
@@ -1157,13 +1219,13 @@ class _DeedCard extends StatelessWidget {
                                     color: theme.colorScheme.onSurfaceVariant,
                                   ),
                                   const SizedBox(height: 2),
-                                  MediaQuery.withClampedTextScaling(
-                                    maxScaleFactor: 1.2,
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
                                     child: Text(
                                       'PLAN',
                                       style: theme.textTheme.labelSmall
                                           ?.copyWith(
-                                        fontSize: 8,
+                                        fontSize: 11,
                                         letterSpacing: 0.8,
                                         fontWeight: FontWeight.w700,
                                         color: theme
@@ -1216,9 +1278,11 @@ class _CaughtUpCard extends StatelessWidget {
           children: [
             Icon(
               Icons.celebration_rounded,
-              color: context.appStyle.isDigital
-                  ? theme.colorScheme.primary
-                  : const Color(0xFF22C55E),
+              color: AppColors.outcome(
+                LogStatus.done,
+                theme,
+                digital: context.appStyle.isDigital,
+              ),
               size: 28,
             ),
             const SizedBox(width: 14),
@@ -1282,7 +1346,7 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: 20),
           FilledButton.tonalIcon(
             onPressed: onCreate,
-            icon: const Icon(Icons.add_rounded),
+            icon: const Icon(AppIcons.add),
             label: const Text('Create a deed'),
           ),
         ],

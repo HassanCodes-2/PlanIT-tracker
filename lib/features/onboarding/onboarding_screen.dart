@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/prefs/prefs_providers.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/icons.dart';
 import '../../data/db/app_database.dart' as db;
@@ -247,7 +248,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         duration: const Duration(milliseconds: 250),
                         curve: Curves.easeOutCubic,
                       ),
-                      icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                      icon: const Icon(AppIcons.back, size: 18),
                       label: const Text('Back'),
                     )
                   else
@@ -296,7 +297,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                             curve: Curves.easeOutCubic,
                           ),
                           child: SizedBox(
-                            width: 40,
+                            width: 48,
                             height: 48,
                             child: Center(
                               child: AnimatedContainer(
@@ -323,6 +324,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     onPressed: _saving ? null : _next,
                     style: FilledButton.styleFrom(
                       minimumSize: const Size.fromHeight(52),
+                      disabledBackgroundColor:
+                          theme.colorScheme.primary.withValues(alpha: 0.65),
+                      disabledForegroundColor: theme.colorScheme.onPrimary,
                     ),
                     child: _saving
                         ? SizedBox(
@@ -330,7 +334,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                             height: 22,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: theme.colorScheme.onSurface,
+                              color: theme.colorScheme.onPrimary,
                               semanticsLabel: 'Saving starter deeds',
                             ),
                           )
@@ -339,8 +343,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                             children: [
                               Icon(
                                 _page == 2
-                                    ? Icons.rocket_launch_rounded
-                                    : Icons.arrow_forward_rounded,
+                                    ? AppIcons.rocket
+                                    : AppIcons.forward,
                                 size: 20,
                               ),
                               const SizedBox(width: 8),
@@ -362,7 +366,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       builder: (context, constraints) {
         return SingleChildScrollView(
           padding:
-              const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+              const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.screen, vertical: 24),
           child: ConstrainedBox(
             constraints:
                 BoxConstraints(minHeight: constraints.maxHeight - 48),
@@ -379,7 +384,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                Icons.check_rounded,
+                AppIcons.check,
                 color: theme.colorScheme.onPrimary,
                 size: 56,
               ),
@@ -427,7 +432,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   Widget _areasPage(ThemeData theme) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.screen, vertical: 40),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -485,7 +491,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   Widget _deedsPage(ThemeData theme, List<_Suggestion> visible) {
     return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.screen, vertical: 32),
       children: [
         Text(
           'Pick starter deeds',
@@ -571,14 +578,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           ),
                         ),
                         child: selected
-                            ? Icon(Icons.check_rounded,
+                            ? Icon(AppIcons.check,
                                 size: 16, color: theme.colorScheme.onPrimary)
                             : null,
                       ),
                       const SizedBox(width: 12),
                       Icon(
                         iconForName(suggestion.icon,
-                            fallback: Icons.check_rounded),
+                            fallback: AppIcons.check),
                         color: context.appStyle.isDigital
                       ? theme.colorScheme.onSurfaceVariant
                       : AppTheme.ensureVisible(

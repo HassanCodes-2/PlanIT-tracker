@@ -7,6 +7,7 @@ import '../../core/prefs/prefs_providers.dart';
 import '../../core/notifications/notification_service.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/icons.dart';
 import '../../data/providers.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -116,34 +117,39 @@ class SettingsScreen extends ConsumerWidget {
                 final large =
                     MediaQuery.textScalerOf(context).scale(1) > 1.4 ||
                         constraints.maxWidth < 300;
-                IconData iconFor(ThemeMode mode) => switch (mode) {
-                      ThemeMode.system => Icons.brightness_auto_rounded,
-                      ThemeMode.light => Icons.light_mode_rounded,
-                      ThemeMode.dark => Icons.dark_mode_rounded,
-                    };
                 String labelFor(ThemeMode mode) => switch (mode) {
                       ThemeMode.system => 'System',
                       ThemeMode.light => 'Light',
                       ThemeMode.dark => 'Dark',
                     };
+                if (large) {
+                  return Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: ThemeMode.values
+                        .map(
+                          (item) => ChoiceChip(
+                            label: Text(labelFor(item)),
+                            selected: item == mode,
+                            onSelected: (_) => ref
+                                .read(themeModeProvider.notifier)
+                                .setMode(item),
+                          ),
+                        )
+                        .toList(),
+                  );
+                }
                 return SegmentedButton<ThemeMode>(
                   segments: ThemeMode.values
                       .map(
-                        (mode) => ButtonSegment(
-                          value: mode,
-                          icon: large
-                              ? Icon(
-                                  iconFor(mode),
-                                  size: 22,
-                                  semanticLabel: labelFor(mode),
-                                )
-                              : null,
-                          label: large ? null : Text(labelFor(mode)),
+                        (item) => ButtonSegment(
+                          value: item,
+                          label: Text(labelFor(item)),
                         ),
                       )
                       .toList(),
                   selected: {mode},
-                  showSelectedIcon: false,
+                  showSelectedIcon: true,
                   onSelectionChanged: (selection) => ref
                       .read(themeModeProvider.notifier)
                       .setMode(selection.first),
@@ -179,7 +185,9 @@ class SettingsScreen extends ConsumerWidget {
                 subtitle: 'Monochrome HUD',
                 selected:
                     ref.watch(themeStyleProvider) == AppThemeStyle.digital,
-                previewColor: Colors.white,
+                previewColor: theme.brightness == Brightness.dark
+                    ? Colors.white
+                    : Colors.black,
                 onTap: () => ref
                     .read(themeStyleProvider.notifier)
                     .setStyle(AppThemeStyle.digital),
@@ -207,59 +215,64 @@ class SettingsScreen extends ConsumerWidget {
           _Label('ACCENT PRESETS'),
           const SizedBox(height: 10),
           if (!digital) ...[
-            GridView.count(
-              crossAxisCount: 4,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 4,
-              crossAxisSpacing: 4,
-              childAspectRatio: 1.5,
-              children: List.generate(_accentPresets.length, (index) {
-                final color = _accentPresets[index];
-                final selected = accent.toARGB32() == color.toARGB32();
-                return Semantics(
-                  button: true,
-                  selected: selected,
-                  label: 'Accent color ${_accentNames[index]}',
-                  child: InkResponse(
-                    radius: 24,
-                    onTap: () => ref
-                        .read(accentColorProvider.notifier)
-                        .setColor(color),
-                    child: Center(
-                      child: Container(
-                        width: 34,
-                        height: 34,
-                        decoration: BoxDecoration(
-                          color: color,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: selected
-                                ? theme.colorScheme.onSurface
-                                : theme.colorScheme.outline,
-                            width: selected ? 2.5 : 1,
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final count = constraints.maxWidth >= 520 ? 8 : 4;
+                return GridView.count(
+                  crossAxisCount: count,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  mainAxisSpacing: 4,
+                  crossAxisSpacing: 4,
+                  childAspectRatio: 1.5,
+                  children: List.generate(_accentPresets.length, (index) {
+                    final color = _accentPresets[index];
+                    final selected = accent.toARGB32() == color.toARGB32();
+                    return Semantics(
+                      button: true,
+                      selected: selected,
+                      label: 'Accent color ${_accentNames[index]}',
+                      child: InkResponse(
+                        radius: 24,
+                        onTap: () => ref
+                            .read(accentColorProvider.notifier)
+                            .setColor(color),
+                        child: Center(
+                          child: Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              color: color,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: selected
+                                    ? theme.colorScheme.onSurface
+                                    : theme.colorScheme.outline,
+                                width: selected ? 2.5 : 1,
+                              ),
+                              boxShadow: selected
+                                  ? [
+                                      BoxShadow(
+                                        color: color.withValues(alpha: 0.45),
+                                        blurRadius: 10,
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            child: selected
+                                ? Icon(
+                                    AppIcons.check,
+                                    size: 16,
+                                    color: AppTheme.onColor(color),
+                                  )
+                                : null,
                           ),
-                          boxShadow: selected
-                              ? [
-                                  BoxShadow(
-                                    color: color.withValues(alpha: 0.45),
-                                    blurRadius: 10,
-                                  ),
-                                ]
-                              : null,
                         ),
-                        child: selected
-                            ? Icon(
-                                Icons.check_rounded,
-                                size: 16,
-                                color: AppTheme.onColor(color),
-                              )
-                            : null,
                       ),
-                    ),
-                  ),
+                    );
+                  }),
                 );
-              }),
+              },
             ),
             const SizedBox(height: 8),
             Text(
@@ -285,7 +298,7 @@ class SettingsScreen extends ConsumerWidget {
             clipBehavior: Clip.antiAlias,
             child: ListTile(
               leading: Icon(
-                Icons.person_outline_rounded,
+                AppIcons.person,
                 color: theme.colorScheme.primary,
               ),
               title: const Text('Your name'),
@@ -311,7 +324,7 @@ class SettingsScreen extends ConsumerWidget {
             clipBehavior: Clip.antiAlias,
             child: ListTile(
               leading: Icon(
-                Icons.share_outlined,
+                AppIcons.share,
                 color: theme.colorScheme.primary,
               ),
               title: const Text('Export my data'),
@@ -333,7 +346,7 @@ class SettingsScreen extends ConsumerWidget {
             clipBehavior: Clip.antiAlias,
             child: ListTile(
               leading: Icon(
-                Icons.restore_rounded,
+                AppIcons.restore,
                 color: theme.colorScheme.primary,
               ),
               title: const Text('Archived deeds'),
@@ -355,7 +368,7 @@ class SettingsScreen extends ConsumerWidget {
             clipBehavior: Clip.antiAlias,
             child: ListTile(
               leading: Icon(
-                Icons.restart_alt_rounded,
+                AppIcons.restore,
                 color: theme.colorScheme.primary,
               ),
               title: const Text('Run setup again'),
@@ -393,7 +406,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 10),
           _InfoTile(
-            icon: Icons.storage_rounded,
+            icon: AppIcons.storage,
             title: 'Storage',
             subtitle:
                 'Stored only on this phone. Export shares a copy you can keep.',
@@ -410,7 +423,7 @@ class SettingsScreen extends ConsumerWidget {
             clipBehavior: Clip.antiAlias,
             child: ListTile(
               leading: Icon(
-                Icons.notifications_none_rounded,
+                AppIcons.bell,
                 color: theme.colorScheme.primary,
               ),
               title: const Text('Notification permission'),
@@ -442,7 +455,7 @@ class SettingsScreen extends ConsumerWidget {
           _Label('ABOUT'),
           const SizedBox(height: 10),
           _InfoTile(
-            icon: Icons.apps_rounded,
+            icon: AppIcons.apps,
             title: 'PlanIT',
             subtitle: 'Habit & deed tracker v1.6.0',
           ),
@@ -488,7 +501,7 @@ class _StyleCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(AppSpacing.card),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -533,7 +546,7 @@ class _StyleCard extends StatelessWidget {
                 children: [
                   Icon(
                     selected
-                        ? Icons.check_circle_rounded
+                        ? AppIcons.done
                         : Icons.circle_outlined,
                     size: 14,
                     color: selected

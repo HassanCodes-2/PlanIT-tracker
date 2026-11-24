@@ -14,7 +14,7 @@ abstract final class AppSpacing {
   static const double screen = 20;
 
   /// Standard inner card padding.
-  static const double card = 14;
+  static const double card = 12;
 
   /// Gap between major sections.
   static const double section = 24;

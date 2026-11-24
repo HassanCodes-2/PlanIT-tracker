@@ -335,7 +335,7 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
       appBar: AppBar(
         leading: IconButton(
           tooltip: 'Back',
-          icon: const Icon(Icons.arrow_back_rounded),
+          icon: const Icon(AppIcons.back),
           onPressed: _leave,
         ),
         title: Text(_existing == null ? 'Create new deed' : 'Edit deed'),
@@ -416,7 +416,7 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
                                     top: 4,
                                     right: 4,
                                     child: Icon(
-                                      Icons.check_circle_rounded,
+                                      AppIcons.done,
                                       size: 12,
                                       color: theme.colorScheme.primary,
                                     ),
@@ -464,7 +464,7 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
                   );
                 }),
                 ActionChip(
-                  avatar: const Icon(Icons.add_rounded, size: 18),
+                  avatar: const Icon(AppIcons.add, size: 18),
                   label: const Text('New'),
                   onPressed: _addCategory,
                 ),
@@ -560,7 +560,7 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
               clipBehavior: Clip.antiAlias,
               child: ListTile(
                 leading: Icon(
-                  Icons.notifications_none_rounded,
+                  AppIcons.bell,
                   color: theme.colorScheme.primary,
                 ),
                 title: Text(
@@ -572,7 +572,7 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
                     ? const Icon(Icons.chevron_right_rounded)
                     : IconButton(
                         tooltip: 'Clear reminder',
-                        icon: const Icon(Icons.close_rounded),
+                        icon: const Icon(AppIcons.close),
                         onPressed: () {
                         setState(() => _reminder = null);
                         _dirty = true;
@@ -631,6 +631,9 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
             onPressed: _saving ? null : _save,
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(52),
+              disabledBackgroundColor:
+                  theme.colorScheme.primary.withValues(alpha: 0.65),
+              disabledForegroundColor: theme.colorScheme.onPrimary,
             ),
             child: _saving
                 ? SizedBox(
@@ -638,7 +641,7 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: theme.colorScheme.onSurface,
+                      color: theme.colorScheme.onPrimary,
                       semanticsLabel: 'Saving deed',
                     ),
                   )

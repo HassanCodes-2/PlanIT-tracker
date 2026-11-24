@@ -66,7 +66,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
     } else if (digital) {
       color = up
           ? theme.colorScheme.secondary
-          : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7);
+          : theme.colorScheme.onSurfaceVariant;
     } else {
       final isLight = theme.brightness == Brightness.light;
       color = up
@@ -184,7 +184,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                     const SizedBox(height: 20),
                     FilledButton.tonalIcon(
                       onPressed: () => context.push('/create-deed'),
-                      icon: const Icon(Icons.add_rounded),
+                      icon: const Icon(AppIcons.add),
                       label: const Text('Create a deed'),
                     ),
                   ],
@@ -202,7 +202,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                 const SizedBox(height: 10),
                 Card(
                   child: Padding(
-                    padding: const EdgeInsets.all(14),
+                    padding: const EdgeInsets.all(AppSpacing.card),
                     child: _Heatmap(
                       deeds: deeds,
                       logs: logs,
@@ -506,19 +506,24 @@ class _Heatmap extends StatelessWidget {
                 .withValues(alpha: digital ? 0.08 : 0.08);
           }
 
-          return Container(
-            width: size,
-            height: size,
-            margin: const EdgeInsets.only(right: 4),
-            decoration: BoxDecoration(
-              color: fill,
-              borderRadius: BorderRadius.circular(4),
-              border:
-                  borderColor != null ? Border.all(color: borderColor) : null,
+          final state = status?.label ?? (missed ? 'missed' : 'no entry');
+          return Semantics(
+            label: '${DateFormat('EEE d MMM').format(day)}: $state',
+            child: Container(
+              width: size,
+              height: size,
+              margin: const EdgeInsets.only(right: 4),
+              decoration: BoxDecoration(
+                color: fill,
+                borderRadius: BorderRadius.circular(4),
+                border: borderColor != null
+                    ? Border.all(color: borderColor)
+                    : null,
+              ),
+              child: glyph == null
+                  ? null
+                  : Icon(glyph, size: size * 0.52, color: glyphColor),
             ),
-            child: glyph == null
-                ? null
-                : Icon(glyph, size: size * 0.52, color: glyphColor),
           );
         }
 
@@ -565,26 +570,27 @@ class _Heatmap extends StatelessWidget {
               const SizedBox(height: 10),
               for (final deed in deeds) ...[
                 Semantics(
+                  container: true,
                   label: rowLabel(deed),
-                  child: ExcludeSemantics(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ExcludeSemantics(
+                        child: Text(
                           deed.name,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodyMedium
                               ?.copyWith(fontWeight: FontWeight.w600),
                         ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: dateList
-                              .map((day) => cell(deed, day, stripCell))
-                              .toList(),
-                        ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: dateList
+                            .map((day) => cell(deed, day, stripCell))
+                            .toList(),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 14),
@@ -661,20 +667,19 @@ class _Heatmap extends StatelessWidget {
                       ),
                       for (final deed in deeds)
                         Semantics(
+                          container: true,
                           label: rowLabel(deed),
-                          child: ExcludeSemantics(
-                            child: Padding(
-                              padding: const EdgeInsets.only(bottom: 5),
-                              child: SizedBox(
-                                height: rowHeight,
-                                child: Row(
-                                  children: dateList
-                                      .map((day) => Align(
-                                            alignment: Alignment.centerLeft,
-                                            child: cell(deed, day, cellSize),
-                                          ))
-                                      .toList(),
-                                ),
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 5),
+                            child: SizedBox(
+                              height: rowHeight,
+                              child: Row(
+                                children: dateList
+                                    .map((day) => Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: cell(deed, day, cellSize),
+                                        ))
+                                    .toList(),
                               ),
                             ),
                           ),
@@ -717,7 +722,7 @@ class _StreakCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(AppSpacing.card),
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
@@ -915,9 +920,25 @@ class _SlidingPeriodBar extends StatelessWidget {
     final periods = StatsPeriodType.values;
     final index = periods.indexOf(selected);
     final rawScale = MediaQuery.textScalerOf(context).scale(1);
-    final textScale = rawScale.clamp(1.0, 1.3);
+    final textScale = rawScale.clamp(1.0, 1.4);
     final compact = rawScale > 1.4;
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
+
+    if (compact) {
+      return Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: periods
+            .map(
+              (period) => ChoiceChip(
+                label: Text(period.label),
+                selected: period == selected,
+                onSelected: (_) => onSelect(period),
+              ),
+            )
+            .toList(),
+      );
+    }
 
     return Container(
       height: 48 * textScale,
@@ -972,8 +993,9 @@ class _SlidingPeriodBar extends StatelessWidget {
                               : const Duration(milliseconds: 200),
                           style: (theme.textTheme.labelMedium ?? const TextStyle())
                               .copyWith(
-                            fontSize: compact ? 10 : null,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: period == selected
+                                ? FontWeight.w800
+                                : FontWeight.w600,
                             color: period == selected
                                 ? theme.colorScheme.onPrimary
                                 : theme.colorScheme.onSurfaceVariant,

@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/icons.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/providers.dart';
 
@@ -264,7 +265,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
         appBar: AppBar(
           leading: IconButton(
             tooltip: 'Back',
-            icon: const Icon(Icons.arrow_back_rounded),
+            icon: const Icon(AppIcons.back),
             onPressed: _exit,
           ),
           title: Text(_existing == null ? 'New note' : 'Note'),
@@ -292,7 +293,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
                 _onChanged();
               },
               icon: Icon(
-                _pinned ? Icons.push_pin_rounded : Icons.push_pin_outlined,
+                _pinned ? AppIcons.pin : AppIcons.pin,
                 color: _pinned ? theme.colorScheme.primary : null,
               ),
             ),
@@ -300,7 +301,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
               IconButton(
                 tooltip: 'Delete note',
                 onPressed: _delete,
-                icon: Icon(Icons.delete_outline_rounded,
+                icon: Icon(AppIcons.delete,
                     color: theme.colorScheme.error),
               ),
           ],
@@ -343,7 +344,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
                               ),
                             ),
                             child: selected
-                                ? Icon(Icons.check_rounded,
+                                ? Icon(AppIcons.check,
                                     size: 16,
                                     color: AppTheme.onColor(_palette[index]))
                                 : null,

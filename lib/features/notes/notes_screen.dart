@@ -62,7 +62,7 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/note'),
         tooltip: 'New note',
-        child: const Icon(Icons.add_rounded),
+        child: const Icon(AppIcons.add),
       ),
       body: Column(
         children: [
@@ -73,12 +73,12 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
               onChanged: (value) => setState(() => _query = value),
               decoration: InputDecoration(
                 hintText: 'Search your notes',
-                prefixIcon: const Icon(Icons.search_rounded),
+                prefixIcon: const Icon(AppIcons.search),
                 suffixIcon: _query.isEmpty
                     ? null
                     : IconButton(
                         tooltip: 'Clear search',
-                        icon: const Icon(Icons.close_rounded),
+                        icon: const Icon(AppIcons.close),
                         onPressed: () {
                           _searchController.clear();
                           setState(() => _query = '');
@@ -177,16 +177,21 @@ class _NoteGrid extends StatelessWidget {
     final theme = Theme.of(context);
     final scale =
         MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 2.0);
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: columns,
-        mainAxisSpacing: 10,
-        crossAxisSpacing: 10,
-        mainAxisExtent: extent * scale,
-      ),
-      itemCount: notes.length,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final count = columns == 1
+            ? 1
+            : (constraints.maxWidth / 200).floor().clamp(2, 4);
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: count,
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+            mainAxisExtent: extent * scale,
+          ),
+          itemCount: notes.length,
       itemBuilder: (context, index) {
         final note = notes[index];
         final digital = context.appStyle.isDigital;
@@ -256,8 +261,8 @@ class _NoteGrid extends StatelessWidget {
                         iconSize: 18,
                         icon: Icon(
                           note.pinned
-                              ? Icons.push_pin_rounded
-                              : Icons.push_pin_outlined,
+                              ? AppIcons.pin
+                              : AppIcons.pin,
                           color: note.pinned
                               ? theme.colorScheme.secondary
                               : theme.colorScheme.onSurfaceVariant,
@@ -289,6 +294,8 @@ class _NoteGrid extends StatelessWidget {
           ),
           ),
         );
+      },
+    );
       },
     );
   }
@@ -345,7 +352,7 @@ class _EmptyNotes extends StatelessWidget {
               const SizedBox(height: 20),
               FilledButton.tonalIcon(
                 onPressed: onCreate,
-                icon: const Icon(Icons.add_rounded),
+                icon: const Icon(AppIcons.add),
                 label: const Text('Write a note'),
               ),
             ],

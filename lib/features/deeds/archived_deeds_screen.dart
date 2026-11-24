@@ -114,7 +114,7 @@ class ArchivedDeedsScreen extends ConsumerWidget {
                         ),
                         trailing: IconButton(
                           tooltip: 'Restore deed',
-                          icon: const Icon(Icons.restore_rounded),
+                          icon: const Icon(AppIcons.restore),
                           onPressed: () => _restore(context, ref, deed),
                         ),
                       ),
