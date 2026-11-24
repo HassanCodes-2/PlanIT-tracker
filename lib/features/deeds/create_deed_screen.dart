@@ -34,7 +34,7 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
   FrequencyType _frequency = FrequencyType.daily;
   Set<int> _weekdays = {1, 2, 3, 4, 5};
   int? _categoryId;
-  int? _parentId;
+  bool _dirty = false;
   bool _reasonsEnabled = false;
   TimeOfDay? _reminder;
   String _icon = 'fitness_center';
@@ -61,9 +61,15 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
   @override
   void initState() {
     super.initState();
+    _nameController.addListener(_touch);
+    _timesController.addListener(_touch);
     if (widget.deedId != null) {
       _loadDeed();
     }
+  }
+
+  void _touch() {
+    _dirty = true;
   }
 
   Future<void> _loadDeed() async {
@@ -79,7 +85,7 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
       if (_weekdays.isEmpty) _weekdays = {1, 2, 3, 4, 5};
       _timesController.text = '${deed.timesPerPeriod ?? 3}';
       _categoryId = deed.categoryId;
-      _parentId = deed.parentId;
+      _dirty = false;
       _reasonsEnabled = deed.reasonsEnabled;
       _icon = deed.icon ?? 'fitness_center';
       final reminder = deed.reminderTime;
@@ -106,6 +112,33 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
   String _formatReminder(TimeOfDay time) =>
       '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
 
+  Future<void> _leave() async {
+    final dirty = _dirty ||
+        (_existing == null && _nameController.text.trim().isNotEmpty);
+    if (!dirty) {
+      if (mounted) context.pop();
+      return;
+    }
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Discard changes?'),
+        content: const Text('Your edits to this deed will be lost.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Keep editing'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    );
+    if (discard == true && mounted) context.pop();
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
@@ -123,7 +156,6 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
     final companion = db.DeedsCompanion(
       name: Value(_nameController.text.trim()),
       categoryId: Value(_categoryId),
-      parentId: Value(_parentId),
       frequencyType: Value(frequencyValue),
       weekdays: Value(weekdaysValue),
       timesPerPeriod: Value(timesValue),
@@ -140,6 +172,7 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
     }
 
     // Close first, then refresh reminders in the background.
+    _dirty = false;
     final notifications = ref.read(notificationServiceProvider);
     if (reminderValue != null) {
       unawaited(notifications.ensurePermission());
@@ -190,6 +223,7 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
       '#${color.toARGB32().toRadixString(16).substring(2, 8).toUpperCase()}';
 
   Future<void> _archive() async {
+    final theme = Theme.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -203,6 +237,10 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
             child: const Text('Cancel'),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: theme.colorScheme.error,
+              foregroundColor: theme.colorScheme.onError,
+            ),
             onPressed: () => Navigator.pop(dialogContext, true),
             child: const Text('Archive'),
           ),
@@ -222,7 +260,6 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final categories = ref.watch(categoriesProvider).value ?? [];
-    final deeds = ref.watch(deedsProvider).value ?? [];
 
     if (_loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -232,15 +269,16 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
       _categoryId = categories.first.id;
     }
 
-    final parentOptions = deeds
-        .where((deed) => _existing == null || deed.id != _existing!.id)
-        .toList();
-
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _leave();
+      },
+      child: Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => context.pop(),
+          onPressed: _leave,
         ),
         title: Text(_existing == null ? 'Create new deed' : 'Edit deed'),
       ),
@@ -392,7 +430,7 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
               color: theme.cardTheme.color,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: theme.colorScheme.outline),
+                side: BorderSide(color: theme.colorScheme.outlineVariant),
               ),
               clipBehavior: Clip.antiAlias,
               child: ListTile(
@@ -419,26 +457,6 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
                   if (picked != null) setState(() => _reminder = picked);
                 },
               ),
-            ),
-            const SizedBox(height: 20),
-            _Label('PARENT DEED (OPTIONAL)'),
-            const SizedBox(height: 8),
-            DropdownButtonFormField<int?>(
-              initialValue: _parentId,
-              decoration: const InputDecoration(hintText: 'None'),
-              items: [
-                const DropdownMenuItem<int?>(
-                  value: null,
-                  child: Text('None'),
-                ),
-                ...parentOptions.map(
-                  (deed) => DropdownMenuItem<int?>(
-                    value: deed.id,
-                    child: Text(deed.name),
-                  ),
-                ),
-              ],
-              onChanged: (value) => setState(() => _parentId = value),
             ),
             const SizedBox(height: 12),
             SwitchListTile(
@@ -478,6 +496,7 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
             ],
           ],
         ),
+      ),
       ),
     );
   }

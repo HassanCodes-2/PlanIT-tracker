@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/backup/backup_service.dart';
@@ -103,7 +104,7 @@ class SettingsScreen extends ConsumerWidget {
             decoration: BoxDecoration(
               color: theme.cardTheme.color,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: theme.colorScheme.outline),
+              border: Border.all(color: theme.colorScheme.outlineVariant),
             ),
             child: SegmentedButton<ThemeMode>(
               segments: const [
@@ -240,7 +241,7 @@ class SettingsScreen extends ConsumerWidget {
             color: theme.cardTheme.color,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
-              side: BorderSide(color: theme.colorScheme.outline),
+              side: BorderSide(color: theme.colorScheme.outlineVariant),
             ),
             clipBehavior: Clip.antiAlias,
             child: ListTile(
@@ -266,7 +267,7 @@ class SettingsScreen extends ConsumerWidget {
             color: theme.cardTheme.color,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
-              side: BorderSide(color: theme.colorScheme.outline),
+              side: BorderSide(color: theme.colorScheme.outlineVariant),
             ),
             clipBehavior: Clip.antiAlias,
             child: ListTile(
@@ -284,6 +285,28 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 10),
+          Material(
+            color: theme.cardTheme.color,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: theme.colorScheme.outlineVariant),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: ListTile(
+              leading: Icon(
+                Icons.restore_rounded,
+                color: theme.colorScheme.primary,
+              ),
+              title: const Text('Archived deeds'),
+              subtitle: Text(
+                'Restore deeds you archived earlier',
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+              onTap: () => context.push('/archived'),
+            ),
+          ),
+          const SizedBox(height: 10),
           _InfoTile(
             icon: Icons.storage_rounded,
             title: 'Data',
@@ -296,7 +319,7 @@ class SettingsScreen extends ConsumerWidget {
           _InfoTile(
             icon: Icons.apps_rounded,
             title: 'PlanIT',
-            subtitle: 'Habit & deed tracker · v1.1.0',
+            subtitle: 'Habit & deed tracker v1.5.0',
           ),
           const SizedBox(height: 10),
           _InfoTile(
@@ -424,7 +447,7 @@ class _InfoTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.colorScheme.outline),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
       child: ListTile(
         leading: Icon(icon, color: theme.colorScheme.primary),

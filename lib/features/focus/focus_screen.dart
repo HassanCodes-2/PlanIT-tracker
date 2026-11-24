@@ -262,7 +262,8 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
           title: const Text('Focus'),
         ),
         body: SafeArea(
-          child: Column(
+          child: SingleChildScrollView(
+            child: Column(
             children: [
               const SizedBox(height: 8),
               Row(
@@ -352,7 +353,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
                   icon: const Icon(Icons.add_rounded, size: 18),
                   label: const Text('Add 5 minutes'),
                 ),
-              const Spacer(),
+              const SizedBox(height: AppSpacing.xxl),
               Padding(
                 padding: const EdgeInsets.all(AppSpacing.screen),
                 child: Column(
@@ -389,6 +390,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
                 ),
               ),
             ],
+          ),
           ),
         ),
       ),

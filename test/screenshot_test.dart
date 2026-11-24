@@ -298,6 +298,10 @@ void main() {
       'PhosphorBold',
       'D:/Projects/PlanIT/assets/fonts/Phosphor-Bold.ttf',
     );
+    await _loadFont(
+      'RobotoMono',
+      'D:/Projects/PlanIT/assets/fonts/RobotoMono.ttf',
+    );
     SharedPreferences.setMockInitialValues({});
     _prefsCache = await SharedPreferences.getInstance();
   });

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/prefs/prefs_providers.dart';
+import '../../features/deeds/archived_deeds_screen.dart';
 import '../../features/deeds/create_deed_screen.dart';
 import '../../features/deeds/deed_detail_screen.dart';
 import '../../features/focus/focus_screen.dart';
@@ -74,6 +75,10 @@ GoRouter _createRouter({required bool onboarded}) {
         builder: (context, state) => CreateDeedScreen(
           deedId: int.tryParse(state.uri.queryParameters['id'] ?? ''),
         ),
+      ),
+      GoRoute(
+        path: '/archived',
+        builder: (context, state) => const ArchivedDeedsScreen(),
       ),
       GoRoute(
         path: '/note',

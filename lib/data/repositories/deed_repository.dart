@@ -74,6 +74,22 @@ class DeedRepository {
       (_db.update(_db.deeds)..where((row) => row.id.equals(id)))
           .write(DeedsCompanion(archivedAt: Value(DateTime.now())));
 
+  Future<void> unarchiveDeed(int id) =>
+      (_db.update(_db.deeds)..where((row) => row.id.equals(id)))
+          .write(const DeedsCompanion(archivedAt: Value(null)));
+
+  Stream<List<Deed>> watchArchivedDeeds() {
+    final query = _db.select(_db.deeds)
+      ..where((row) => row.archivedAt.isNotNull())
+      ..orderBy([(row) => OrderingTerm.desc(row.archivedAt)]);
+    return query.watch();
+  }
+
+  Future<List<Deed>> allDeedsIncludingArchived() =>
+      (_db.select(_db.deeds)
+            ..orderBy([(row) => OrderingTerm.asc(row.name)]))
+          .get();
+
   // ---------- Logs ----------
 
   Stream<Map<int, DeedLog>> watchLogsForDay(DateTime day) {

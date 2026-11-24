@@ -16,7 +16,7 @@ final backupServiceProvider =
 class BackupService {
   Future<void> shareBackup(DeedRepository repository) async {
     final categories = await repository.allCategories();
-    final deeds = await repository.allDeeds();
+    final deeds = await repository.allDeedsIncludingArchived();
     final logs =
         await repository.logsBetween(DateTime(2000), DateTime(2100));
     final notes = await (repository.watchNotes().first);

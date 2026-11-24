@@ -222,8 +222,7 @@ class _NoteGrid extends StatelessWidget {
                       IconButton(
                         tooltip: note.pinned ? 'Unpin note' : 'Pin note',
                         onPressed: () => onLongPress(note),
-                        visualDensity: VisualDensity.compact,
-                        iconSize: 16,
+                        iconSize: 18,
                         icon: Icon(
                           note.pinned
                               ? Icons.push_pin_rounded

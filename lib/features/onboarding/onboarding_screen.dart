@@ -114,54 +114,65 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   Future<void> _finish() async {
     setState(() => _saving = true);
-    final name = _nameController.text.trim();
-    if (name.isNotEmpty) {
-      await ref.read(userNameProvider.notifier).set(name);
-    }
+    try {
+      final name = _nameController.text.trim();
+      if (name.isNotEmpty) {
+        await ref.read(userNameProvider.notifier).set(name);
+      }
 
-    final repository = ref.read(repositoryProvider);
-    final existing = (await repository.allDeeds())
-        .map((deed) => deed.name.trim().toLowerCase())
-        .toSet();
-    var categories = await repository.allCategories();
+      final repository = ref.read(repositoryProvider);
+      final existing = (await repository.allDeeds())
+          .map((deed) => deed.name.trim().toLowerCase())
+          .toSet();
+      var categories = await repository.allCategories();
 
-    for (final index in _selectedSuggestions) {
-      final suggestion = _suggestions[index];
-      if (existing.contains(suggestion.name.toLowerCase())) continue;
+      for (final index in _selectedSuggestions) {
+        final suggestion = _suggestions[index];
+        if (existing.contains(suggestion.name.toLowerCase())) continue;
 
-      final area = _areas[suggestion.area];
-      db.Category? category;
-      for (final candidate in categories) {
-        if (candidate.name.toLowerCase() == area.name.toLowerCase()) {
-          category = candidate;
-          break;
+        final area = _areas[suggestion.area];
+        db.Category? category;
+        for (final candidate in categories) {
+          if (candidate.name.toLowerCase() == area.name.toLowerCase()) {
+            category = candidate;
+            break;
+          }
         }
-      }
-      if (category == null) {
-        final id = await repository.createCategory(
-          name: area.name,
-          icon: area.icon,
-          color: area.color,
-          sortOrder: 10 + suggestion.area,
+        if (category == null) {
+          final id = await repository.createCategory(
+            name: area.name,
+            icon: area.icon,
+            color: area.color,
+            sortOrder: 10 + suggestion.area,
+          );
+          category = await repository.categoryById(id);
+          categories = [...categories, ?category];
+        }
+
+        await repository.createDeed(
+          db.DeedsCompanion(
+            name: Value(suggestion.name),
+            categoryId: Value(category?.id),
+            frequencyType: Value(suggestion.frequency),
+            weekdays: Value(suggestion.weekdays),
+            timesPerPeriod: Value(suggestion.times),
+            icon: Value(suggestion.icon),
+          ),
         );
-        category = await repository.categoryById(id);
-        categories = [...categories, ?category];
       }
 
-      await repository.createDeed(
-        db.DeedsCompanion(
-          name: Value(suggestion.name),
-          categoryId: Value(category?.id),
-          frequencyType: Value(suggestion.frequency),
-          weekdays: Value(suggestion.weekdays),
-          timesPerPeriod: Value(suggestion.times),
-          icon: Value(suggestion.icon),
-        ),
-      );
+      await ref.read(onboardedProvider.notifier).complete();
+      if (mounted) context.go('/today');
+    } catch (_) {
+      if (mounted) {
+        setState(() => _saving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not finish setup. Please try again.'),
+          ),
+        );
+      }
     }
-
-    await ref.read(onboardedProvider.notifier).complete();
-    if (mounted) context.go('/today');
   }
 
   @override
@@ -175,6 +186,29 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       body: SafeArea(
         child: Column(
           children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+              child: Row(
+                children: [
+                  if (_page > 0)
+                    TextButton.icon(
+                      onPressed: () => _pageController.previousPage(
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeOutCubic,
+                      ),
+                      icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                      label: const Text('Back'),
+                    )
+                  else
+                    const SizedBox(width: 76),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: _saving ? null : _finish,
+                    child: const Text('Skip'),
+                  ),
+                ],
+              ),
+            ),
             Expanded(
               child: PageView(
                 controller: _pageController,
@@ -194,34 +228,57 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(3, (index) {
                       final active = index == _page;
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: active ? 22 : 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: active
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.outline,
-                          borderRadius: BorderRadius.circular(3),
+                      return Semantics(
+                        button: true,
+                        selected: active,
+                        label: 'Step ${index + 1}',
+                        child: GestureDetector(
+                          onTap: () => _pageController.animateToPage(
+                            index,
+                            duration: const Duration(milliseconds: 250),
+                            curve: Curves.easeOutCubic,
+                          ),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            width: active ? 22 : 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: active
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.onSurfaceVariant,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
                         ),
                       );
                     }),
                   ),
                   const SizedBox(height: 20),
-                  FilledButton.icon(
+                  FilledButton(
                     onPressed: _saving ? null : _next,
                     style: FilledButton.styleFrom(
                       minimumSize: const Size.fromHeight(52),
                     ),
-                    icon: _page == 2
-                        ? const Icon(Icons.rocket_launch_rounded)
-                        : const Icon(Icons.arrow_forward_rounded),
-                    label: Text(
-                      _page == 2
-                          ? 'Let\'s go'
-                          : 'Continue',
-                    ),
+                    child: _saving
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                _page == 2
+                                    ? Icons.rocket_launch_rounded
+                                    : Icons.arrow_forward_rounded,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(_page == 2 ? 'Let\'s go' : 'Continue'),
+                            ],
+                          ),
                   ),
                 ],
               ),
@@ -349,6 +406,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         Text(
           'You can add, edit or remove these anytime.',
           style: theme.textTheme.bodyMedium
+              ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          '${_selectedSuggestions.length} starter deeds will be created.',
+          style: theme.textTheme.bodySmall
               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
         const SizedBox(height: 20),

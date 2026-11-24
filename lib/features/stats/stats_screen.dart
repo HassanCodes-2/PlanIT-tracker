@@ -137,12 +137,14 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
         ? theme.colorScheme.onSurface
         : (isLight ? AppColors.doneLight : AppColors.done);
     final lateColor = digital
-        ? theme.colorScheme.onSurfaceVariant
+        ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8)
         : (isLight ? AppColors.lateLight : AppColors.late);
     final skippedColor = digital
         ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.55)
         : (isLight ? AppColors.skippedLight : AppColors.skipped);
-    final missedColor = theme.colorScheme.onSurfaceVariant;
+    final missedColor = digital
+        ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.35)
+        : theme.colorScheme.onSurfaceVariant;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Stats')),
@@ -191,7 +193,9 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                   onSelect: (period) => setState(() => _period = period),
                 ),
                 const SizedBox(height: 20),
-                _Label('HEATMAP — LAST 30 DAYS'),
+                _Label(_period == StatsPeriodType.weeks
+                    ? 'HEATMAP — LAST 7 DAYS'
+                    : 'HEATMAP — LAST 30 DAYS'),
                 const SizedBox(height: 10),
                 Card(
                   child: Padding(
@@ -201,6 +205,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                       logs: logs,
                       categories: categories,
                       today: today,
+                      days: _period == StatsPeriodType.weeks ? 7 : 30,
                     ),
                   ),
                 ),
@@ -247,13 +252,6 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                     if (_period != StatsPeriodType.all)
                       _deltaChip(result, deeds, logs, from, _period),
                   ],
-                ),
-                const SizedBox(height: 10),
-                _Legend(
-                  doneColor: doneColor,
-                  lateColor: lateColor,
-                  skippedColor: skippedColor,
-                  missedColor: missedColor,
                 ),
                 const SizedBox(height: 10),
                 GridView.count(
@@ -369,14 +367,14 @@ class _Heatmap extends StatelessWidget {
     required this.logs,
     required this.categories,
     required this.today,
+    required this.days,
   });
-
-  static const int _days = 30;
 
   final List<db.Deed> deeds;
   final List<db.DeedLog> logs;
   final List<db.Category> categories;
   final DateTime today;
+  final int days;
 
   String? _categoryIcon(int? categoryId) {
     for (final category in categories) {
@@ -385,59 +383,14 @@ class _Heatmap extends StatelessWidget {
     return null;
   }
 
-  Color? _colorFor(
-    Map<String, LogStatus> index,
-    db.Deed deed,
-    DateTime day,
-    ThemeData theme,
-    bool digital,
-  ) {
-    final status = index['${deed.id}/${day.year}-${day.month}-${day.day}'];
-    if (status != null) {
-      if (digital) {
-        return switch (status) {
-          LogStatus.done => theme.colorScheme.onSurface,
-          LogStatus.late => theme.colorScheme.onSurfaceVariant
-              .withValues(alpha: 0.75),
-          LogStatus.skipped => theme.colorScheme.onSurfaceVariant
-              .withValues(alpha: 0.55),
-        };
-      }
-      return switch (status) {
-        LogStatus.done => theme.brightness == Brightness.light
-            ? AppColors.doneLight
-            : AppColors.done,
-        LogStatus.late => theme.brightness == Brightness.light
-            ? AppColors.lateLight
-            : AppColors.late,
-        LogStatus.skipped => theme.brightness == Brightness.light
-            ? AppColors.skippedLight
-            : AppColors.skipped,
-      };
-    }
-    if (!isScheduledOn(deed, day)) return null;
-    if (frequencyOf(deed).isCountBased) return null;
-    if (day.isBefore(today)) {
-      return theme.colorScheme.onSurfaceVariant.withValues(
-        alpha: digital ? 0.22 : 0.35,
-      );
-    }
-    if (day.year == today.year &&
-        day.month == today.month &&
-        day.day == today.day) {
-      return theme.colorScheme.primary.withValues(alpha: digital ? 0.30 : 0.25);
-    }
-    return null;
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final digital = context.appStyle.isDigital;
-    final start = today.subtract(const Duration(days: _days - 1));
+    final start = today.subtract(Duration(days: days - 1));
     final dateList =
-        List.generate(_days, (index) => start.add(Duration(days: index)));
-    final index = <String, LogStatus>{
+        List.generate(days, (index) => start.add(Duration(days: index)));
+    final logIndex = <String, LogStatus>{
       for (final log in logs)
         '${log.deedId}/${log.day.year}-${log.day.month}-${log.day.day}':
             LogStatus.fromDb(log.status),
@@ -451,75 +404,135 @@ class _Heatmap extends StatelessWidget {
       );
     }
 
+    final cellSize = days <= 7 ? 34.0 : 16.0;
+    final gap = days <= 7 ? 6.0 : 3.0;
+    final isLight = theme.brightness == Brightness.light;
+
+    Widget cell(db.Deed deed, DateTime day) {
+      final status =
+          logIndex['${deed.id}/${day.year}-${day.month}-${day.day}'];
+      final scheduled =
+          isScheduledOn(deed, day) && !frequencyOf(deed).isCountBased;
+
+      Color? fill;
+      Color? border;
+      IconData? glyph;
+      Color? glyphColor;
+
+      if (status != null) {
+        final base = switch (status) {
+          LogStatus.done => digital
+              ? theme.colorScheme.onSurface
+              : (isLight ? AppColors.doneLight : AppColors.done),
+          LogStatus.late => digital
+              ? theme.colorScheme.onSurface.withValues(alpha: 0.72)
+              : (isLight ? AppColors.lateLight : AppColors.late),
+          LogStatus.skipped => digital
+              ? theme.colorScheme.onSurface.withValues(alpha: 0.46)
+              : (isLight ? AppColors.skippedLight : AppColors.skipped),
+        };
+        fill = base;
+        if (digital) {
+          if (status == LogStatus.late) {
+            glyph = AppIcons.late;
+          } else if (status == LogStatus.skipped) {
+            glyph = AppIcons.skipped;
+          }
+          if (glyph != null) glyphColor = AppTheme.onColor(base);
+        }
+      } else if (scheduled && day.isBefore(today)) {
+        fill = theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.10);
+        border = theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.55);
+      } else {
+        fill = theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.08);
+      }
+
+      final label = status?.label ?? (scheduled ? 'missed' : 'no deed');
+      return Semantics(
+        label: '${DateFormat('d MMM').format(day)}, $label',
+        child: Container(
+          width: cellSize,
+          height: cellSize,
+          margin: EdgeInsets.only(right: gap),
+          decoration: BoxDecoration(
+            color: fill,
+            borderRadius: BorderRadius.circular(3),
+            border: border != null ? Border.all(color: border) : null,
+          ),
+          child: glyph == null
+              ? null
+              : Icon(glyph, size: cellSize * 0.55, color: glyphColor),
+        ),
+      );
+    }
+
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (final deed in deeds) ...[
-          Row(
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(
-                width: 34,
-                child: Tooltip(
-                  message: deed.name,
-                  child: Icon(
-                    iconForDeed(
-                      deedIcon: deed.icon,
-                      categoryIcon: _categoryIcon(deed.categoryId),
-                      name: deed.name,
-                    ),
-                    size: 18,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Row(
-                  children: dateList.map((day) {
-                    final color = _colorFor(index, deed, day, theme, digital);
-                    return Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.all(1),
-                        child: AspectRatio(
-                        aspectRatio: 1,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: color ??
-                                theme.colorScheme.outline
-                                    .withValues(alpha: 0.18),
-                            borderRadius: BorderRadius.circular(3),
+              if (days <= 7)
+                Row(
+                  children: [
+                    const SizedBox(width: 38),
+                    ...dateList.map(
+                      (day) => SizedBox(
+                        width: cellSize + gap,
+                        child: Text(
+                          DateFormat('EE').format(day).substring(0, 1),
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ),
-                      ),
-                    );
-                  }).toList(),
+                    ),
+                  ],
                 ),
-              ),
+              if (days <= 7) const SizedBox(height: 4),
+              for (final deed in deeds)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 5),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 38,
+                        child: Tooltip(
+                          message: deed.name,
+                          child: Icon(
+                            iconForDeed(
+                              deedIcon: deed.icon,
+                              categoryIcon: _categoryIcon(deed.categoryId),
+                              name: deed.name,
+                            ),
+                            size: 18,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                      ),
+                      ...dateList.map((day) => cell(deed, day)),
+                    ],
+                  ),
+                ),
             ],
           ),
-          const SizedBox(height: 4),
-        ],
-        const SizedBox(height: 6),
-        Row(
-          children: [
-            const SizedBox(width: 34),
-            Text(
-              DateFormat('d MMM').format(dateList.first),
-              style: theme.textTheme.labelSmall
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-            ),
-            const Spacer(),
-            Text(
-              'Today',
-              style: theme.textTheme.labelSmall
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-            ),
-          ],
+        ),
+        const SizedBox(height: 8),
+        Padding(
+          padding: const EdgeInsets.only(left: 38),
+          child: Text(
+            '${DateFormat('d MMM').format(start)} — today',
+            style: theme.textTheme.labelSmall
+                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          ),
         ),
       ],
     );
   }
 }
-
 class _StreakCard extends StatelessWidget {
   const _StreakCard({
     required this.icon,
@@ -541,7 +554,7 @@ class _StreakCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.colorScheme.outline),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
       child: Row(
         children: [
@@ -606,7 +619,7 @@ class _RingStat extends StatelessWidget {
         decoration: BoxDecoration(
           color: theme.cardTheme.color,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: theme.colorScheme.outline),
+          border: Border.all(color: theme.colorScheme.outlineVariant),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -725,7 +738,7 @@ class _SlidingPeriodBar extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(23),
-        border: Border.all(color: theme.colorScheme.outline),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
       child: Stack(
         children: [
@@ -800,7 +813,7 @@ class _DeedStatsRow extends StatelessWidget {
         color: theme.cardTheme.color,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
-          side: BorderSide(color: theme.colorScheme.outline),
+          side: BorderSide(color: theme.colorScheme.outlineVariant),
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(

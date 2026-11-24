@@ -122,7 +122,7 @@ class DeedDetailScreen extends ConsumerWidget {
                     decoration: BoxDecoration(
                       color: theme.cardTheme.color,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: theme.colorScheme.outline),
+                      border: Border.all(color: theme.colorScheme.outlineVariant),
                     ),
                     child: Row(
                       children: [

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/prefs/prefs_providers.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/icons.dart';
@@ -103,8 +104,8 @@ class TodayScreen extends ConsumerWidget {
                 final picked = await showDatePicker(
                   context: context,
                   initialDate: day,
-                  firstDate: DateTime(today.year - 2),
-                  lastDate: DateTime(today.year + 1, 12, 31),
+                  firstDate: DateTime(today.year, today.month, today.day - 60),
+                  lastDate: DateTime(today.year, today.month, today.day + 60),
                 );
                 if (picked != null) {
                   ref.read(selectedDayProvider.notifier).select(picked);
@@ -214,12 +215,12 @@ class TodayScreen extends ConsumerWidget {
   void _toggleTheme(BuildContext context, WidgetRef ref) {
     HapticFeedback.selectionClick();
     final mode = ref.read(themeModeProvider);
-    final isDark = mode == ThemeMode.dark ||
-        (mode == ThemeMode.system &&
-            MediaQuery.platformBrightnessOf(context) == Brightness.dark);
-    ref
-        .read(themeModeProvider.notifier)
-        .setMode(isDark ? ThemeMode.light : ThemeMode.dark);
+    final next = switch (mode) {
+      ThemeMode.dark => ThemeMode.light,
+      ThemeMode.light => ThemeMode.system,
+      ThemeMode.system => ThemeMode.dark,
+    };
+    ref.read(themeModeProvider.notifier).setMode(next);
   }
 
   void _snack(BuildContext context, String message, VoidCallback? undo) {
@@ -297,12 +298,16 @@ class TodayScreen extends ConsumerWidget {
     final repository = ref.read(repositoryProvider);
     final existing = logs[deed.id];
     final digital = context.appStyle.isDigital;
-    final doneColor =
-        digital ? theme.colorScheme.primary : const Color(0xFF22C55E);
-    final lateColor =
-        digital ? theme.colorScheme.onSurfaceVariant : const Color(0xFFF59E0B);
-    final skippedColor =
-        digital ? theme.colorScheme.onSurfaceVariant : const Color(0xFFEF4444);
+    final isLight = theme.brightness == Brightness.light;
+    final doneColor = digital
+        ? theme.colorScheme.primary
+        : (isLight ? AppColors.doneLight : AppColors.done);
+    final lateColor = digital
+        ? theme.colorScheme.onSurfaceVariant
+        : (isLight ? AppColors.lateLight : AppColors.late);
+    final skippedColor = digital
+        ? theme.colorScheme.onSurfaceVariant
+        : (isLight ? AppColors.skippedLight : AppColors.skipped);
 
     await showModalBottomSheet<void>(
       context: context,
@@ -417,7 +422,7 @@ class TodayScreen extends ConsumerWidget {
                 },
               ),
               _OutcomeTile(
-                icon: AppIcons.late,
+                icon: AppIcons.history,
                 color: theme.colorScheme.onSurfaceVariant,
                 label: 'View history & stats',
                 selected: false,
@@ -430,7 +435,7 @@ class TodayScreen extends ConsumerWidget {
                 _OutcomeTile(
                   icon: AppIcons.reset,
                   color: theme.colorScheme.onSurfaceVariant,
-                  label: 'Clear today\'s log',
+                  label: 'Clear log for ${DateFormat('d MMM').format(day)}',
                   selected: false,
                   onTap: () async {
                     final previous = existing;
@@ -525,6 +530,9 @@ class _DateHeader extends StatelessWidget {
                       style: theme.textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.w700,
                         letterSpacing: context.appStyle.isDigital ? 2.4 : 1.2,
+                        fontFamily: context.appStyle.isDigital
+                            ? 'RobotoMono'
+                            : null,
                         fontFeatures: const [FontFeature.tabularFigures()],
                       ),
                     ),
@@ -613,8 +621,29 @@ class _DayScroller extends StatefulWidget {
 }
 
 class _DayScrollerState extends State<_DayScroller> {
-  final ScrollController _controller =
-      ScrollController(initialScrollOffset: 172);
+  static const int _window = 60;
+  final ScrollController _controller = ScrollController(
+    initialScrollOffset: _window * 54.0 - 171,
+  );
+
+  @override
+  void didUpdateWidget(covariant _DayScroller oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final changed = oldWidget.selected.year != widget.selected.year ||
+        oldWidget.selected.month != widget.selected.month ||
+        oldWidget.selected.day != widget.selected.day;
+    if (!changed || !_controller.hasClients) return;
+    final index =
+        widget.selected.difference(dateOnly(widget.today)).inDays + _window;
+    final target = (index * 54.0 -
+            (MediaQuery.sizeOf(context).width - 48) / 2)
+        .clamp(0.0, _controller.position.maxScrollExtent);
+    _controller.animateTo(
+      target,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
+    );
+  }
 
   @override
   void dispose() {
@@ -625,11 +654,11 @@ class _DayScrollerState extends State<_DayScroller> {
   @override
   Widget build(BuildContext context) {
     final days = List.generate(
-      15,
+      _window * 2 + 1,
       (index) => DateTime(
         widget.today.year,
         widget.today.month,
-        widget.today.day - 6 + index,
+        widget.today.day - _window + index,
       ),
     );
     return SizedBox(
@@ -647,50 +676,57 @@ class _DayScrollerState extends State<_DayScroller> {
               day.day == widget.selected.day;
           final theme = Theme.of(context);
           final digital = context.appStyle.isDigital;
-          return InkWell(
-            borderRadius: BorderRadius.circular(digital ? 8 : 12),
-            onTap: () => widget.onSelect(day),
-            child: Container(
-              width: 48,
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? theme.colorScheme.primary
-                    : Colors.transparent,
+          return Semantics(
+            button: true,
+            selected: isSelected,
+            label: DateFormat('EEEE d MMMM').format(day),
+            child: ExcludeSemantics(
+              child: InkWell(
                 borderRadius: BorderRadius.circular(digital ? 8 : 12),
-                boxShadow: digital && isSelected
-                    ? [
-                        BoxShadow(
-                          color: theme.colorScheme.primary
-                              .withValues(alpha: 0.30),
-                          blurRadius: 12,
+                onTap: () => widget.onSelect(day),
+                child: Container(
+                  width: 48,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? theme.colorScheme.primary
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(digital ? 8 : 12),
+                    boxShadow: digital && isSelected
+                        ? [
+                            BoxShadow(
+                              color: theme.colorScheme.primary
+                                  .withValues(alpha: 0.30),
+                              blurRadius: 12,
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        DateFormat('EEE').format(day).toUpperCase(),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: isSelected
+                              ? theme.colorScheme.onPrimary
+                              : theme.colorScheme.onSurfaceVariant,
+                          letterSpacing: 0.5,
                         ),
-                      ]
-                    : null,
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    DateFormat('EEE').format(day).toUpperCase(),
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: isSelected
-                          ? theme.colorScheme.onPrimary
-                          : theme.colorScheme.onSurfaceVariant,
-                      letterSpacing: 0.5,
-                    ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${day.day}',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: isSelected
+                              ? theme.colorScheme.onPrimary
+                              : theme.colorScheme.onSurface,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${day.day}',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: isSelected
-                          ? theme.colorScheme.onPrimary
-                          : theme.colorScheme.onSurface,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           );
@@ -699,7 +735,6 @@ class _DayScrollerState extends State<_DayScroller> {
     );
   }
 }
-
 class _SegmentBar extends StatelessWidget {
   const _SegmentBar({required this.done, required this.total});
 
@@ -864,45 +899,44 @@ class _DeedCard extends StatelessWidget {
     final status = log == null ? null : LogStatus.fromDb(log!.status);
     final completed = status != null;
 
+    final isLight = theme.brightness == Brightness.light;
+
     final (tint, icon, iconColor) = switch (status) {
       null => (
           accent.withValues(alpha: digital ? 0.05 : 0.06),
           null,
           accent
         ),
-      LogStatus.done => digital
-          ? (
-              theme.colorScheme.primary.withValues(alpha: 0.12),
-              AppIcons.done,
-              theme.colorScheme.primary,
-            )
-          : (
-              const Color(0xFF22C55E).withValues(alpha: 0.24),
-              AppIcons.done,
-              const Color(0xFF22C55E),
-            ),
-      LogStatus.late => digital
-          ? (
-              theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.14),
-              AppIcons.late,
-              theme.colorScheme.onSurfaceVariant,
-            )
-          : (
-              const Color(0xFFF59E0B).withValues(alpha: 0.24),
-              AppIcons.late,
-              const Color(0xFFF59E0B),
-            ),
-      LogStatus.skipped => digital
-          ? (
-              theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.07),
-              AppIcons.skipped,
-              theme.colorScheme.onSurfaceVariant,
-            )
-          : (
-              const Color(0xFFEF4444).withValues(alpha: 0.20),
-              AppIcons.skipped,
-              const Color(0xFFEF4444),
-            ),
+      LogStatus.done => (
+          (digital
+                  ? theme.colorScheme.primary
+                  : (isLight ? AppColors.doneLight : AppColors.done))
+              .withValues(alpha: digital ? 0.12 : 0.20),
+          AppIcons.done,
+          digital
+              ? theme.colorScheme.primary
+              : (isLight ? AppColors.doneLight : AppColors.done),
+        ),
+      LogStatus.late => (
+          (digital
+                  ? theme.colorScheme.onSurfaceVariant
+                  : (isLight ? AppColors.lateLight : AppColors.late))
+              .withValues(alpha: digital ? 0.14 : 0.18),
+          AppIcons.late,
+          digital
+              ? theme.colorScheme.onSurfaceVariant
+              : (isLight ? AppColors.lateLight : AppColors.late),
+        ),
+      LogStatus.skipped => (
+          (digital
+                  ? theme.colorScheme.onSurfaceVariant
+                  : (isLight ? AppColors.skippedLight : AppColors.skipped))
+              .withValues(alpha: digital ? 0.07 : 0.16),
+          AppIcons.skipped,
+          digital
+              ? theme.colorScheme.onSurfaceVariant
+              : (isLight ? AppColors.skippedLight : AppColors.skipped),
+        ),
     };
 
     final hasReason = log?.reason != null && log!.reason!.isNotEmpty;
@@ -911,17 +945,26 @@ class _DeedCard extends StatelessWidget {
         ? 'Reminder at $reminder'
         : null;
     final subtitle = hasReason ? log!.reason! : (progressText ?? reminderLabel);
+    final statusLabel = status?.label;
+    final semanticsLabel = '${deed.name}'
+        '${statusLabel != null ? ', $statusLabel' : ''}'
+        '${subtitle != null && subtitle.isNotEmpty ? ', $subtitle' : ''}';
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-          AppSpacing.screen, 0, AppSpacing.screen, AppSpacing.sm + 2),
-      child: Opacity(
+    return Semantics(
+      container: true,
+      button: canLog,
+      label: semanticsLabel,
+      excludeSemantics: true,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+            AppSpacing.screen, 0, AppSpacing.screen, AppSpacing.sm + 2),
+        child: Opacity(
         opacity: canLog ? 1 : 0.6,
         child: Material(
           color: theme.cardTheme.color,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: theme.colorScheme.outline),
+            side: BorderSide(color: theme.colorScheme.outlineVariant),
           ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
@@ -1019,6 +1062,7 @@ class _DeedCard extends StatelessWidget {
           ),
         ),
       ),
+      ),
     );
   }
 }
@@ -1036,7 +1080,7 @@ class _CaughtUpCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: theme.cardTheme.color,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: theme.colorScheme.outline),
+          border: Border.all(color: theme.colorScheme.outlineVariant),
         ),
         child: Row(
           children: [

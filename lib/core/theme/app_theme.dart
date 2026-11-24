@@ -88,21 +88,6 @@ abstract final class AppTheme {
       seedColor: accent,
       brightness: brightness,
     );
-    final accentText =
-        _accessibleAccent(accent, surface, brightness, ratio: 4.5);
-    final scheme = baseScheme.copyWith(
-      primary: accent,
-      onPrimary: onAccent,
-      secondary: accentText,
-      onSecondary: onAccent,
-      surface: surface,
-      onSurface: text,
-      outline: border,
-      onSurfaceVariant: muted,
-      error: digital ? muted : baseScheme.error,
-      onError: digital ? surface : baseScheme.onError,
-    );
-
     final fieldBorder = digital
         ? (brightness == Brightness.dark
             ? const Color(0xFF5F5F6A)
@@ -110,6 +95,26 @@ abstract final class AppTheme {
         : (brightness == Brightness.dark
             ? const Color(0xFF75757F)
             : const Color(0xFF8A8A93));
+    final accentText =
+        _accessibleAccent(accent, surface, brightness, ratio: 4.5);
+    final snackBg = brightness == Brightness.dark
+        ? const Color(0xFF2E2E36)
+        : const Color(0xFF202024);
+    final snackAction =
+        _accessibleAccent(accent, snackBg, Brightness.dark, ratio: 4.5);
+    final scheme = baseScheme.copyWith(
+      primary: accent,
+      onPrimary: onAccent,
+      secondary: accentText,
+      onSecondary: onAccent,
+      surface: surface,
+      onSurface: text,
+      outline: fieldBorder,
+      outlineVariant: border,
+      onSurfaceVariant: muted,
+      error: digital ? muted : baseScheme.error,
+      onError: digital ? surface : baseScheme.onError,
+    );
 
     final textTheme = _textTheme(text, muted);
 
@@ -193,6 +198,20 @@ abstract final class AppTheme {
         ),
       ),
       dividerTheme: DividerThemeData(color: border, thickness: 1),
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: surface,
+        headerBackgroundColor: accent,
+        headerForegroundColor: onAccent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppShape.dialog),
+        ),
+      ),
+      timePickerTheme: TimePickerThemeData(
+        backgroundColor: surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppShape.dialog),
+        ),
+      ),
       dialogTheme: DialogThemeData(
         backgroundColor: surface,
         shape: RoundedRectangleBorder(
@@ -215,11 +234,9 @@ abstract final class AppTheme {
         ),
       ),
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: brightness == Brightness.dark
-            ? const Color(0xFF2E2E36)
-            : const Color(0xFF202024),
+        backgroundColor: snackBg,
         contentTextStyle: const TextStyle(color: Colors.white),
-        actionTextColor: accentText,
+        actionTextColor: snackAction,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radius - 4),

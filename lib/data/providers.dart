@@ -31,6 +31,11 @@ final notesProvider = StreamProvider<List<Note>>(
   (ref) => ref.watch(repositoryProvider).watchNotes(),
 );
 
+/// Archived deeds (recoverable).
+final archivedDeedsProvider = StreamProvider<List<Deed>>(
+  (ref) => ref.watch(repositoryProvider).watchArchivedDeeds(),
+);
+
 /// The day currently shown on the Today screen.
 class SelectedDay extends Notifier<DateTime> {
   @override

@@ -130,6 +130,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
   }
 
   Future<void> _delete() async {
+    final theme = Theme.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -141,6 +142,10 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
             child: const Text('Cancel'),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: theme.colorScheme.error,
+              foregroundColor: theme.colorScheme.onError,
+            ),
             onPressed: () => Navigator.pop(dialogContext, true),
             child: const Text('Delete'),
           ),
