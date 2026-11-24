@@ -101,9 +101,20 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
   }
 
   Future<void> _exit() async {
+    final hadContent = !_isEmpty;
     // Save without popping here — this method owns the single pop.
     await _save(popAfter: false);
-    if (mounted) context.pop();
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    context.pop();
+    if (hadContent) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Note saved'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   Future<void> _delete() async {
@@ -184,33 +195,44 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: Wrap(
+                alignment: WrapAlignment.center,
                 children: List.generate(_palette.length, (index) {
                   final selected = index == _colorIndex;
-                  return GestureDetector(
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      setState(() => _colorIndex = index);
-                    },
-                    child: Container(
-                      width: 30,
-                      height: 30,
-                      margin: const EdgeInsets.symmetric(horizontal: 6),
-                      decoration: BoxDecoration(
-                        color: _palette[index],
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: selected
-                              ? theme.colorScheme.onSurface
-                              : Colors.transparent,
-                          width: 2.5,
+                  return SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: Semantics(
+                      button: true,
+                      selected: selected,
+                      label: 'Note color ${index + 1}',
+                      child: InkResponse(
+                        radius: 24,
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          setState(() => _colorIndex = index);
+                        },
+                        child: Center(
+                          child: Container(
+                            width: 30,
+                            height: 30,
+                            decoration: BoxDecoration(
+                              color: _palette[index],
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: selected
+                                    ? theme.colorScheme.onSurface
+                                    : Colors.transparent,
+                                width: 2.5,
+                              ),
+                            ),
+                            child: selected
+                                ? const Icon(Icons.check_rounded,
+                                    size: 16, color: Colors.white)
+                                : null,
+                          ),
                         ),
                       ),
-                      child: selected
-                          ? const Icon(Icons.check_rounded,
-                              size: 16, color: Colors.white)
-                      : null,
                     ),
                   );
                 }),

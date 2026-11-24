@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import 'app_colors.dart';
+import 'app_spacing.dart';
 
 /// Material 3 themes for PlanIT.
 /// Two styles: Midnight (customizable accent) and Digital (monochrome HUD),
@@ -12,7 +13,8 @@ abstract final class AppTheme {
 
   /// Midnight dark with a user-chosen accent, auto-corrected for contrast.
   static ThemeData darkWith(Color accent) {
-    final safe = _accessibleAccent(accent, AppColors.darkBg, Brightness.dark);
+    final safe =
+        _accessibleAccent(accent, AppColors.darkSurface, Brightness.dark);
     return _build(
       brightness: Brightness.dark,
       bg: AppColors.darkBg,
@@ -27,7 +29,8 @@ abstract final class AppTheme {
 
   /// Midnight light with a user-chosen accent, auto-corrected for contrast.
   static ThemeData lightWith(Color accent) {
-    final safe = _accessibleAccent(accent, AppColors.lightBg, Brightness.light);
+    final safe =
+        _accessibleAccent(accent, AppColors.lightSurface, Brightness.light);
     return _build(
       brightness: Brightness.light,
       bg: AppColors.lightBg,
@@ -81,17 +84,28 @@ abstract final class AppTheme {
     double radius = 16,
     bool digital = false,
   }) {
-    final scheme = ColorScheme.fromSeed(
+    final baseScheme = ColorScheme.fromSeed(
       seedColor: accent,
       brightness: brightness,
-    ).copyWith(
+    );
+    final scheme = baseScheme.copyWith(
       primary: accent,
       onPrimary: onAccent,
       surface: surface,
       onSurface: text,
       outline: border,
       onSurfaceVariant: muted,
+      error: digital ? muted : baseScheme.error,
+      onError: digital ? surface : baseScheme.onError,
     );
+
+    final fieldBorder = digital
+        ? (brightness == Brightness.dark
+            ? const Color(0xFF4A4A52)
+            : const Color(0xFF9A9AA3))
+        : (brightness == Brightness.dark
+            ? const Color(0xFF5A5A66)
+            : const Color(0xFF8E8E99));
 
     final textTheme = _textTheme(text, muted);
 
@@ -152,11 +166,11 @@ abstract final class AppTheme {
             const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radius - 4),
-          borderSide: BorderSide(color: border),
+          borderSide: BorderSide(color: fieldBorder),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radius - 4),
-          borderSide: BorderSide(color: border),
+          borderSide: BorderSide(color: fieldBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radius - 4),
@@ -167,11 +181,12 @@ abstract final class AppTheme {
       dialogTheme: DialogThemeData(
         backgroundColor: surface,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppShape.dialog),
         ),
       ),
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: ButtonStyle(
+          minimumSize: const WidgetStatePropertyAll(Size(0, 48)),
           backgroundColor: WidgetStateProperty.resolveWith(
             (states) => states.contains(WidgetState.selected)
                 ? accent
@@ -181,7 +196,7 @@ abstract final class AppTheme {
             (states) =>
                 states.contains(WidgetState.selected) ? onAccent : text,
           ),
-          side: WidgetStatePropertyAll(BorderSide(color: border)),
+          side: WidgetStatePropertyAll(BorderSide(color: fieldBorder)),
         ),
       ),
       snackBarTheme: SnackBarThemeData(
@@ -225,12 +240,12 @@ abstract final class AppTheme {
         labelLarge: TextStyle(
             fontSize: 13, fontWeight: FontWeight.w600, color: text),
         labelMedium: TextStyle(
-            fontSize: 11,
+            fontSize: 12,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.8,
             color: muted),
         labelSmall: TextStyle(
-            fontSize: 10,
+            fontSize: 11,
             fontWeight: FontWeight.w500,
             letterSpacing: 0.4,
             color: muted),
@@ -244,18 +259,19 @@ abstract final class AppTheme {
     return (hi + 0.05) / (lo + 0.05);
   }
 
-  /// Nudges the accent toward white/black until it reaches WCAG AA (4.5:1)
-  /// against the app background, so custom accents always stay readable.
+  /// Nudges the accent toward white/black until it reaches WCAG 3:1
+  /// (UI-component contrast) against the given surface, so custom accents
+  /// stay visible while keeping buttons and icons legible.
   static Color _accessibleAccent(
     Color accent,
-    Color bg,
+    Color against,
     Brightness brightness,
   ) {
-    if (_contrastRatio(accent, bg) >= 4.5) return accent;
+    if (_contrastRatio(accent, against) >= 3.0) return accent;
     final target = brightness == Brightness.dark ? Colors.white : Colors.black;
     for (var t = 0.05; t <= 0.95; t += 0.05) {
       final candidate = Color.lerp(accent, target, t)!;
-      if (_contrastRatio(candidate, bg) >= 4.5) return candidate;
+      if (_contrastRatio(candidate, against) >= 3.0) return candidate;
     }
     return target;
   }

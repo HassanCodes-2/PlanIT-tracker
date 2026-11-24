@@ -5,6 +5,8 @@ import 'package:material_ui/material_ui.dart';
 /// Fires a one-shot confetti burst over the current screen.
 /// Pure CustomPainter — no dependencies, no state kept afterwards.
 void showConfetti(BuildContext context) {
+  if (MediaQuery.disableAnimationsOf(context)) return;
+
   final overlay = OverlayEntry(
     builder: (_) => const _ConfettiView(),
   );

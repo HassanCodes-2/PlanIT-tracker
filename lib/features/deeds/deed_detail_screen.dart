@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/icons.dart';
 import '../../data/db/app_database.dart' as db;
@@ -20,6 +21,7 @@ class DeedDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final digital = context.appStyle.isDigital;
+    final isLight = theme.brightness == Brightness.light;
     final repository = ref.read(repositoryProvider);
     final deedFuture = repository.deedById(deedId);
     final categoriesAsync = ref.watch(categoriesProvider);
@@ -44,10 +46,37 @@ class DeedDetailScreen extends ConsumerWidget {
           }
           if (deed == null) {
             return Center(
-              child: Text(
-                'This deed no longer exists.',
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              child: Padding(
+                padding: const EdgeInsets.all(40),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      AppIcons.notePencil,
+                      size: 56,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'This deed no longer exists',
+                      style: theme.textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'It may have been archived.',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    FilledButton.tonal(
+                      onPressed: () => context.go('/today'),
+                      child: const Text('Back to Today'),
+                    ),
+                  ],
+                ),
               ),
             );
           }
@@ -167,21 +196,27 @@ class DeedDetailScreen extends ConsumerWidget {
                             value: '${stats.done}',
                             color: digital
                                 ? theme.colorScheme.onSurface
-                                : const Color(0xFF22C55E)),
+                                : (isLight
+                                    ? AppColors.doneLight
+                                    : AppColors.done)),
                         _MiniStat(
                             label: 'Late',
                             value: '${stats.late}',
                             color: digital
                                 ? theme.colorScheme.onSurfaceVariant
                                     .withValues(alpha: 0.75)
-                                : const Color(0xFFF59E0B)),
+                                : (isLight
+                                    ? AppColors.lateLight
+                                    : AppColors.late)),
                         _MiniStat(
                             label: 'Skipped',
                             value: '${stats.skipped}',
                             color: digital
                                 ? theme.colorScheme.onSurfaceVariant
                                     .withValues(alpha: 0.45)
-                                : const Color(0xFFEF4444)),
+                                : (isLight
+                                    ? AppColors.skippedLight
+                                    : AppColors.skipped)),
                         _MiniStat(
                             label: 'Missed',
                             value: '${stats.missed}',
@@ -249,24 +284,28 @@ class DeedDetailScreen extends ConsumerWidget {
                               children: [
                                 Icon(
                                   switch (LogStatus.fromDb(log.status)) {
-                                    LogStatus.done =>
-                                      Icons.check_circle_rounded,
-                                    LogStatus.late => Icons.schedule_rounded,
-                                    LogStatus.skipped =>
-                                      Icons.remove_circle_rounded,
+                                    LogStatus.done => AppIcons.done,
+                                    LogStatus.late => AppIcons.late,
+                                    LogStatus.skipped => AppIcons.skipped,
                                   },
                                   size: 18,
                                   color: switch (LogStatus.fromDb(log.status)) {
                                     LogStatus.done => digital
                                         ? theme.colorScheme.onSurface
-                                        : const Color(0xFF22C55E),
+                                        : (isLight
+                                            ? AppColors.doneLight
+                                            : AppColors.done),
                                     LogStatus.late => digital
                                         ? theme.colorScheme.onSurfaceVariant
-                                        : const Color(0xFFF59E0B),
+                                        : (isLight
+                                            ? AppColors.lateLight
+                                            : AppColors.late),
                                     LogStatus.skipped => digital
                                         ? theme.colorScheme.onSurfaceVariant
                                             .withValues(alpha: 0.6)
-                                        : const Color(0xFFEF4444),
+                                        : (isLight
+                                            ? AppColors.skippedLight
+                                            : AppColors.skipped),
                                   },
                                 ),
                                 const SizedBox(width: 10),
@@ -332,9 +371,15 @@ class _SingleDeedHeatmap extends StatelessWidget {
                 };
               } else {
                 color = switch (status) {
-                  LogStatus.done => const Color(0xFF22C55E),
-                  LogStatus.late => const Color(0xFFF59E0B),
-                  LogStatus.skipped => const Color(0xFFEF4444),
+                  LogStatus.done => theme.brightness == Brightness.light
+                      ? AppColors.doneLight
+                      : AppColors.done,
+                  LogStatus.late => theme.brightness == Brightness.light
+                      ? AppColors.lateLight
+                      : AppColors.late,
+                  LogStatus.skipped => theme.brightness == Brightness.light
+                      ? AppColors.skippedLight
+                      : AppColors.skipped,
                 };
               }
             } else if (isScheduledOn(deed, day) &&

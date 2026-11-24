@@ -18,10 +18,13 @@ abstract final class AppColors {
   static const lightText = Color(0xFF1A1A1E);
   static const lightMuted = Color(0xFF6B6B75);
 
-  // Outcome colors
+  // Outcome colors (accessible variants for light surfaces)
   static const done = Color(0xFF22C55E);
   static const late = Color(0xFFF59E0B);
   static const skipped = Color(0xFFEF4444);
+  static const doneLight = Color(0xFF15803D);
+  static const lateLight = Color(0xFFB45309);
+  static const skippedLight = Color(0xFFB91C1C);
 
   // Digital theme — monochrome HUD
   static const digitalDarkBg = Color(0xFF000000);

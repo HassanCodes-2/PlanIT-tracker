@@ -49,6 +49,10 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
     'edit_calendar',
     'call',
     'school',
+    'self_improvement',
+    'savings',
+    'chat_bubble',
+    'sports_esports',
     'favorite',
     'star',
   ];
@@ -268,7 +272,8 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
                         border: Border.all(
                           color: selected
                               ? theme.colorScheme.primary
-                              : theme.colorScheme.onSurfaceVariant,
+                              : theme.colorScheme.onSurfaceVariant
+                                  .withValues(alpha: 0.35),
                         ),
                       ),
                       child: Icon(

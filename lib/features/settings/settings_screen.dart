@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/backup/backup_service.dart';
 import '../../core/prefs/prefs_providers.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../data/providers.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -18,6 +19,23 @@ class SettingsScreen extends ConsumerWidget {
     Color(0xFFF97316),
     Color(0xFF84CC16),
   ];
+
+  static const List<String> _accentNames = [
+    'Blue',
+    'Violet',
+    'Emerald',
+    'Amber',
+    'Rose',
+    'Cyan',
+    'Orange',
+    'Lime',
+  ];
+
+  String _accentName(Color color) {
+    final index = _accentPresets
+        .indexWhere((preset) => preset.toARGB32() == color.toARGB32());
+    return index == -1 ? 'Custom accent' : '${_accentNames[index]} accent';
+  }
 
   Future<void> _editName(BuildContext context, WidgetRef ref) async {
     final controller =
@@ -69,11 +87,14 @@ class SettingsScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final mode = ref.watch(themeModeProvider);
     final accent = ref.watch(accentColorProvider);
+    final digital =
+        ref.watch(themeStyleProvider) == AppThemeStyle.digital;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+        padding: const EdgeInsets.fromLTRB(
+            AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, AppSpacing.xxl),
         children: [
           _Label('APPEARANCE'),
           const SizedBox(height: 10),
@@ -113,7 +134,7 @@ class SettingsScreen extends ConsumerWidget {
               Expanded(
                 child: _StyleCard(
                   title: 'Midnight',
-                  subtitle: 'Blue accent',
+                  subtitle: _accentName(accent),
                   selected:
                       ref.watch(themeStyleProvider) == AppThemeStyle.midnight,
                   previewColor: const Color(0xFF1B6CFF),
@@ -140,52 +161,75 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 24),
           _Label('ACCENT COLOR'),
           const SizedBox(height: 10),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: _accentPresets.map((color) {
-              final selected =
-                  accent.toARGB32() == color.toARGB32();
-              return GestureDetector(
-                onTap: () =>
-                    ref.read(accentColorProvider.notifier).setColor(color),
-                child: Container(
-                  width: 34,
-                  height: 34,
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: selected
-                          ? theme.colorScheme.onSurface
-                          : Colors.transparent,
-                      width: 2.5,
-                    ),
-                    boxShadow: selected
-                        ? [
-                            BoxShadow(
-                              color: color.withValues(alpha: 0.45),
-                              blurRadius: 10,
+          Opacity(
+            opacity: digital ? 0.4 : 1,
+            child: IgnorePointer(
+              ignoring: digital,
+              child: Wrap(
+                spacing: 4,
+                runSpacing: 4,
+                children:
+                    List.generate(_accentPresets.length, (index) {
+                  final color = _accentPresets[index];
+                  final selected = accent.toARGB32() == color.toARGB32();
+                  return SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: Semantics(
+                      button: true,
+                      selected: selected,
+                      label: 'Accent color ${_accentNames[index]}',
+                      child: InkResponse(
+                        radius: 24,
+                        onTap: () => ref
+                            .read(accentColorProvider.notifier)
+                            .setColor(color),
+                        child: Center(
+                          child: Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              color: color,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: selected
+                                    ? theme.colorScheme.onSurface
+                                    : Colors.transparent,
+                                width: 2.5,
+                              ),
+                              boxShadow: selected
+                                  ? [
+                                      BoxShadow(
+                                        color:
+                                            color.withValues(alpha: 0.45),
+                                        blurRadius: 10,
+                                      ),
+                                    ]
+                                  : null,
                             ),
-                          ]
-                        : null,
-                  ),
-                  child: selected
-                      ? Icon(
-                          Icons.check_rounded,
-                          size: 16,
-                          color: color.computeLuminance() > 0.45
-                              ? Colors.black
-                              : Colors.white,
-                        )
-                      : null,
-                ),
-              );
-            }).toList(),
+                            child: selected
+                                ? Icon(
+                                    Icons.check_rounded,
+                                    size: 16,
+                                    color: color.computeLuminance() > 0.45
+                                        ? Colors.black
+                                        : Colors.white,
+                                  )
+                                : null,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Used for buttons, progress, highlights and selected states.',
+            digital
+                ? 'Digital is monochrome — the accent applies to Midnight.'
+                : 'Used for buttons, progress, highlights and selected states.',
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
@@ -287,7 +331,7 @@ class _StyleCard extends StatelessWidget {
     return Material(
       color: theme.cardTheme.color,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppShape.medium),
         side: BorderSide(
           color: selected ? theme.colorScheme.primary : theme.colorScheme.outline,
           width: selected ? 1.5 : 1,

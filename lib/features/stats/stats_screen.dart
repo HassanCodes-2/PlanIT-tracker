@@ -1,10 +1,10 @@
-import 'dart:math' as math;
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/icons.dart';
 import '../../data/db/app_database.dart' as db;
@@ -67,7 +67,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
           ? theme.colorScheme.primary
           : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7);
     } else {
-      color = up ? const Color(0xFF22C55E) : const Color(0xFFEF4444);
+      final isLight = theme.brightness == Brightness.light;
+      color = up
+          ? (isLight ? AppColors.doneLight : AppColors.done)
+          : (isLight ? AppColors.skippedLight : AppColors.skipped);
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -126,34 +129,66 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
     );
 
     final digital = context.appStyle.isDigital;
-    final doneColor =
-        digital ? theme.colorScheme.primary : const Color(0xFF22C55E);
-    final lateColor =
-        digital ? theme.colorScheme.onSurfaceVariant : const Color(0xFFF59E0B);
+    final isLight = theme.brightness == Brightness.light;
+    final doneColor = digital
+        ? theme.colorScheme.onSurface
+        : (isLight ? AppColors.doneLight : AppColors.done);
+    final lateColor = digital
+        ? theme.colorScheme.onSurfaceVariant
+        : (isLight ? AppColors.lateLight : AppColors.late);
     final skippedColor = digital
         ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.65)
-        : const Color(0xFFEF4444);
+        : (isLight ? AppColors.skippedLight : AppColors.skipped);
     final missedColor = theme.colorScheme.onSurfaceVariant;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Stats')),
       body: deeds.isEmpty
           ? Center(
-              child: Text(
-                'Create a deed to see your stats.',
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              child: Padding(
+                padding: const EdgeInsets.all(40),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      AppIcons.trendUp,
+                      size: 56,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No stats yet',
+                      style: theme.textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Create a deed and start logging to see your trends.',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    FilledButton.tonalIcon(
+                      onPressed: () => context.push('/create-deed'),
+                      icon: const Icon(Icons.add_rounded),
+                      label: const Text('Create a deed'),
+                    ),
+                  ],
+                ),
               ),
             )
           : ListView(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+              padding: const EdgeInsets.fromLTRB(
+            AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, AppSpacing.xxl),
               children: [
                 _SlidingPeriodBar(
                   selected: _period,
                   onSelect: (period) => setState(() => _period = period),
                 ),
                 const SizedBox(height: 20),
-                _Label('HEATMAP — LAST ${math.min(30, _period.days)} DAYS'),
+                _Label('HEATMAP — LAST 30 DAYS'),
                 const SizedBox(height: 10),
                 Card(
                   child: Padding(
@@ -162,10 +197,16 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                       deeds: result.deeds,
                       logs: logs,
                       categories: categories,
-                      days: math.min(30, _period.days),
                       today: today,
                     ),
                   ),
+                ),
+                const SizedBox(height: 10),
+                _Legend(
+                  doneColor: doneColor,
+                  lateColor: lateColor,
+                  skippedColor: skippedColor,
+                  missedColor: missedColor,
                 ),
                 const SizedBox(height: 24),
                 _Label('STREAKS'),
@@ -214,24 +255,28 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                   childAspectRatio: 1.22,
                   children: [
                     _RingStat(
+                      label: 'Done',
                       percent: result.donePct,
                       color: doneColor,
                       icon: AppIcons.done,
                       count: result.done,
                     ),
                     _RingStat(
+                      label: 'Done late',
                       percent: result.latePct,
                       color: lateColor,
                       icon: AppIcons.late,
                       count: result.late,
                     ),
                     _RingStat(
+                      label: 'Skipped',
                       percent: result.skippedPct,
                       color: skippedColor,
                       icon: AppIcons.skipped,
                       count: result.skipped,
                     ),
                     _RingStat(
+                      label: 'Missed',
                       percent: result.missedPct,
                       color: missedColor,
                       icon: AppIcons.missed,
@@ -264,19 +309,63 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
   }
 }
 
+class _Legend extends StatelessWidget {
+  const _Legend({
+    required this.doneColor,
+    required this.lateColor,
+    required this.skippedColor,
+    required this.missedColor,
+  });
+
+  final Color doneColor;
+  final Color lateColor;
+  final Color skippedColor;
+  final Color missedColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Wrap(
+      spacing: 14,
+      runSpacing: 6,
+      children: [
+        _item(theme, AppIcons.done, 'Done', doneColor),
+        _item(theme, AppIcons.late, 'Late', lateColor),
+        _item(theme, AppIcons.skipped, 'Skipped', skippedColor),
+        _item(theme, AppIcons.missed, 'Missed', missedColor),
+      ],
+    );
+  }
+
+  Widget _item(ThemeData theme, IconData icon, String label, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 13, color: color),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: theme.textTheme.labelSmall
+              ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+        ),
+      ],
+    );
+  }
+}
+
 class _Heatmap extends StatelessWidget {
   const _Heatmap({
     required this.deeds,
     required this.logs,
     required this.categories,
-    required this.days,
     required this.today,
   });
+
+  static const int _days = 30;
 
   final List<DeedStats> deeds;
   final List<db.DeedLog> logs;
   final List<db.Category> categories;
-  final int days;
   final DateTime today;
 
   String? _categoryIcon(int? categoryId) {
@@ -306,9 +395,15 @@ class _Heatmap extends StatelessWidget {
         };
       }
       return switch (status) {
-        LogStatus.done => const Color(0xFF22C55E),
-        LogStatus.late => const Color(0xFFF59E0B),
-        LogStatus.skipped => const Color(0xFFEF4444),
+        LogStatus.done => theme.brightness == Brightness.light
+            ? AppColors.doneLight
+            : AppColors.done,
+        LogStatus.late => theme.brightness == Brightness.light
+            ? AppColors.lateLight
+            : AppColors.late,
+        LogStatus.skipped => theme.brightness == Brightness.light
+            ? AppColors.skippedLight
+            : AppColors.skipped,
       };
     }
     if (!isScheduledOn(stats.deed, day)) return null;
@@ -330,8 +425,9 @@ class _Heatmap extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final digital = context.appStyle.isDigital;
-    final start = today.subtract(Duration(days: days - 1));
-    final dateList = List.generate(days, (index) => start.add(Duration(days: index)));
+    final start = today.subtract(const Duration(days: _days - 1));
+    final dateList =
+        List.generate(_days, (index) => start.add(Duration(days: index)));
     final index = <String, LogStatus>{
       for (final log in logs)
         '${log.deedId}/${log.day.year}-${log.day.month}-${log.day.day}':
@@ -477,12 +573,14 @@ class _StreakCard extends StatelessWidget {
 
 class _RingStat extends StatelessWidget {
   const _RingStat({
+    required this.label,
     required this.percent,
     required this.color,
     required this.icon,
     required this.count,
   });
 
+  final String label;
   final double percent;
   final Color color;
   final IconData icon;
@@ -491,61 +589,65 @@ class _RingStat extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.colorScheme.outline),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0, end: (percent / 100).clamp(0.0, 1.0)),
-            duration: const Duration(milliseconds: 900),
-            curve: Curves.easeOutCubic,
-            builder: (context, value, _) {
-              return SizedBox(
-                width: 76,
-                height: 76,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    CustomPaint(
-                      size: const Size(76, 76),
-                      painter: _RingPainter(
-                        progress: value,
-                        color: color,
-                        track: color.withValues(alpha: 0.12),
+    return Semantics(
+      label: label,
+      value: '${percent.round()} percent, $count times',
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: theme.cardTheme.color,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: theme.colorScheme.outline),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: (percent / 100).clamp(0.0, 1.0)),
+              duration: const Duration(milliseconds: 900),
+              curve: Curves.easeOutCubic,
+              builder: (context, value, _) {
+                return SizedBox(
+                  width: 76,
+                  height: 76,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      CustomPaint(
+                        size: const Size(76, 76),
+                        painter: _RingPainter(
+                          progress: value,
+                          color: color,
+                          track: color.withValues(alpha: 0.12),
+                        ),
                       ),
-                    ),
-                    Text(
-                      '${(value * 100).round()}%',
-                      style: theme.textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                  ],
+                      Text(
+                        '${(value * 100).round()}%',
+                        style: theme.textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 14, color: color),
+                const SizedBox(width: 5),
+                Text(
+                  '$count',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              );
-            },
-          ),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 14, color: color),
-              const SizedBox(width: 5),
-              Text(
-                '$count',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -610,7 +712,7 @@ class _SlidingPeriodBar extends StatelessWidget {
     final index = periods.indexOf(selected);
 
     return Container(
-      height: 46,
+      height: 48,
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(23),
@@ -733,8 +835,8 @@ class _DeedStatsRow extends StatelessWidget {
                 Text(
                   '$percent%',
                   style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w700,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
               ],

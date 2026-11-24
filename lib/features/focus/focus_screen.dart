@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../core/theme/app_spacing.dart';
 import '../../core/utils/icons.dart';
 import '../../core/widgets/confetti.dart';
 import '../../data/db/app_database.dart' as db;
@@ -31,6 +32,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
   bool _running = false;
   bool _finished = false;
   Timer? _timer;
+  DateTime? _endsAt;
 
   @override
   void initState() {
@@ -57,15 +59,26 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
     HapticFeedback.selectionClick();
     if (_running) {
       _timer?.cancel();
-      setState(() => _running = false);
+      final ends = _endsAt;
+      setState(() {
+        _running = false;
+        if (ends != null) {
+          _remaining = ends.difference(DateTime.now()).inSeconds
+              .clamp(0, _totalSeconds);
+        }
+      });
       return;
     }
+    _endsAt = DateTime.now().add(Duration(seconds: _remaining));
     _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
     setState(() => _running = true);
   }
 
   void _tick() {
-    if (_remaining <= 1) {
+    final ends = _endsAt;
+    if (ends == null) return;
+    final seconds = ends.difference(DateTime.now()).inSeconds;
+    if (seconds <= 0) {
       _timer?.cancel();
       setState(() {
         _remaining = 0;
@@ -75,7 +88,9 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
       _onComplete();
       return;
     }
-    setState(() => _remaining--);
+    setState(() {
+      _remaining = seconds.clamp(0, _totalSeconds);
+    });
   }
 
   Future<void> _onComplete() async {
@@ -139,6 +154,24 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
   Future<void> _markDoneNow() async {
     final deed = _deed;
     if (deed == null) return;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Mark as done?'),
+        content: Text('Log "${deed.name}" as done and end this session?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Mark done'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
     _timer?.cancel();
     HapticFeedback.mediumImpact();
     await ref
@@ -152,6 +185,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
     setState(() {
       _totalSeconds = minutes * 60;
       _remaining = _totalSeconds;
+      _endsAt = null;
     });
   }
 
@@ -160,6 +194,9 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
       _totalSeconds += 5 * 60;
       _remaining += 5 * 60;
       _finished = false;
+      if (_running && _endsAt != null) {
+        _endsAt = _endsAt!.add(const Duration(minutes: 5));
+      }
     });
   }
 
@@ -259,22 +296,25 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
                         ),
                       ),
                     ),
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          _timeLabel,
-                          style: theme.textTheme.displaySmall
-                              ?.copyWith(fontWeight: FontWeight.w700),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          _statusLabel,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _timeLabel,
+                            style: theme.textTheme.displaySmall
+                                ?.copyWith(fontWeight: FontWeight.w700),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 6),
+                          Text(
+                            _statusLabel,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -302,7 +342,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
                 ),
               const Spacer(),
               Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(AppSpacing.screen),
                 child: Row(
                   children: [
                     Expanded(
@@ -325,6 +365,9 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(0, 52),
+                        ),
                         onPressed: _markDoneNow,
                         icon: const Icon(Icons.check_rounded),
                         label: const Text('Done'),

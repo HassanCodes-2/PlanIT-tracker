@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/prefs/prefs_providers.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/icons.dart';
 import '../../core/widgets/confetti.dart';
@@ -52,6 +53,10 @@ class TodayScreen extends ConsumerWidget {
 
     final now = ref.watch(clockProvider).value ?? DateTime.now();
     final timeLabel = DateFormat('HH:mm').format(now);
+    final userName = ref.watch(userNameProvider);
+    final dateLabel = userName.isEmpty
+        ? DateFormat('EEEE, d MMMM').format(day)
+        : '$userName · ${DateFormat('EEEE, d MMMM').format(day)}';
 
     final grouped = <db.Category, List<db.Deed>>{};
     for (final category in categories) {
@@ -87,7 +92,7 @@ class TodayScreen extends ConsumerWidget {
           children: [
             _DateHeader(
               timeLabel: timeLabel,
-              dateLabel: DateFormat('EEEE, d MMMM').format(day),
+              dateLabel: dateLabel,
               streak: streak,
               done: doneCount,
               total: scheduled.length,
@@ -97,8 +102,10 @@ class TodayScreen extends ConsumerWidget {
             _DayScroller(
               today: today,
               selected: day,
-              onSelect: (value) =>
-                  ref.read(selectedDayProvider.notifier).select(value),
+              onSelect: (value) {
+                HapticFeedback.selectionClick();
+                ref.read(selectedDayProvider.notifier).select(value);
+              },
             ),
             if (!isFuture)
               Padding(
@@ -143,7 +150,7 @@ class TodayScreen extends ConsumerWidget {
                   allLogs: allLogs,
                   selectedDay: day,
                   canLog: !isFuture,
-                  onTap: (deed) => _markDone(
+                  onTap: (deed) => _onTapDeed(
                     context,
                     ref,
                     deed,
@@ -164,7 +171,7 @@ class TodayScreen extends ConsumerWidget {
                   allLogs: allLogs,
                   selectedDay: day,
                   canLog: !isFuture,
-                  onTap: (deed) => _markDone(
+                  onTap: (deed) => _onTapDeed(
                     context,
                     ref,
                     deed,
@@ -210,6 +217,22 @@ class TodayScreen extends ConsumerWidget {
       ));
   }
 
+  Future<void> _onTapDeed(
+    BuildContext context,
+    WidgetRef ref,
+    db.Deed deed,
+    DateTime day,
+    Map<int, db.DeedLog> logs,
+    int doneCount,
+    int total,
+  ) async {
+    if (logs[deed.id] == null) {
+      await _markDone(context, ref, deed, day, logs, doneCount, total);
+    } else {
+      await _showOutcomeSheet(context, ref, deed, day, logs);
+    }
+  }
+
   Future<void> _markDone(
     BuildContext context,
     WidgetRef ref,
@@ -225,31 +248,22 @@ class TodayScreen extends ConsumerWidget {
       await repository.setLog(deed.id, day, LogStatus.done);
       HapticFeedback.mediumImpact();
       if (context.mounted) {
-        if (doneCount + 1 >= total && total > 0) {
+        final name = ref.read(userNameProvider);
+        final allDone = doneCount + 1 >= total && total > 0;
+        if (allDone) {
           HapticFeedback.heavyImpact();
           showConfetti(context);
         }
         _snack(
           context,
-          'Marked "${deed.name}" done',
+          allDone
+              ? 'All deeds done${name.isEmpty ? '' : ', $name'}! 🎉'
+              : 'Marked "${deed.name}" done',
           () => repository.clearLog(deed.id, day),
         );
       }
     } else {
-      final previous = existing;
-      await repository.clearLog(deed.id, day);
-      if (context.mounted) {
-        _snack(
-          context,
-          'Removed log for "${deed.name}"',
-          () => repository.setLog(
-            deed.id,
-            day,
-            LogStatus.fromDb(previous.status),
-            reason: previous.reason,
-          ),
-        );
-      }
+      await _showOutcomeSheet(context, ref, deed, day, logs);
     }
   }
 
@@ -317,7 +331,7 @@ class TodayScreen extends ConsumerWidget {
                 },
               ),
               _OutcomeTile(
-                icon: Icons.check_circle_rounded,
+                icon: AppIcons.done,
                 color: doneColor,
                 label: 'Done on time',
                 selected: existing?.status == LogStatus.done.dbValue,
@@ -335,7 +349,7 @@ class TodayScreen extends ConsumerWidget {
                 },
               ),
               _OutcomeTile(
-                icon: Icons.schedule_rounded,
+                icon: AppIcons.late,
                 color: lateColor,
                 label: 'Done late',
                 selected: existing?.status == LogStatus.late.dbValue,
@@ -352,7 +366,7 @@ class TodayScreen extends ConsumerWidget {
                 },
               ),
               _OutcomeTile(
-                icon: Icons.remove_circle_rounded,
+                icon: AppIcons.skipped,
                 color: skippedColor,
                 label: 'Skipped',
                 selected: existing?.status == LogStatus.skipped.dbValue,
@@ -470,12 +484,11 @@ class _DateHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.screen, 4, 8, 0),
       child: Column(
         children: [
           Row(
             children: [
-              const SizedBox(width: 48),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -509,14 +522,9 @@ class _DateHeader extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: _SegmentBar(done: done, total: total),
-          ),
+          _SegmentBar(done: done, total: total),
           const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
+          Row(
               children: [
                 Icon(
                   AppIcons.fire,
@@ -549,7 +557,6 @@ class _DateHeader extends StatelessWidget {
                 ),
               ],
             ),
-          ),
         ],
       ),
     );
@@ -592,10 +599,10 @@ class _DayScrollerState extends State<_DayScroller> {
       ),
     );
     return SizedBox(
-      height: 64,
+      height: 68,
       child: ListView.separated(
         controller: _controller,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
         scrollDirection: Axis.horizontal,
         itemCount: days.length,
         separatorBuilder: (_, _) => const SizedBox(width: 6),
@@ -610,8 +617,8 @@ class _DayScrollerState extends State<_DayScroller> {
             borderRadius: BorderRadius.circular(digital ? 8 : 12),
             onTap: () => widget.onSelect(day),
             child: Container(
-              width: 46,
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              width: 48,
+              padding: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
                 color: isSelected
                     ? theme.colorScheme.primary
@@ -634,7 +641,7 @@ class _DayScrollerState extends State<_DayScroller> {
                     DateFormat('EEE').format(day).toUpperCase(),
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: isSelected
-                          ? theme.colorScheme.onPrimary.withValues(alpha: 0.75)
+                          ? theme.colorScheme.onPrimary
                           : theme.colorScheme.onSurfaceVariant,
                       letterSpacing: 0.5,
                     ),
@@ -756,12 +763,13 @@ class _CategorySection extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(top: 20),
+      padding: const EdgeInsets.only(top: AppSpacing.xl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.screen, 0, AppSpacing.screen, AppSpacing.sm + 2),
             child: Text(
               (category?.name ?? 'Other').toUpperCase(),
               style: theme.textTheme.labelMedium?.copyWith(
@@ -826,34 +834,34 @@ class _DeedCard extends StatelessWidget {
       LogStatus.done => digital
           ? (
               theme.colorScheme.primary.withValues(alpha: 0.12),
-              Icons.check_rounded,
+              AppIcons.done,
               theme.colorScheme.primary,
             )
           : (
               const Color(0xFF22C55E).withValues(alpha: 0.24),
-              Icons.check_rounded,
+              AppIcons.done,
               const Color(0xFF22C55E),
             ),
       LogStatus.late => digital
           ? (
               theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.14),
-              Icons.schedule_rounded,
+              AppIcons.late,
               theme.colorScheme.onSurfaceVariant,
             )
           : (
               const Color(0xFFF59E0B).withValues(alpha: 0.24),
-              Icons.schedule_rounded,
+              AppIcons.late,
               const Color(0xFFF59E0B),
             ),
       LogStatus.skipped => digital
           ? (
               theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.07),
-              Icons.close_rounded,
+              AppIcons.skipped,
               theme.colorScheme.onSurfaceVariant,
             )
           : (
               const Color(0xFFEF4444).withValues(alpha: 0.20),
-              Icons.close_rounded,
+              AppIcons.skipped,
               const Color(0xFFEF4444),
             ),
     };
@@ -866,7 +874,8 @@ class _DeedCard extends StatelessWidget {
     final subtitle = hasReason ? log!.reason! : (progressText ?? reminderLabel);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screen, 0, AppSpacing.screen, AppSpacing.sm + 2),
       child: Opacity(
         opacity: canLog ? 1 : 0.6,
         child: Material(
@@ -879,9 +888,10 @@ class _DeedCard extends StatelessWidget {
           child: InkWell(
             onTap: canLog ? onTap : null,
             onLongPress: canLog ? onLongPress : null,
-            child: SizedBox(
-              height: 68,
-              child: Row(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: IntrinsicHeight(
+                child: Row(
                 children: [
                   Container(width: 4, height: double.infinity,
                       color: digital
@@ -915,13 +925,15 @@ class _DeedCard extends StatelessWidget {
                       children: [
                         Text(
                           deed.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodyLarge?.copyWith(
                             fontWeight: FontWeight.w500,
                             decoration:
                                 completed ? TextDecoration.lineThrough : null,
                             color: completed
                                 ? theme.colorScheme.onSurface
-                                    .withValues(alpha: 0.45)
+                                    .withValues(alpha: 0.65)
                                 : theme.colorScheme.onSurface,
                           ),
                         ),
@@ -931,9 +943,7 @@ class _DeedCard extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: hasReason
-                                  ? theme.colorScheme.onSurfaceVariant
-                                  : theme.colorScheme.primary,
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
                       ],
@@ -942,8 +952,7 @@ class _DeedCard extends StatelessWidget {
                   IconButton(
                     onPressed: canLog ? onLongPress : null,
                     tooltip: 'More actions',
-                    visualDensity: VisualDensity.compact,
-                    iconSize: 18,
+                    iconSize: 20,
                     icon: Icon(
                       Icons.more_horiz_rounded,
                       color: theme.colorScheme.onSurfaceVariant,
@@ -965,6 +974,7 @@ class _DeedCard extends StatelessWidget {
                         : Icon(icon, color: iconColor, size: 22),
                   ),
                 ],
+              ),
               ),
             ),
           ),
@@ -1034,7 +1044,8 @@ class _EmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 40, 20, 0),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screen, AppSpacing.huge, AppSpacing.screen, 0),
       child: Column(
         children: [
           Icon(Icons.event_available_rounded,
@@ -1086,7 +1097,7 @@ class _OutcomeTile extends StatelessWidget {
       leading: Icon(icon, color: color),
       title: Text(label),
       trailing: selected
-          ? Icon(Icons.check_rounded, color: theme.colorScheme.primary)
+          ? Icon(AppIcons.done, color: theme.colorScheme.primary)
           : null,
       onTap: onTap,
     );
