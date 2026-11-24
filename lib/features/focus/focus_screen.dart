@@ -200,6 +200,15 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
     });
   }
 
+  void _restart() {
+    setState(() {
+      _remaining = _totalSeconds;
+      _finished = false;
+      _running = false;
+      _endsAt = null;
+    });
+  }
+
   String get _timeLabel {
     final minutes = (_remaining / 60).floor();
     final seconds = _remaining % 60;
@@ -337,41 +346,44 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
               else
                 TextButton.icon(
                   onPressed: _finished ? null : _addFive,
+                  style: TextButton.styleFrom(
+                    foregroundColor: theme.colorScheme.secondary,
+                  ),
                   icon: const Icon(Icons.add_rounded, size: 18),
                   label: const Text('Add 5 minutes'),
                 ),
               const Spacer(),
               Padding(
                 padding: const EdgeInsets.all(AppSpacing.screen),
-                child: Row(
+                child: Column(
                   children: [
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: _finished ? null : _startPause,
-                        icon: Icon(
-                          _running
-                              ? Icons.pause_rounded
-                              : Icons.play_arrow_rounded,
-                        ),
-                        label: Text(
-                          _running
-                              ? 'Pause'
-                              : (_remaining == _totalSeconds
-                                  ? 'Start'
-                                  : 'Resume'),
-                        ),
+                    FilledButton.icon(
+                      onPressed: _finished ? _restart : _startPause,
+                      icon: Icon(
+                        _finished
+                            ? Icons.replay_rounded
+                            : (_running
+                                ? Icons.pause_rounded
+                                : Icons.play_arrow_rounded),
+                      ),
+                      label: Text(
+                        _finished
+                            ? 'Go again'
+                            : (_running
+                                ? 'Pause'
+                                : (_remaining == _totalSeconds
+                                    ? 'Start'
+                                    : 'Resume')),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          minimumSize: const Size(0, 52),
-                        ),
-                        onPressed: _markDoneNow,
-                        icon: const Icon(Icons.check_rounded),
-                        label: const Text('Done'),
+                    const SizedBox(height: 10),
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(52),
                       ),
+                      onPressed: _markDoneNow,
+                      icon: const Icon(Icons.check_rounded),
+                      label: const Text('Done'),
                     ),
                   ],
                 ),

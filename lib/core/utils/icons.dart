@@ -32,6 +32,7 @@ abstract final class Phosphor {
   static const trendUp = IconData(0xe4ae, fontFamily: _f);
   static const trendDown = IconData(0xe4ac, fontFamily: _f);
   static const notePencil = IconData(0xe34c, fontFamily: _f);
+  static const arrowsClockwise = IconData(0xe094, fontFamily: _f);
   static const gear = IconData(0xe270, fontFamily: _f);
 }
 
@@ -48,6 +49,8 @@ abstract final class AppIcons {
   static const trendDown = Phosphor.trendDown;
   static const notePencil = Phosphor.notePencil;
   static const star = Phosphor.star;
+  static const timer = Phosphor.timer;
+  static const reset = Phosphor.arrowsClockwise;
 }
 
 /// Maps icon names stored in the DB to Phosphor icons (bold weight).

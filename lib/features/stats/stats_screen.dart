@@ -88,7 +88,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
           ),
           const SizedBox(width: 4),
           Text(
-            '${diff.abs().round()}% vs prev',
+            '${diff.abs().round()} pts vs last ${period.label.toLowerCase()}',
             style: theme.textTheme.labelSmall?.copyWith(
               color: color,
               fontWeight: FontWeight.w600,
@@ -118,7 +118,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
     final from = _period == StatsPeriodType.all
         ? _earliest(deeds, logs, today)
         : today.subtract(Duration(days: _period.days - 1));
-    final loggedDays = logs.map((log) => dateOnly(log.day)).toSet();
+    final loggedDays = logs
+        .where((log) => LogStatus.fromDb(log.status) == LogStatus.done)
+        .map((log) => dateOnly(log.day))
+        .toSet();
     final streakNow = currentStreak(loggedDays, today: today);
     final bestRun = bestStreak(loggedDays);
     final result = computeStats(
@@ -137,7 +140,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
         ? theme.colorScheme.onSurfaceVariant
         : (isLight ? AppColors.lateLight : AppColors.late);
     final skippedColor = digital
-        ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.65)
+        ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.55)
         : (isLight ? AppColors.skippedLight : AppColors.skipped);
     final missedColor = theme.colorScheme.onSurfaceVariant;
 
@@ -194,7 +197,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                   child: Padding(
                     padding: const EdgeInsets.all(14),
                     child: _Heatmap(
-                      deeds: result.deeds,
+                      deeds: deeds,
                       logs: logs,
                       categories: categories,
                       today: today,
@@ -244,6 +247,13 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                     if (_period != StatsPeriodType.all)
                       _deltaChip(result, deeds, logs, from, _period),
                   ],
+                ),
+                const SizedBox(height: 10),
+                _Legend(
+                  doneColor: doneColor,
+                  lateColor: lateColor,
+                  skippedColor: skippedColor,
+                  missedColor: missedColor,
                 ),
                 const SizedBox(height: 10),
                 GridView.count(
@@ -363,7 +373,7 @@ class _Heatmap extends StatelessWidget {
 
   static const int _days = 30;
 
-  final List<DeedStats> deeds;
+  final List<db.Deed> deeds;
   final List<db.DeedLog> logs;
   final List<db.Category> categories;
   final DateTime today;
@@ -377,13 +387,12 @@ class _Heatmap extends StatelessWidget {
 
   Color? _colorFor(
     Map<String, LogStatus> index,
-    DeedStats stats,
+    db.Deed deed,
     DateTime day,
     ThemeData theme,
     bool digital,
   ) {
-    final status =
-        index['${stats.deed.id}/${day.year}-${day.month}-${day.day}'];
+    final status = index['${deed.id}/${day.year}-${day.month}-${day.day}'];
     if (status != null) {
       if (digital) {
         return switch (status) {
@@ -391,7 +400,7 @@ class _Heatmap extends StatelessWidget {
           LogStatus.late => theme.colorScheme.onSurfaceVariant
               .withValues(alpha: 0.75),
           LogStatus.skipped => theme.colorScheme.onSurfaceVariant
-              .withValues(alpha: 0.45),
+              .withValues(alpha: 0.55),
         };
       }
       return switch (status) {
@@ -406,8 +415,8 @@ class _Heatmap extends StatelessWidget {
             : AppColors.skipped,
       };
     }
-    if (!isScheduledOn(stats.deed, day)) return null;
-    if (frequencyOf(stats.deed).isCountBased) return null;
+    if (!isScheduledOn(deed, day)) return null;
+    if (frequencyOf(deed).isCountBased) return null;
     if (day.isBefore(today)) {
       return theme.colorScheme.onSurfaceVariant.withValues(
         alpha: digital ? 0.22 : 0.35,
@@ -444,18 +453,18 @@ class _Heatmap extends StatelessWidget {
 
     return Column(
       children: [
-        for (final stats in deeds) ...[
+        for (final deed in deeds) ...[
           Row(
             children: [
               SizedBox(
                 width: 34,
                 child: Tooltip(
-                  message: stats.deed.name,
+                  message: deed.name,
                   child: Icon(
                     iconForDeed(
-                      deedIcon: stats.deed.icon,
-                      categoryIcon: _categoryIcon(stats.deed.categoryId),
-                      name: stats.deed.name,
+                      deedIcon: deed.icon,
+                      categoryIcon: _categoryIcon(deed.categoryId),
+                      name: deed.name,
                     ),
                     size: 18,
                     color: theme.colorScheme.primary,
@@ -465,7 +474,7 @@ class _Heatmap extends StatelessWidget {
               Expanded(
                 child: Row(
                   children: dateList.map((day) {
-                    final color = _colorFor(index, stats, day, theme, digital);
+                    final color = _colorFor(index, deed, day, theme, digital);
                     return Expanded(
                       child: Padding(
                         padding: const EdgeInsets.all(1),

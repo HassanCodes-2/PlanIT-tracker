@@ -137,7 +137,7 @@ class SettingsScreen extends ConsumerWidget {
                   subtitle: _accentName(accent),
                   selected:
                       ref.watch(themeStyleProvider) == AppThemeStyle.midnight,
-                  previewColor: const Color(0xFF1B6CFF),
+                  previewColor: accent,
                   onTap: () => ref
                       .read(themeStyleProvider.notifier)
                       .setStyle(AppThemeStyle.midnight),
@@ -271,12 +271,12 @@ class SettingsScreen extends ConsumerWidget {
             clipBehavior: Clip.antiAlias,
             child: ListTile(
               leading: Icon(
-                Icons.file_upload_outlined,
+                Icons.file_download_outlined,
                 color: theme.colorScheme.primary,
               ),
-              title: const Text('Backup my data'),
+              title: const Text('Export my data'),
               subtitle: Text(
-                'Save a copy of every deed and your history as a file',
+                'Save a copy of every deed and note as a file',
                 style: theme.textTheme.bodySmall
                     ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
@@ -288,7 +288,7 @@ class SettingsScreen extends ConsumerWidget {
             icon: Icons.storage_rounded,
             title: 'Data',
             subtitle:
-                'Stored only on this phone. Use Backup to keep a safe copy.',
+                'Stored only on this phone. Export keeps a safe copy.',
           ),
           const SizedBox(height: 24),
           _Label('ABOUT'),
@@ -384,7 +384,7 @@ class _StyleCard extends StatelessWidget {
                         : Icons.circle_outlined,
                     size: 14,
                     color: selected
-                        ? theme.colorScheme.primary
+                        ? theme.colorScheme.secondary
                         : theme.colorScheme.onSurfaceVariant,
                   ),
                   const SizedBox(width: 4),
@@ -392,7 +392,7 @@ class _StyleCard extends StatelessWidget {
                     selected ? 'Active' : 'Use',
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: selected
-                          ? theme.colorScheme.primary
+                          ? theme.colorScheme.secondary
                           : theme.colorScheme.onSurfaceVariant,
                     ),
                   ),

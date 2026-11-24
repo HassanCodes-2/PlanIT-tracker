@@ -165,23 +165,26 @@ class _NoteGrid extends StatelessWidget {
         crossAxisCount: 2,
         mainAxisSpacing: 10,
         crossAxisSpacing: 10,
-        mainAxisExtent: 150,
+        mainAxisExtent: 164,
       ),
       itemCount: notes.length,
       itemBuilder: (context, index) {
         final note = notes[index];
-        final accent = colorFromHex(note.color);
         final digital = context.appStyle.isDigital;
+        final accent = AppTheme.ensureVisible(
+          colorFromHex(note.color),
+          theme.cardTheme.color ?? theme.colorScheme.surface,
+          theme.brightness,
+          ratio: 3.2,
+        );
         return Material(
-          color: digital
-              ? theme.cardTheme.color
-              : accent.withValues(alpha: 0.14),
+          color: theme.cardTheme.color,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
             side: BorderSide(
               color: digital
                   ? theme.colorScheme.outline
-                  : accent.withValues(alpha: 0.45),
+                  : accent.withValues(alpha: 0.55),
             ),
           ),
           clipBehavior: Clip.antiAlias,
@@ -195,27 +198,17 @@ class _NoteGrid extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      if (digital) ...[
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: accent,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                      ],
-                      if (note.pinned) ...[
-                        Icon(
-                          Icons.push_pin_rounded,
-                          size: 13,
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
                           color: digital
-                              ? theme.colorScheme.primary
+                              ? theme.colorScheme.onSurfaceVariant
                               : accent,
+                          borderRadius: BorderRadius.circular(2),
                         ),
-                        const SizedBox(width: 4),
-                      ],
+                      ),
+                      const SizedBox(width: 6),
                       Expanded(
                         child: Text(
                           note.title.isEmpty ? 'Untitled' : note.title,
@@ -226,13 +219,27 @@ class _NoteGrid extends StatelessWidget {
                           ),
                         ),
                       ),
+                      IconButton(
+                        tooltip: note.pinned ? 'Unpin note' : 'Pin note',
+                        onPressed: () => onLongPress(note),
+                        visualDensity: VisualDensity.compact,
+                        iconSize: 16,
+                        icon: Icon(
+                          note.pinned
+                              ? Icons.push_pin_rounded
+                              : Icons.push_pin_outlined,
+                          color: note.pinned
+                              ? theme.colorScheme.secondary
+                              : theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 6),
                   Expanded(
                     child: Text(
                       note.body.isEmpty ? 'No text yet' : note.body,
-                      maxLines: 4,
+                      maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,

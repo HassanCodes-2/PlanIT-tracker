@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../core/theme/app_theme.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/providers.dart';
 
@@ -78,7 +79,18 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
     final repository = ref.read(repositoryProvider);
 
     if (_isEmpty) {
-      if (_existing != null) await repository.deleteNote(_existing!.id);
+      if (_existing != null) {
+        // Don't delete silently — keep the note, the user can use the
+        // explicit delete button if they want it gone.
+        await repository.updateNote(
+          _existing!,
+          db.NotesCompanion(
+            title: const Value(''),
+            body: const Value(''),
+            updatedAt: Value(DateTime.now()),
+          ),
+        );
+      }
     } else {
       final changes = db.NotesCompanion(
         title: Value(_titleController.text.trim()),
@@ -193,7 +205,8 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
         ),
         body: Column(
           children: [
-            Padding(
+            if (!context.appStyle.isDigital)
+              Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Wrap(
                 alignment: WrapAlignment.center,
@@ -227,8 +240,9 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
                               ),
                             ),
                             child: selected
-                                ? const Icon(Icons.check_rounded,
-                                    size: 16, color: Colors.white)
+                                ? Icon(Icons.check_rounded,
+                                    size: 16,
+                                    color: AppTheme.onColor(_palette[index]))
                                 : null,
                           ),
                         ),
@@ -238,6 +252,15 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
                 }),
               ),
             ),
+            if (context.appStyle.isDigital)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Text(
+                  'Note colors are available in Midnight.',
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                ),
+              ),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),

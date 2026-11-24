@@ -88,9 +88,13 @@ abstract final class AppTheme {
       seedColor: accent,
       brightness: brightness,
     );
+    final accentText =
+        _accessibleAccent(accent, surface, brightness, ratio: 4.5);
     final scheme = baseScheme.copyWith(
       primary: accent,
       onPrimary: onAccent,
+      secondary: accentText,
+      onSecondary: onAccent,
       surface: surface,
       onSurface: text,
       outline: border,
@@ -101,11 +105,11 @@ abstract final class AppTheme {
 
     final fieldBorder = digital
         ? (brightness == Brightness.dark
-            ? const Color(0xFF4A4A52)
-            : const Color(0xFF9A9AA3))
+            ? const Color(0xFF5F5F6A)
+            : const Color(0xFF85858F))
         : (brightness == Brightness.dark
-            ? const Color(0xFF5A5A66)
-            : const Color(0xFF8E8E99));
+            ? const Color(0xFF75757F)
+            : const Color(0xFF8A8A93));
 
     final textTheme = _textTheme(text, muted);
 
@@ -151,12 +155,23 @@ abstract final class AppTheme {
         style: FilledButton.styleFrom(
           backgroundColor: accent,
           foregroundColor: onAccent,
-          minimumSize: const Size.fromHeight(52),
+          minimumSize: const Size(64, 48),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radius - 2),
           ),
           textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: surface,
+        selectedColor: accent.withValues(alpha: 0.16),
+        side: BorderSide(color: fieldBorder),
+        labelStyle: TextStyle(
+          color: text,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
+        checkmarkColor: accentText,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -200,9 +215,11 @@ abstract final class AppTheme {
         ),
       ),
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: surface,
-        contentTextStyle: TextStyle(color: text),
-        actionTextColor: accent,
+        backgroundColor: brightness == Brightness.dark
+            ? const Color(0xFF2E2E36)
+            : const Color(0xFF202024),
+        contentTextStyle: const TextStyle(color: Colors.white),
+        actionTextColor: accentText,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radius - 4),
@@ -229,6 +246,8 @@ abstract final class AppTheme {
             fontSize: 20, fontWeight: FontWeight.w600, height: 1.3, color: text),
         titleMedium: TextStyle(
             fontSize: 16, fontWeight: FontWeight.w600, height: 1.35, color: text),
+        headlineMedium: TextStyle(
+            fontSize: 28, fontWeight: FontWeight.w700, height: 1.25, color: text),
         titleSmall: TextStyle(
             fontSize: 14, fontWeight: FontWeight.w600, color: text),
         bodyLarge:
@@ -265,22 +284,42 @@ abstract final class AppTheme {
   static Color _accessibleAccent(
     Color accent,
     Color against,
-    Brightness brightness,
-  ) {
-    if (_contrastRatio(accent, against) >= 3.0) return accent;
+    Brightness brightness, {
+    double ratio = 3.0,
+  }) {
+    if (_contrastRatio(accent, against) >= ratio) return accent;
     final target = brightness == Brightness.dark ? Colors.white : Colors.black;
     for (var t = 0.05; t <= 0.95; t += 0.05) {
       final candidate = Color.lerp(accent, target, t)!;
-      if (_contrastRatio(candidate, against) >= 3.0) return candidate;
+      if (_contrastRatio(candidate, against) >= ratio) return candidate;
     }
     return target;
   }
 
   /// Picks black or white text for the best contrast on the accent fill.
-  static Color _idealOn(Color fill) =>
-      _contrastRatio(Colors.white, fill) >= _contrastRatio(Colors.black, fill)
-          ? Colors.white
-          : Colors.black;
+  /// Prefers white for saturated fills (MD3 tonal pairing), black for
+  /// luminous fills like amber or lime.
+  static Color _idealOn(Color fill) {
+    final white = _contrastRatio(Colors.white, fill);
+    final black = _contrastRatio(Colors.black, fill);
+    if (white >= 4.5) return Colors.white;
+    if (black >= 4.5) return Colors.black;
+    return white >= black ? Colors.white : Colors.black;
+  }
+
+  /// Public helper for widgets that render colored chips/dots: darken or
+  /// lighten the color until it is at least [ratio] readable on [against].
+  static Color ensureVisible(
+    Color color,
+    Color against,
+    Brightness brightness, {
+    double ratio = 3.0,
+  }) {
+    return _accessibleAccent(color, against, brightness, ratio: ratio);
+  }
+
+  /// Best black/white foreground for an arbitrary fill color.
+  static Color onColor(Color fill) => _idealOn(fill);
 }
 
 /// Marks the active visual style so widgets can fine-tune details.

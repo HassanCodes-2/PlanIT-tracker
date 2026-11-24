@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/notifications/notification_service.dart';
+import '../../core/prefs/prefs_providers.dart';
 import '../../core/utils/icons.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/providers.dart';
@@ -140,6 +141,9 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
 
     // Close first, then refresh reminders in the background.
     final notifications = ref.read(notificationServiceProvider);
+    if (reminderValue != null) {
+      unawaited(notifications.ensurePermission());
+    }
     if (mounted) context.pop();
     final deeds = await repository.allDeeds();
     unawaited(notifications.syncAll(deeds));
@@ -174,9 +178,16 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
     if (name == null || name.isEmpty) return;
     final id = await ref
         .read(repositoryProvider)
-        .createCategory(name: name, icon: 'star');
+        .createCategory(
+          name: name,
+          icon: 'star',
+          color: _accentHex(ref.read(accentColorProvider)),
+        );
     if (mounted) setState(() => _categoryId = id);
   }
+
+  String _accentHex(Color color) =>
+      '#${color.toARGB32().toRadixString(16).substring(2, 8).toUpperCase()}';
 
   Future<void> _archive() async {
     final confirmed = await showDialog<bool>(
@@ -228,7 +239,7 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.close_rounded),
+          icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => context.pop(),
         ),
         title: Text(_existing == null ? 'Create new deed' : 'Edit deed'),
@@ -444,6 +455,9 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
             const SizedBox(height: 24),
             FilledButton(
               onPressed: _saving ? null : _save,
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(52),
+              ),
               child: _saving
                   ? const SizedBox(
                       width: 20,

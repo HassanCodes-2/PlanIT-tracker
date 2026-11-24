@@ -40,10 +40,16 @@ class TodayScreen extends ConsumerWidget {
     final today = dateOnly(DateTime.now());
     final isFuture = day.isAfter(today);
     final scheduled = deeds.where((deed) => isScheduledOn(deed, day)).toList();
-    final doneCount =
-        scheduled.where((deed) => logs[deed.id] != null).length;
+    final doneCount = scheduled.where((deed) {
+      final log = logs[deed.id];
+      return log != null &&
+          LogStatus.fromDb(log.status) == LogStatus.done;
+    }).length;
 
-    final loggedDays = allLogs.map((log) => dateOnly(log.day)).toSet();
+    final loggedDays = allLogs
+        .where((log) => LogStatus.fromDb(log.status) == LogStatus.done)
+        .map((log) => dateOnly(log.day))
+        .toSet();
     final streak = currentStreak(loggedDays, today: today);
 
     final mode = ref.watch(themeModeProvider);
@@ -93,6 +99,17 @@ class TodayScreen extends ConsumerWidget {
             _DateHeader(
               timeLabel: timeLabel,
               dateLabel: dateLabel,
+              onPickDate: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: day,
+                  firstDate: DateTime(today.year - 2),
+                  lastDate: DateTime(today.year + 1, 12, 31),
+                );
+                if (picked != null) {
+                  ref.read(selectedDayProvider.notifier).select(picked);
+                }
+              },
               streak: streak,
               done: doneCount,
               total: scheduled.length,
@@ -210,7 +227,7 @@ class TodayScreen extends ConsumerWidget {
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(
         content: Text(message),
-        duration: const Duration(seconds: 3),
+        duration: const Duration(seconds: 5),
         action: undo == null
             ? null
             : SnackBarAction(label: 'Undo', onPressed: undo),
@@ -289,6 +306,7 @@ class TodayScreen extends ConsumerWidget {
 
     await showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: theme.cardTheme.color,
       showDragHandle: true,
       shape: const RoundedRectangleBorder(
@@ -296,7 +314,8 @@ class TodayScreen extends ConsumerWidget {
       ),
       builder: (sheetContext) {
         return SafeArea(
-          child: Column(
+          child: SingleChildScrollView(
+            child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Padding(
@@ -315,13 +334,16 @@ class TodayScreen extends ConsumerWidget {
                         Navigator.pop(sheetContext);
                         context.push('/create-deed?id=${deed.id}');
                       },
+                      style: TextButton.styleFrom(
+                        foregroundColor: theme.colorScheme.secondary,
+                      ),
                       child: const Text('Edit'),
                     ),
                   ],
                 ),
               ),
               _OutcomeTile(
-                icon: Icons.timer_rounded,
+                icon: AppIcons.timer,
                 color: theme.colorScheme.primary,
                 label: 'Start focus session',
                 selected: false,
@@ -355,6 +377,7 @@ class TodayScreen extends ConsumerWidget {
                 selected: existing?.status == LogStatus.late.dbValue,
                 onTap: () async {
                   Navigator.of(sheetContext).pop();
+                  HapticFeedback.selectionClick();
                   await repository.setLog(deed.id, day, LogStatus.late);
                   if (context.mounted) {
                     _snack(
@@ -372,6 +395,7 @@ class TodayScreen extends ConsumerWidget {
                 selected: existing?.status == LogStatus.skipped.dbValue,
                 onTap: () async {
                   Navigator.of(sheetContext).pop();
+                  HapticFeedback.selectionClick();
                   String? reason;
                   if (deed.reasonsEnabled) {
                     reason = await _askReason(context);
@@ -393,7 +417,7 @@ class TodayScreen extends ConsumerWidget {
                 },
               ),
               _OutcomeTile(
-                icon: Icons.bar_chart_rounded,
+                icon: AppIcons.late,
                 color: theme.colorScheme.onSurfaceVariant,
                 label: 'View history & stats',
                 selected: false,
@@ -404,7 +428,7 @@ class TodayScreen extends ConsumerWidget {
               ),
               if (existing != null)
                 _OutcomeTile(
-                  icon: Icons.restart_alt_rounded,
+                  icon: AppIcons.reset,
                   color: theme.colorScheme.onSurfaceVariant,
                   label: 'Clear today\'s log',
                   selected: false,
@@ -428,6 +452,7 @@ class TodayScreen extends ConsumerWidget {
                 ),
               const SizedBox(height: 12),
             ],
+          ),
           ),
         );
       },
@@ -465,6 +490,7 @@ class _DateHeader extends StatelessWidget {
   const _DateHeader({
     required this.timeLabel,
     required this.dateLabel,
+    required this.onPickDate,
     required this.streak,
     required this.done,
     required this.total,
@@ -474,6 +500,7 @@ class _DateHeader extends StatelessWidget {
 
   final String timeLabel;
   final String dateLabel;
+  final VoidCallback onPickDate;
   final int streak;
   final int done;
   final int total;
@@ -503,12 +530,19 @@ class _DateHeader extends StatelessWidget {
                     ),
                     Text(
                       dateLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
                 ),
+              ),
+              IconButton(
+                tooltip: 'Pick a date',
+                onPressed: onPickDate,
+                icon: const Icon(Icons.calendar_month_rounded),
               ),
               IconButton(
                 tooltip: 'Switch theme',
@@ -819,9 +853,14 @@ class _DeedCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final digital = context.appStyle.isDigital;
-    final accent = digital
+    final accent = digital || category == null
         ? theme.colorScheme.primary
-        : colorFromHex(category?.color ?? '#1B6CFF');
+        : AppTheme.ensureVisible(
+            colorFromHex(category!.color),
+            theme.cardTheme.color ?? theme.colorScheme.surface,
+            theme.brightness,
+            ratio: 3.2,
+          );
     final status = log == null ? null : LogStatus.fromDb(log!.status);
     final completed = status != null;
 

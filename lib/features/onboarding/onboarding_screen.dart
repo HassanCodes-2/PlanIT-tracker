@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/prefs/prefs_providers.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/icons.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/providers.dart';
@@ -210,6 +211,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   const SizedBox(height: 20),
                   FilledButton.icon(
                     onPressed: _saving ? null : _next,
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(52),
+                    ),
                     icon: _page == 2
                         ? const Icon(Icons.rocket_launch_rounded)
                         : const Icon(Icons.arrow_forward_rounded),
@@ -308,7 +312,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 avatar: Icon(
                   iconForName(area.icon, fallback: Icons.star_rounded),
                   size: 18,
-                  color: colorFromHex(area.color),
+                  color: context.appStyle.isDigital
+                      ? theme.colorScheme.onSurfaceVariant
+                      : colorFromHex(area.color),
                 ),
                 selected: selected,
                 onSelected: (value) {
@@ -404,7 +410,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       Icon(
                         iconForName(suggestion.icon,
                             fallback: Icons.check_rounded),
-                        color: colorFromHex(area.color),
+                        color: context.appStyle.isDigital
+                      ? theme.colorScheme.onSurfaceVariant
+                      : colorFromHex(area.color),
                         size: 20,
                       ),
                       const SizedBox(width: 12),

@@ -20,7 +20,6 @@ class _PlanItAppState extends ConsumerState<PlanItApp> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final notifications = ref.read(notificationServiceProvider);
-      await notifications.ensurePermission();
       final deeds = await ref.read(repositoryProvider).allDeeds();
       await notifications.syncAll(deeds);
     });
@@ -39,6 +38,8 @@ class _PlanItAppState extends ConsumerState<PlanItApp> {
       darkTheme: isDigital ? AppTheme.digitalDark : AppTheme.darkWith(accent),
       themeMode: ref.watch(themeModeProvider),
       routerConfig: ref.watch(appRouterProvider),
+      themeAnimationDuration: const Duration(milliseconds: 300),
+      themeAnimationCurve: Curves.easeOutCubic,
     );
   }
 }

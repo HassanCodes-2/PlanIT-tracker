@@ -2,13 +2,16 @@ import 'dart:math';
 
 import 'package:material_ui/material_ui.dart';
 
+import '../theme/app_theme.dart';
+
 /// Fires a one-shot confetti burst over the current screen.
 /// Pure CustomPainter — no dependencies, no state kept afterwards.
 void showConfetti(BuildContext context) {
   if (MediaQuery.disableAnimationsOf(context)) return;
 
+  final monochrome = context.appStyle.isDigital;
   final overlay = OverlayEntry(
-    builder: (_) => const _ConfettiView(),
+    builder: (_) => _ConfettiView(monochrome: monochrome),
   );
   Overlay.of(context, rootOverlay: true).insert(overlay);
   Future.delayed(const Duration(milliseconds: 2400), () {
@@ -17,7 +20,9 @@ void showConfetti(BuildContext context) {
 }
 
 class _ConfettiView extends StatefulWidget {
-  const _ConfettiView();
+  const _ConfettiView({required this.monochrome});
+
+  final bool monochrome;
 
   @override
   State<_ConfettiView> createState() => _ConfettiViewState();
@@ -38,17 +43,26 @@ class _ConfettiViewState extends State<_ConfettiView>
     Color(0xFF14B8A6),
   ];
 
+  static const _monoColors = [
+    Color(0xFFFFFFFF),
+    Color(0xFFC9C9D2),
+    Color(0xFF9A9AA5),
+    Color(0xFF6C6C76),
+    Color(0xFFF5F5F7),
+  ];
+
   @override
   void initState() {
     super.initState();
     final random = Random();
+    final palette = widget.monochrome ? _monoColors : _colors;
     _pieces = List.generate(80, (_) {
       return _Piece(
         angle: random.nextDouble() * 2 * pi,
         speed: 140 + random.nextDouble() * 340,
         size: 5 + random.nextDouble() * 7,
         spin: (random.nextDouble() * 8 - 4) * 2 * pi,
-        color: _colors[random.nextInt(_colors.length)],
+        color: palette[random.nextInt(palette.length)],
         circle: random.nextBool(),
       );
     });

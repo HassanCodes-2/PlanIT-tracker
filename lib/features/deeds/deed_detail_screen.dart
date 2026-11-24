@@ -86,6 +86,14 @@ class DeedDetailScreen extends ConsumerWidget {
           for (final candidate in categories) {
             if (candidate.id == deed.categoryId) category = candidate;
           }
+          final accent = digital || category == null
+              ? theme.colorScheme.primary
+              : AppTheme.ensureVisible(
+                  colorFromHex(category.color),
+                  theme.cardTheme.color ?? theme.colorScheme.surface,
+                  theme.brightness,
+                  ratio: 3.2,
+                );
 
           return StreamBuilder<List<db.DeedLog>>(
             stream: repository.watchLogsForDeed(deedId),
@@ -122,11 +130,7 @@ class DeedDetailScreen extends ConsumerWidget {
                           width: 52,
                           height: 52,
                           decoration: BoxDecoration(
-                            color: (digital
-                                    ? theme.colorScheme.primary
-                                    : colorFromHex(
-                                        category?.color ?? '#1B6CFF'))
-                                .withValues(alpha: digital ? 0.10 : 0.12),
+                            color: accent.withValues(alpha: digital ? 0.10 : 0.12),
                             shape: digital
                                 ? BoxShape.rectangle
                                 : BoxShape.circle,
@@ -140,10 +144,7 @@ class DeedDetailScreen extends ConsumerWidget {
                               categoryIcon: category?.icon,
                               name: deed.name,
                             ),
-                            color: digital
-                                ? theme.colorScheme.primary
-                                : colorFromHex(
-                                    category?.color ?? '#1B6CFF'),
+                            color: accent,
                             size: 28,
                           ),
                         ),
