@@ -277,9 +277,15 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    if (_categoryId == null && categories.isNotEmpty) {
-      _categoryId = categories.first.id;
-    }
+    ref.listen(categoriesProvider, (previous, next) {
+      final list = next.value;
+      if (widget.deedId == null &&
+          list != null &&
+          list.isNotEmpty &&
+          _categoryId == null) {
+        setState(() => _categoryId = list.first.id);
+      }
+    });
 
     return PopScope(
       canPop: false,
@@ -385,6 +391,16 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
               spacing: 8,
               runSpacing: 8,
               children: [
+                ChoiceChip(
+                  label: const Text('None'),
+                  selected: _categoryId == null,
+                  onSelected: (_) {
+                    setState(() {
+                      _categoryId = null;
+                      _dirty = true;
+                    });
+                  },
+                ),
                 ...categories.map((category) {
                   final selected = category.id == _categoryId;
                   return ChoiceChip(

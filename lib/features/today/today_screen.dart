@@ -76,8 +76,8 @@ class TodayScreen extends ConsumerWidget {
     final timeLabel = DateFormat('HH:mm').format(now);
     final userName = ref.watch(userNameProvider);
     final dateLabel = userName.isEmpty
-        ? DateFormat('EEEE, d MMMM').format(day)
-        : '$userName · ${DateFormat('EEEE, d MMMM').format(day)}';
+        ? DateFormat('EEEE, d MMMM yyyy').format(day)
+        : '$userName · ${DateFormat('EEEE, d MMMM yyyy').format(day)}';
 
     final grouped = <db.Category, List<db.Deed>>{};
     for (final category in categories) {
@@ -109,7 +109,7 @@ class TodayScreen extends ConsumerWidget {
                 ),
               ),
             ListView(
-          padding: const EdgeInsets.only(bottom: 96),
+          padding: const EdgeInsets.only(bottom: 150),
           children: [
             _DateHeader(
               timeLabel: timeLabel,
@@ -198,6 +198,7 @@ class TodayScreen extends ConsumerWidget {
                   ),
                   onLongPress: (deed) =>
                       _showOutcomeSheet(context, ref, deed, day, logs),
+                  onFocus: (deed) => _openFocus(context, deed, day),
                 ),
               ),
               if (uncategorized.isNotEmpty)
@@ -219,6 +220,7 @@ class TodayScreen extends ConsumerWidget {
                   ),
                   onLongPress: (deed) =>
                       _showOutcomeSheet(context, ref, deed, day, logs),
+                  onFocus: (deed) => _openFocus(context, deed, day),
                 ),
               if (doneCount >= scheduled.length && !isFuture)
                 const _CaughtUpCard(),
@@ -241,6 +243,12 @@ class TodayScreen extends ConsumerWidget {
             ? null
             : SnackBarAction(label: 'Undo', onPressed: undo),
       ));
+  }
+
+  void _openFocus(BuildContext context, db.Deed deed, DateTime day) {
+    context.push(
+      '/focus?id=${deed.id}&day=${DateFormat('yyyy-MM-dd').format(day)}',
+    );
   }
 
   Future<void> _onTapDeed(
@@ -425,6 +433,7 @@ class TodayScreen extends ConsumerWidget {
                 label: 'Skipped',
                 selected: existing?.status == LogStatus.skipped.dbValue,
                 onTap: () async {
+                  final previous = existing;
                   Navigator.of(sheetContext).pop();
                   HapticFeedback.selectionClick();
                   String? reason;
@@ -442,7 +451,14 @@ class TodayScreen extends ConsumerWidget {
                     _snack(
                       context,
                       'Skipped "${deed.name}"',
-                      () => repository.clearLog(deed.id, day),
+                      () => previous == null
+                          ? repository.clearLog(deed.id, day)
+                          : repository.setLog(
+                              deed.id,
+                              day,
+                              LogStatus.fromDb(previous.status),
+                              reason: previous.reason,
+                            ),
                     );
                   }
                 },
@@ -861,6 +877,7 @@ class _CategorySection extends StatelessWidget {
     required this.canLog,
     required this.onTap,
     required this.onLongPress,
+    required this.onFocus,
   });
 
   final db.Category? category;
@@ -871,6 +888,7 @@ class _CategorySection extends StatelessWidget {
   final bool canLog;
   final ValueChanged<db.Deed> onTap;
   final ValueChanged<db.Deed> onLongPress;
+  final ValueChanged<db.Deed> onFocus;
 
   String? _progressFor(db.Deed deed) {
     final frequency = frequencyOf(deed);
@@ -889,13 +907,15 @@ class _CategorySection extends StatelessWidget {
     final done = allLogs
         .where((log) =>
             log.deedId == deed.id &&
-            LogStatus.fromDb(log.status) == LogStatus.done &&
+            (LogStatus.fromDb(log.status) == LogStatus.done ||
+                LogStatus.fromDb(log.status) == LogStatus.late) &&
             !dateOnly(log.day).isBefore(start) &&
             !dateOnly(log.day).isAfter(end))
         .length;
     final period =
         frequency == FrequencyType.timesPerWeek ? 'this week' : 'this month';
-    return '$done/$target $period';
+    final capped = done > target ? target : done;
+    return '$capped/$target $period';
   }
 
   @override
@@ -927,6 +947,7 @@ class _CategorySection extends StatelessWidget {
               canLog: canLog,
               onTap: () => onTap(deed),
               onLongPress: () => onLongPress(deed),
+              onFocus: () => onFocus(deed),
             ),
           ),
         ],
@@ -944,6 +965,7 @@ class _DeedCard extends StatelessWidget {
     required this.canLog,
     required this.onTap,
     required this.onLongPress,
+    required this.onFocus,
   });
 
   final db.Deed deed;
@@ -953,6 +975,7 @@ class _DeedCard extends StatelessWidget {
   final bool canLog;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
+  final VoidCallback onFocus;
 
   @override
   Widget build(BuildContext context) {
@@ -1019,7 +1042,7 @@ class _DeedCard extends StatelessWidget {
     final subtitle = hasReason ? log!.reason! : (progressText ?? reminderLabel);
     final statusLabel = status?.label;
     final semanticsLabel = '${deed.name}'
-        '${statusLabel != null ? ', $statusLabel' : ''}'
+        '${statusLabel != null ? ', $statusLabel' : ', not logged'}'
         '${subtitle != null && subtitle.isNotEmpty ? ', $subtitle' : ''}';
 
     return Semantics(
@@ -1106,6 +1129,15 @@ class _DeedCard extends StatelessWidget {
                     ),
                   ),
                   IconButton(
+                    onPressed: canLog ? onFocus : null,
+                    tooltip: 'Start focus session',
+                    iconSize: 20,
+                    icon: Icon(
+                      AppIcons.timer,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  IconButton(
                     onPressed: canLog ? onLongPress : null,
                     tooltip: 'More actions',
                     iconSize: 20,
@@ -1130,8 +1162,7 @@ class _DeedCard extends StatelessWidget {
                         ? Icon(
                             Icons.radio_button_unchecked_rounded,
                             size: 20,
-                            color: theme.colorScheme.onSurfaceVariant
-                                .withValues(alpha: 0.6),
+                            color: theme.colorScheme.onSurfaceVariant,
                           )
                         : Icon(icon, color: iconColor, size: 22),
                   ),

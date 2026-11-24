@@ -130,7 +130,6 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
       note,
       db.NotesCompanion(
         pinned: Value(!note.pinned),
-        updatedAt: Value(DateTime.now()),
       ),
     );
   }

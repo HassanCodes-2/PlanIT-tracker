@@ -158,7 +158,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
         ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.55)
         : (isLight ? AppColors.skippedLight : AppColors.skipped);
     final missedColor = digital
-        ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.55)
+        ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.35)
         : theme.colorScheme.onSurfaceVariant;
 
     return Scaffold(
@@ -210,7 +210,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                 const SizedBox(height: 20),
                 _Label(_period == StatsPeriodType.weeks
                     ? 'HEATMAP — LAST 7 DAYS'
-                    : 'HEATMAP — LAST 30 DAYS'),
+                    : 'HEATMAP — LAST 14 DAYS'),
                 const SizedBox(height: 10),
                 Card(
                   child: Padding(
@@ -220,7 +220,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                       logs: logs,
                       categories: categories,
                       today: today,
-                      days: _period == StatsPeriodType.weeks ? 7 : 30,
+                      days: _period == StatsPeriodType.weeks ? 7 : 14,
                     ),
                   ),
                 ),

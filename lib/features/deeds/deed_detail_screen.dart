@@ -348,9 +348,9 @@ class _SingleDeedHeatmap extends StatelessWidget {
         '${log.day.year}-${log.day.month}-${log.day.day}':
             LogStatus.fromDb(log.status),
     };
-    final start = today.subtract(const Duration(days: 29));
+    final start = today.subtract(const Duration(days: 13));
     final days = List.generate(
-      30,
+      14,
       (index) => start.add(Duration(days: index)),
     );
 

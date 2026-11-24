@@ -218,9 +218,7 @@ class SettingsScreen extends ConsumerWidget {
                                 ? Icon(
                                     Icons.check_rounded,
                                     size: 16,
-                                    color: color.computeLuminance() > 0.45
-                                        ? Colors.black
-                                        : Colors.white,
+                                    color: AppTheme.onColor(color),
                                   )
                                 : null,
                           ),
@@ -278,7 +276,7 @@ class SettingsScreen extends ConsumerWidget {
             clipBehavior: Clip.antiAlias,
             child: ListTile(
               leading: Icon(
-                Icons.file_download_outlined,
+                Icons.share_outlined,
                 color: theme.colorScheme.primary,
               ),
               title: const Text('Export my data'),
@@ -315,7 +313,7 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 10),
           _InfoTile(
             icon: Icons.storage_rounded,
-            title: 'Data',
+            title: 'Storage',
             subtitle:
                 'Stored only on this phone. Export keeps a safe copy.',
           ),

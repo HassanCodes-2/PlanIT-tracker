@@ -311,7 +311,10 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
                 ],
               ),
               const SizedBox(height: 28),
-              SizedBox(
+              Semantics(
+                liveRegion: true,
+                label: '$_timeLabel remaining, $_statusLabel',
+                child: SizedBox(
                 width: 248,
                 height: 248,
                 child: Stack(
@@ -361,18 +364,29 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
                   ],
                 ),
               ),
+              ),
               const SizedBox(height: 24),
               if (canPickMinutes)
                 Wrap(
                   spacing: 8,
                   children: _choices
                       .map(
-                        (minutes) => ChoiceChip(
-                          label: Text('$minutes min'),
-                          selected: _totalSeconds == minutes * 60,
-                          showCheckmark: false,
-                          onSelected: (_) => _choose(minutes),
-                        ),
+                        (minutes) {
+                          final selected = _totalSeconds == minutes * 60;
+                          return ChoiceChip(
+                            label: Text('$minutes min'),
+                            selected: selected,
+                            showCheckmark: false,
+                            selectedColor: theme.colorScheme.primary,
+                            labelStyle: TextStyle(
+                              color: selected
+                                  ? theme.colorScheme.onPrimary
+                                  : theme.colorScheme.onSurface,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            onSelected: (_) => _choose(minutes),
+                          );
+                        },
                       )
                       .toList(),
                 )

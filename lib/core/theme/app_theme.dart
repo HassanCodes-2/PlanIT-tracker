@@ -96,7 +96,7 @@ abstract final class AppTheme {
             ? const Color(0xFF75757F)
             : const Color(0xFF8A8A93));
     final accentText =
-        _accessibleAccent(accent, surface, brightness, ratio: 4.5);
+        _accessibleAccent(accent, bg, brightness, ratio: 4.5);
     final snackBg = brightness == Brightness.dark
         ? const Color(0xFF2E2E36)
         : const Color(0xFF202024);

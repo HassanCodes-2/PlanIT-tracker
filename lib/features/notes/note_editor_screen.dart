@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,7 +19,8 @@ class NoteEditorScreen extends ConsumerStatefulWidget {
   ConsumerState<NoteEditorScreen> createState() => _NoteEditorScreenState();
 }
 
-class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
+class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
+    with WidgetsBindingObserver {
   static const List<Color> _palette = [
     Color(0xFF1B6CFF),
     Color(0xFF22C55E),
@@ -41,14 +44,26 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
 
   db.Note? _existing;
   bool _loading = false;
-  bool _saved = false;
+  bool _saving = false;
+  bool _dirty = false;
+  Timer? _autosaveTimer;
   bool _pinned = false;
   int _colorIndex = 0;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _titleController.addListener(_onChanged);
+    _bodyController.addListener(_onChanged);
     if (widget.noteId != null) _load();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused && _dirty) {
+      _save(silent: true);
+    }
   }
 
   Future<void> _load() async {
@@ -67,6 +82,8 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
       );
       _colorIndex = match == -1 ? 0 : match;
     }
+    _dirty = false;
+    _autosaveTimer?.cancel();
     setState(() => _loading = false);
   }
 
@@ -82,25 +99,59 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
       _titleController.text.trim().isEmpty &&
       _bodyController.text.trim().isEmpty;
 
-  Future<void> _save({bool popAfter = true}) async {
-    if (_saved) return;
-    _saved = true;
-    final repository = ref.read(repositoryProvider);
+  void _onChanged() {
+    _dirty = true;
+    _autosaveTimer?.cancel();
+    _autosaveTimer = Timer(const Duration(milliseconds: 800), () {
+      _save(silent: true);
+    });
+  }
 
+  Future<void> _save({bool popAfter = false, bool silent = false}) async {
+    if (_saving) return;
+    if (_existing != null && !_dirty) {
+      if (popAfter && mounted) context.pop();
+      return;
+    }
     if (_isEmpty) {
-      if (_existing != null) {
-        // Don't delete silently — keep the note, the user can use the
-        // explicit delete button if they want it gone.
-        await repository.updateNote(
-          _existing!,
-          db.NotesCompanion(
-            title: const Value(''),
-            body: const Value(''),
-            updatedAt: Value(DateTime.now()),
+      if (_existing != null && silent) return;
+      if (_existing != null && !silent) {
+        final delete = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Discard this note?'),
+            content: const Text(
+              'The note is empty. Delete it, or keep editing.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Keep editing'),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                  foregroundColor: Theme.of(context).colorScheme.onError,
+                ),
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text('Delete'),
+              ),
+            ],
           ),
         );
+        if (delete != true) return;
+        await ref.read(repositoryProvider).deleteNote(_existing!.id);
+        _dirty = false;
+        if (mounted) context.pop();
+      } else if (!silent && mounted) {
+        context.pop();
       }
-    } else {
+      return;
+    }
+
+    setState(() => _saving = true);
+    final repository = ref.read(repositoryProvider);
+    try {
       final changes = db.NotesCompanion(
         title: Value(_titleController.text.trim()),
         body: Value(_bodyController.text.trim()),
@@ -112,30 +163,40 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
       );
       if (_existing == null) {
         final id = await repository.createNote(changes);
-        _existing =
-            await repository.noteById(id);
+        _existing = await repository.noteById(id);
       } else {
         await repository.updateNote(_existing!, changes);
       }
+      _dirty = false;
+      if (popAfter && mounted) {
+        context.pop();
+      } else if (!silent && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Note saved'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not save the note. Try again.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
-    if (popAfter && mounted) context.pop();
   }
 
   Future<void> _exit() async {
-    final hadContent = !_isEmpty;
-    // Save without popping here — this method owns the single pop.
-    await _save(popAfter: false);
-    if (!mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
-    context.pop();
-    if (hadContent) {
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Note saved'),
-          duration: Duration(seconds: 2),
-        ),
-      );
+    if (_isEmpty && widget.noteId == null) {
+      context.pop();
+      return;
     }
+    await _save(popAfter: true);
   }
 
   Future<void> _delete() async {
@@ -162,7 +223,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
       ),
     );
     if (confirmed != true) return;
-    _saved = true;
+    _dirty = false;
     if (_existing != null) {
       await ref.read(repositoryProvider).deleteNote(_existing!.id);
     }
@@ -171,6 +232,8 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _autosaveTimer?.cancel();
     _titleController.dispose();
     _bodyController.dispose();
     super.dispose();
@@ -203,6 +266,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
               onPressed: () {
                 HapticFeedback.selectionClick();
                 setState(() => _pinned = !_pinned);
+                _dirty = true;
               },
               icon: Icon(
                 _pinned ? Icons.push_pin_rounded : Icons.push_pin_outlined,
@@ -239,6 +303,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
                         onTap: () {
                           HapticFeedback.selectionClick();
                           setState(() => _colorIndex = index);
+                          _dirty = true;
                         },
                         child: Center(
                           child: Container(
@@ -291,7 +356,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
                       border: InputBorder.none,
                       filled: false,
                     ),
-                    onChanged: (_) => _saved = false,
+                    onChanged: (_) => _onChanged(),
                   ),
                   const SizedBox(height: 4),
                   TextField(
@@ -305,7 +370,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
                       border: InputBorder.none,
                       filled: false,
                     ),
-                    onChanged: (_) => _saved = false,
+                    onChanged: (_) => _onChanged(),
                   ),
                 ],
               ),
