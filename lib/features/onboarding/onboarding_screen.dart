@@ -455,6 +455,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
         const SizedBox(height: 20),
+        if (visible.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Text(
+              'No starter deeds for the selected areas. You can add your own later.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
+          ),
         ...visible.asMap().entries.map((entry) {
           final suggestionIndex = _suggestions.indexOf(entry.value);
           final suggestion = entry.value;

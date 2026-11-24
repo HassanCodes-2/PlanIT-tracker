@@ -77,7 +77,19 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
     }
     _endsAt = DateTime.now().add(Duration(seconds: _remaining));
     final notifications = ref.read(notificationServiceProvider);
-    unawaited(notifications.ensurePermission());
+    unawaited(
+      notifications.ensurePermission().then((allowed) {
+        if (allowed == false && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Notifications are off — focus alerts may not appear.',
+              ),
+            ),
+          );
+        }
+      }),
+    );
     final deed = _deed;
     if (deed != null && _endsAt != null) {
       unawaited(notifications.scheduleFocusNotification(_endsAt!, deed.name));

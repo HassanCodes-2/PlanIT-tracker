@@ -91,14 +91,14 @@ class NotificationService {
   }
 
   /// Requests notification permission (Android 13+). Call after the first frame.
-  Future<void> ensurePermission() async {
-    if (!_ready) return;
+  Future<bool?> ensurePermission() async {
+    if (!_ready) return null;
     try {
       final android = _plugin.resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
-      await android?.requestNotificationsPermission();
+      return await android?.requestNotificationsPermission();
     } catch (_) {
-      // Permission is best-effort.
+      return null;
     }
   }
 

@@ -293,6 +293,8 @@ class DeedDetailScreen extends ConsumerWidget {
                                     LogStatus.skipped => AppIcons.skipped,
                                   },
                                   size: 18,
+                                  semanticLabel:
+                                      LogStatus.fromDb(log.status).label,
                                   color: switch (LogStatus.fromDb(log.status)) {
                                     LogStatus.done => digital
                                         ? theme.colorScheme.onSurface
@@ -371,7 +373,7 @@ class _SingleDeedHeatmap extends StatelessWidget {
                   LogStatus.late => theme.colorScheme.onSurfaceVariant
                       .withValues(alpha: 0.75),
                   LogStatus.skipped => theme.colorScheme.onSurfaceVariant
-                      .withValues(alpha: 0.45),
+                      .withValues(alpha: 0.55),
                 };
               } else {
                 color = switch (status) {
@@ -393,7 +395,10 @@ class _SingleDeedHeatmap extends StatelessWidget {
                   .withValues(alpha: digital ? 0.22 : 0.25);
             }
             return Expanded(
-              child: Padding(
+              child: Semantics(
+                label:
+                    '${DateFormat('d MMM').format(day)}, ${status?.label ?? (isScheduledOn(deed, day) && !frequencyOf(deed).isCountBased ? 'missed' : 'no deed')}',
+                child: Padding(
                 padding: const EdgeInsets.all(1.5),
                 child: AspectRatio(
                   aspectRatio: 1,
@@ -404,7 +409,19 @@ class _SingleDeedHeatmap extends StatelessWidget {
                               .withValues(alpha: 0.10),
                       borderRadius: BorderRadius.circular(4),
                     ),
+                    child: status == null
+                        ? null
+                        : Icon(
+                            switch (status) {
+                              LogStatus.done => AppIcons.done,
+                              LogStatus.late => AppIcons.late,
+                              LogStatus.skipped => AppIcons.skipped,
+                            },
+                            size: 12,
+                            color: AppTheme.onColor(color ?? theme.colorScheme.surface),
+                          ),
                   ),
+                ),
                 ),
               ),
             );

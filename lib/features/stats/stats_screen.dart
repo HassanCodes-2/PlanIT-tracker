@@ -551,7 +551,7 @@ class _Heatmap extends StatelessWidget {
                               (day) => SizedBox(
                                 width: cellSize + gap,
                                 child: Text(
-                                  DateFormat('EE').format(day).substring(0, 1),
+                                  DateFormat('EE').format(day),
                                   textAlign: TextAlign.center,
                                   style:
                                       theme.textTheme.labelSmall?.copyWith(
