@@ -21,7 +21,6 @@ class DeedDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final digital = context.appStyle.isDigital;
-    final isLight = theme.brightness == Brightness.light;
     final repository = ref.read(repositoryProvider);
     final deedFuture = ref.watch(deedByIdProvider(deedId).future);
     final categoriesAsync = ref.watch(categoriesProvider);
@@ -195,36 +194,22 @@ class DeedDetailScreen extends ConsumerWidget {
                         _MiniStat(
                             label: 'Done',
                             value: '${stats.done}',
-                            color: digital
-                                ? theme.colorScheme.onSurface
-                                : (isLight
-                                    ? AppColors.doneLight
-                                    : AppColors.done)),
+                            color: AppColors.outcome(LogStatus.done, theme,
+                                digital: digital)),
                         _MiniStat(
                             label: 'Late',
                             value: '${stats.late}',
-                            color: digital
-                                ? theme.colorScheme.onSurfaceVariant
-                                    .withValues(alpha: 0.75)
-                                : (isLight
-                                    ? AppColors.lateLight
-                                    : AppColors.late)),
+                            color: AppColors.outcome(LogStatus.late, theme,
+                                digital: digital)),
                         _MiniStat(
                             label: 'Skipped',
                             value: '${stats.skipped}',
-                            color: digital
-                                ? theme.colorScheme.onSurfaceVariant
-                                    .withValues(alpha: 0.55)
-                                : (isLight
-                                    ? AppColors.skippedLight
-                                    : AppColors.skipped)),
+                            color: AppColors.outcome(LogStatus.skipped, theme,
+                                digital: digital)),
                         _MiniStat(
                             label: 'Missed',
                             value: '${stats.missed}',
-                            color: digital
-                                ? theme.colorScheme.onSurfaceVariant
-                                    .withValues(alpha: 0.35)
-                                : theme.colorScheme.onSurfaceVariant),
+                            color: AppColors.missed(theme, digital: digital)),
                       ],
                     ),
                   ],
@@ -295,24 +280,11 @@ class DeedDetailScreen extends ConsumerWidget {
                                   size: 18,
                                   semanticLabel:
                                       LogStatus.fromDb(log.status).label,
-                                  color: switch (LogStatus.fromDb(log.status)) {
-                                    LogStatus.done => digital
-                                        ? theme.colorScheme.onSurface
-                                        : (isLight
-                                            ? AppColors.doneLight
-                                            : AppColors.done),
-                                    LogStatus.late => digital
-                                        ? theme.colorScheme.onSurfaceVariant
-                                        : (isLight
-                                            ? AppColors.lateLight
-                                            : AppColors.late),
-                                    LogStatus.skipped => digital
-                                        ? theme.colorScheme.onSurfaceVariant
-                                            .withValues(alpha: 0.55)
-                                        : (isLight
-                                            ? AppColors.skippedLight
-                                            : AppColors.skipped),
-                                  },
+                                  color: AppColors.outcome(
+                                      LogStatus.fromDb(log.status),
+                                      theme,
+                                      digital: digital,
+                                    ),
                                 ),
                                 const SizedBox(width: 10),
                                 Text(
@@ -344,6 +316,26 @@ class _SingleDeedHeatmap extends StatelessWidget {
   final List<db.DeedLog> logs;
   final DateTime today;
 
+  Widget _legendItem(
+    ThemeData theme,
+    IconData icon,
+    String label,
+    Color color,
+  ) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 12, color: color),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: theme.textTheme.labelSmall
+              ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -365,67 +357,70 @@ class _SingleDeedHeatmap extends StatelessWidget {
           children: days.map((day) {
             final key = '${day.year}-${day.month}-${day.day}';
             final status = index[key];
-            Color? color;
-            if (status != null) {
-              if (digital) {
-                color = switch (status) {
-                  LogStatus.done => theme.colorScheme.onSurface,
-                  LogStatus.late => theme.colorScheme.onSurfaceVariant
-                      .withValues(alpha: 0.75),
-                  LogStatus.skipped => theme.colorScheme.onSurfaceVariant
-                      .withValues(alpha: 0.55),
-                };
-              } else {
-                color = switch (status) {
-                  LogStatus.done => theme.brightness == Brightness.light
-                      ? AppColors.doneLight
-                      : AppColors.done,
-                  LogStatus.late => theme.brightness == Brightness.light
-                      ? AppColors.lateLight
-                      : AppColors.late,
-                  LogStatus.skipped => theme.brightness == Brightness.light
-                      ? AppColors.skippedLight
-                      : AppColors.skipped,
-                };
-              }
-            } else if (isScheduledOn(deed, day) &&
+            final missed = status == null &&
+                isScheduledOn(deed, day) &&
                 day.isBefore(today) &&
-                !frequencyOf(deed).isCountBased) {
+                !frequencyOf(deed).isCountBased;
+            Color? color;
+            Color? glyphColor;
+            IconData? glyph;
+            if (status != null) {
+              color = AppColors.outcome(status, theme, digital: digital);
+              glyph = switch (status) {
+                LogStatus.done => AppIcons.done,
+                LogStatus.late => AppIcons.late,
+                LogStatus.skipped => AppIcons.skipped,
+              };
+              glyphColor = AppTheme.onColor(color);
+            } else if (missed) {
               color = theme.colorScheme.onSurfaceVariant
-                  .withValues(alpha: digital ? 0.22 : 0.25);
+                  .withValues(alpha: digital ? 0.16 : 0.10);
+              glyph = AppIcons.missed;
+              glyphColor = AppColors.missed(theme, digital: digital);
+            } else {
+              color = theme.colorScheme.onSurfaceVariant
+                  .withValues(alpha: 0.08);
             }
             return Expanded(
               child: Semantics(
                 label:
-                    '${DateFormat('d MMM').format(day)}, ${status?.label ?? (isScheduledOn(deed, day) && !frequencyOf(deed).isCountBased ? 'missed' : 'no deed')}',
+                    '${DateFormat('d MMM').format(day)}, ${status?.label ?? (missed ? 'missed' : 'no deed')}',
                 child: Padding(
                 padding: const EdgeInsets.all(1.5),
                 child: AspectRatio(
                   aspectRatio: 1,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: color ??
-                          theme.colorScheme.onSurfaceVariant
-                              .withValues(alpha: 0.10),
+                      color: color,
                       borderRadius: BorderRadius.circular(4),
+                      border: missed
+                          ? Border.all(color: theme.colorScheme.outline)
+                          : null,
                     ),
-                    child: status == null
+                    child: glyph == null
                         ? null
-                        : Icon(
-                            switch (status) {
-                              LogStatus.done => AppIcons.done,
-                              LogStatus.late => AppIcons.late,
-                              LogStatus.skipped => AppIcons.skipped,
-                            },
-                            size: 12,
-                            color: AppTheme.onColor(color ?? theme.colorScheme.surface),
-                          ),
+                        : Icon(glyph, size: 13, color: glyphColor),
                   ),
                 ),
                 ),
               ),
             );
           }).toList(),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 12,
+          runSpacing: 4,
+          children: [
+            _legendItem(theme, AppIcons.done, 'Done',
+                AppColors.outcome(LogStatus.done, theme, digital: digital)),
+            _legendItem(theme, AppIcons.late, 'Late',
+                AppColors.outcome(LogStatus.late, theme, digital: digital)),
+            _legendItem(theme, AppIcons.skipped, 'Skipped',
+                AppColors.outcome(LogStatus.skipped, theme, digital: digital)),
+            _legendItem(theme, AppIcons.missed, 'Missed',
+                AppColors.missed(theme, digital: digital)),
+          ],
         ),
         const SizedBox(height: 8),
         Row(

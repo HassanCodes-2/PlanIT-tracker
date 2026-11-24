@@ -35,6 +35,7 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
   Set<int> _weekdays = {1, 2, 3, 4, 5};
   int? _categoryId;
   bool _dirty = false;
+  bool _weekdayError = false;
   bool _reasonsEnabled = false;
   TimeOfDay? _reminder;
   String _icon = 'fitness_center';
@@ -141,8 +142,16 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _saving = true);
+    if (_frequency == FrequencyType.weekdays && _weekdays.isEmpty) {
+      setState(() => _weekdayError = true);
+      return;
+    }
+    setState(() {
+      _saving = true;
+      _weekdayError = false;
+    });
 
+    final messenger = ScaffoldMessenger.of(context);
     final frequencyValue = _frequency.dbValue;
     final weekdaysValue = _frequency == FrequencyType.weekdays
         ? encodeWeekdays(_weekdays)
@@ -187,7 +196,16 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
     _dirty = false;
     final notifications = ref.read(notificationServiceProvider);
     if (reminderValue != null) {
-      unawaited(notifications.ensurePermission());
+      final allowed = await notifications.ensurePermission();
+      if (allowed == false) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Reminder saved, but notifications are off in Android settings.',
+            ),
+          ),
+        );
+      }
     }
     if (mounted) context.pop();
     final deeds = await repository.allDeeds();
@@ -317,73 +335,78 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
             ),
             const SizedBox(height: 20),
             _Label('ICON'),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 52,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: _icons.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 8),
-                itemBuilder: (context, index) {
-                  final name = _icons[index];
-                  final selected = name == _icon;
-                  return Semantics(
-                    button: true,
-                    selected: selected,
-                    label: name.replaceAll('_', ' '),
-                    onTap: () {
-                      setState(() => _icon = name);
-                      _dirty = true;
-                    },
-                    child: ExcludeSemantics(
-                      child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () {
-                      setState(() => _icon = name);
-                      _dirty = true;
-                    },
-                    child: Container(
-                      width: 52,
-                      decoration: BoxDecoration(
-                        color: selected
-                            ? theme.colorScheme.primary.withValues(alpha: 0.16)
-                            : theme.cardTheme.color,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: selected
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.onSurfaceVariant
-                                  .withValues(alpha: 0.35),
-                        ),
-                      ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Icon(
-                            iconForName(name, fallback: Icons.star_rounded),
-                            color: selected
-                                ? theme.colorScheme.primary
-                                : theme.colorScheme.onSurfaceVariant,
-                          ),
-                          if (selected)
-                            Positioned(
-                              top: 4,
-                              right: 4,
-                              child: Icon(
-                                Icons.check_circle_rounded,
-                                size: 12,
-                                color: theme.colorScheme.primary,
+            LayoutBuilder(
+              builder: (context, constraints) {
+                const gap = 8.0;
+                final columns = constraints.maxWidth >= 560 ? 8 : 4;
+                final tile =
+                    (constraints.maxWidth - gap * (columns - 1)) / columns;
+                return Wrap(
+                  spacing: gap,
+                  runSpacing: gap,
+                  children: _icons.map((name) {
+                    final selected = name == _icon;
+                    return Semantics(
+                      button: true,
+                      selected: selected,
+                      label: name.replaceAll('_', ' '),
+                      onTap: () {
+                        setState(() => _icon = name);
+                        _dirty = true;
+                      },
+                      child: ExcludeSemantics(
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () {
+                            setState(() => _icon = name);
+                            _dirty = true;
+                          },
+                          child: Container(
+                            width: tile,
+                            height: 52,
+                            decoration: BoxDecoration(
+                              color: selected
+                                  ? theme.colorScheme.primary
+                                      .withValues(alpha: 0.16)
+                                  : theme.cardTheme.color,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: selected
+                                    ? theme.colorScheme.primary
+                                    : theme.colorScheme.outline,
                               ),
                             ),
-                        ],
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                Icon(
+                                  iconForName(name,
+                                      fallback: Icons.star_rounded),
+                                  color: selected
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.onSurfaceVariant,
+                                ),
+                                if (selected)
+                                  Positioned(
+                                    top: 4,
+                                    right: 4,
+                                    child: Icon(
+                                      Icons.check_circle_rounded,
+                                      size: 12,
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                    ),
-                  );
-                },
-              ),
+                    );
+                  }).toList(),
+                );
+              },
             ),
+            const SizedBox(height: 20),
             const SizedBox(height: 20),
             _Label('CATEGORY'),
             const SizedBox(height: 8),
@@ -428,6 +451,7 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
             const SizedBox(height: 8),
             DropdownButtonFormField<FrequencyType>(
               initialValue: _frequency,
+              isExpanded: true,
               decoration: const InputDecoration(),
               items: FrequencyType.values
                   .map(
@@ -440,6 +464,7 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
               onChanged: (value) {
                 if (value != null) {
                 setState(() => _frequency = value);
+                _weekdayError = false;
                 _dirty = true;
               }
               },
@@ -461,12 +486,23 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
                         } else {
                           _weekdays.remove(weekday);
                         }
+                        _weekdayError = _weekdays.isEmpty;
                         _dirty = true;
                       });
                     },
                   );
                 }),
               ),
+              if (_weekdayError)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    'Pick at least one day, or the deed will never appear.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.error,
+                    ),
+                  ),
+                ),
             ],
             if (_frequency.isCountBased) ...[
               const SizedBox(height: 12),
@@ -480,8 +516,9 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
                 ),
                 validator: (value) {
                   final parsed = int.tryParse(value?.trim() ?? '');
-                  if (parsed == null || parsed < 1 || parsed > 31) {
-                    return 'Enter a number between 1 and 31';
+                  final max = _frequency == FrequencyType.timesPerWeek ? 7 : 31;
+                  if (parsed == null || parsed < 1 || parsed > max) {
+                    return 'Enter a number between 1 and $max';
                   }
                   return null;
                 },
@@ -510,6 +547,7 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
                 trailing: _reminder == null
                     ? const Icon(Icons.chevron_right_rounded)
                     : IconButton(
+                        tooltip: 'Clear reminder',
                         icon: const Icon(Icons.close_rounded),
                         onPressed: () {
                         setState(() => _reminder = null);
@@ -550,10 +588,14 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
                 minimumSize: const Size.fromHeight(52),
               ),
               child: _saving
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: theme.colorScheme.onSurface,
+                        semanticsLabel: 'Saving deed',
+                      ),
                     )
                   : Text(_existing == null ? 'Create deed' : 'Save changes'),
             ),

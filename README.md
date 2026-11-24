@@ -68,16 +68,17 @@ adb install -r dist\planit-release.apk
 - **Local-first data** — SQLite (Drift) with starter categories and deeds on first launch
 - **Notes & ideas** — a full notepad tab: Keep-style colored cards, pin-to-top, instant search, auto-save editor, "edited 2h ago" timestamps; included in backups
 - **Onboarding** — first-launch welcome: your name, focus areas, starter deeds
-- **Today** — personal greeting, quote of the day, streak 🔥, progress bar, category sections with color stripes; tap to log "done" (with confetti when you clear the day), long-press for focus timer / done late / skipped (+ reason) / history / clear — all with undo
+- **Today** - personal greeting, streak and daily progress, date picker + day scroller, category sections with color stripes; tap to log "done" (with confetti when you clear the day), long-press for focus timer / done late / skipped (+ reason) / history / clear - all with undo
 - **Focus timer** — 5/15/25/45 minute sessions with a live progress ring; finish → mark the deed done
 - **Deed history** — per-deed 14-day heatmap, summary, skip reasons and recent logs
 - **Stats** — current & best streak, trend arrows vs previous period, status heatmap, period filters, per-deed breakdown
 - **Stats glow-up (v1.4)** — animated percentage rings, sliding Week/Month/Year/All bar, icon-only status cards, Phosphor icon set app-wide, trend arrows
 - **Digital theme (v1.5)** — futuristic monochrome HUD: black/gray/white, segmented progress, mono clock, selectable in Settings alongside Midnight blue
 - **Reminders** — local notifications scheduled from each deed's reminder time
-- **Theme** — dark / light / system, persisted; one-tap sun/moon switch on the Today header
+- **Theme** — dark / light / system, persisted; style and accent presets live in Settings
 - **Backup** — export everything to a JSON file via the Android share sheet
 - **Polish** — custom app icon, splash screen, haptic feedback
+- **Accessibility** - 4.5:1 text, 3:1 card borders and status glyphs, semantics on every card/date/heatmap row, and 320dp + 2x text layout tests
 
 > Accounts & cloud sync (Supabase) are scaffolded but not enabled until a Supabase project is connected.
 

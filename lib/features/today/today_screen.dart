@@ -74,14 +74,14 @@ class TodayScreen extends ConsumerWidget {
         .toSet();
     final streak = currentStreak(loggedDays, today: today);
 
-    final mode = ref.watch(themeModeProvider);
-
     final now = ref.watch(clockProvider).value ?? DateTime.now();
-    final timeLabel = DateFormat('HH:mm').format(now);
+    final use24Hour = MediaQuery.maybeOf(context)?.alwaysUse24HourFormat ?? true;
+    final timeLabel = use24Hour
+        ? DateFormat('HH:mm').format(now)
+        : DateFormat('h:mm a').format(now);
     final userName = ref.watch(userNameProvider);
-    final dateLabel = userName.isEmpty
-        ? DateFormat('EEEE, d MMMM yyyy').format(day)
-        : '$userName · ${DateFormat('EEEE, d MMMM yyyy').format(day)}';
+    final date = DateFormat('EEEE, d MMMM yyyy').format(day);
+    final dateLabel = userName.isEmpty ? date : '$date · $userName';
 
     final grouped = <db.Category, List<db.Deed>>{};
     for (final category in categories) {
@@ -132,11 +132,6 @@ class TodayScreen extends ConsumerWidget {
               streak: streak,
               done: doneCount,
               total: scheduled.length,
-              mode: mode,
-              onThemeSelected: (selected) {
-                HapticFeedback.selectionClick();
-                ref.read(themeModeProvider.notifier).setMode(selected);
-              },
               showToday: !(day.year == today.year &&
                   day.month == today.month &&
                   day.day == today.day),
@@ -221,7 +216,7 @@ class TodayScreen extends ConsumerWidget {
 
                 ),
               if (doneCount >= scheduled.length && !isFuture)
-                const _CaughtUpCard(),
+                _CaughtUpCard(day: day),
             ],
           ],
         ),
@@ -306,16 +301,12 @@ class TodayScreen extends ConsumerWidget {
     final repository = ref.read(repositoryProvider);
     final existing = logs[deed.id];
     final digital = context.appStyle.isDigital;
-    final isLight = theme.brightness == Brightness.light;
-    final doneColor = digital
-        ? theme.colorScheme.primary
-        : (isLight ? AppColors.doneLight : AppColors.done);
-    final lateColor = digital
-        ? theme.colorScheme.onSurfaceVariant
-        : (isLight ? AppColors.lateLight : AppColors.late);
-    final skippedColor = digital
-        ? theme.colorScheme.onSurfaceVariant
-        : (isLight ? AppColors.skippedLight : AppColors.skipped);
+    final doneColor =
+        AppColors.outcome(LogStatus.done, theme, digital: digital);
+    final lateColor =
+        AppColors.outcome(LogStatus.late, theme, digital: digital);
+    final skippedColor =
+        AppColors.outcome(LogStatus.skipped, theme, digital: digital);
 
     await showModalBottomSheet<void>(
       context: context,
@@ -533,8 +524,6 @@ class _DateHeader extends StatelessWidget {
     required this.streak,
     required this.done,
     required this.total,
-    required this.mode,
-    required this.onThemeSelected,
     required this.showToday,
     required this.onToday,
   });
@@ -545,8 +534,6 @@ class _DateHeader extends StatelessWidget {
   final int streak;
   final int done;
   final int total;
-  final ThemeMode mode;
-  final ValueChanged<ThemeMode> onThemeSelected;
   final bool showToday;
   final VoidCallback onToday;
 
@@ -576,9 +563,9 @@ class _DateHeader extends StatelessWidget {
                     ),
                     Text(
                       dateLabel,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall?.copyWith(
+                      style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
@@ -598,93 +585,66 @@ class _DateHeader extends StatelessWidget {
               IconButton(
                 tooltip: 'Pick a date',
                 onPressed: onPickDate,
-                icon: const Icon(Icons.calendar_month_rounded),
-              ),
-              PopupMenuButton<ThemeMode>(
-                tooltip: 'Theme',
-                icon: Icon(
-                  mode == ThemeMode.system
-                      ? Icons.brightness_auto_rounded
-                      : (mode == ThemeMode.light
-                          ? Icons.light_mode_rounded
-                          : Icons.dark_mode_rounded),
-                ),
-                onSelected: onThemeSelected,
-                itemBuilder: (context) => ThemeMode.values.map((value) {
-                  final selected = value == mode;
-                  final icon = switch (value) {
-                    ThemeMode.system => Icons.brightness_auto_rounded,
-                    ThemeMode.light => Icons.light_mode_rounded,
-                    ThemeMode.dark => Icons.dark_mode_rounded,
-                  };
-                  final label = switch (value) {
-                    ThemeMode.system => 'System',
-                    ThemeMode.light => 'Light',
-                    ThemeMode.dark => 'Dark',
-                  };
-                  return PopupMenuItem<ThemeMode>(
-                    value: value,
-                    child: Row(
-                      children: [
-                        Icon(
-                          selected ? Icons.check_rounded : icon,
-                          size: 18,
-                          color: selected
-                              ? theme.colorScheme.secondary
-                              : theme.colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 10),
-                        Text(label),
-                      ],
-                    ),
-                  );
-                }).toList(),
+                icon: const Icon(AppIcons.calendar),
               ),
             ],
           ),
           const SizedBox(height: 12),
           _SegmentBar(done: done, total: total),
           const SizedBox(height: 8),
-          Row(
+          Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 12,
+              runSpacing: 4,
               children: [
-                Icon(
-                  AppIcons.fire,
-                  size: 16,
-                  color: context.appStyle.isDigital
-                      ? theme.colorScheme.primary
-                      : AppTheme.ensureVisible(
-                          const Color(0xFFF97316),
-                          theme.colorScheme.surface,
-                          theme.brightness,
-                          ratio: 3.0,
-                        ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      AppIcons.fire,
+                      size: 16,
+                      color: context.appStyle.isDigital
+                          ? theme.colorScheme.primary
+                          : AppTheme.ensureVisible(
+                              const Color(0xFFF97316),
+                              theme.colorScheme.surface,
+                              theme.brightness,
+                              ratio: 3.0,
+                            ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '$streak-day streak',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 4),
-                Text(
-                  '$streak-day streak',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const Spacer(),
-                Icon(
-                  AppIcons.done,
-                  size: 16,
-                  color: context.appStyle.isDigital
-                      ? theme.colorScheme.onSurfaceVariant
-                      : AppTheme.ensureVisible(
-                          const Color(0xFF22C55E),
-                          theme.colorScheme.surface,
-                          theme.brightness,
-                          ratio: 3.0,
-                        ),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  total == 0 ? 'No deeds' : '$done of $total done',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      AppIcons.done,
+                      size: 16,
+                      color: context.appStyle.isDigital
+                          ? theme.colorScheme.onSurfaceVariant
+                          : AppTheme.ensureVisible(
+                              const Color(0xFF22C55E),
+                              theme.colorScheme.surface,
+                              theme.brightness,
+                              ratio: 3.0,
+                            ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      total == 0 ? 'No deeds' : '$done of $total done',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -750,7 +710,9 @@ class _DayScrollerState extends State<_DayScroller> {
         widget.today.day - _window + index,
       ),
     );
-    return SizedBox(
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.35,
+      child: SizedBox(
       height: 68 *
           MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.35),
       child: ListView.separated(
@@ -822,6 +784,7 @@ class _DayScrollerState extends State<_DayScroller> {
             ),
           );
         },
+      ),
       ),
     );
   }
@@ -998,44 +961,17 @@ class _DeedCard extends StatelessWidget {
     final succeeded =
         status == LogStatus.done || status == LogStatus.late;
 
-    final isLight = theme.brightness == Brightness.light;
-
-    final (tint, icon, iconColor) = switch (status) {
-      null => (
-          accent.withValues(alpha: digital ? 0.05 : 0.06),
-          null,
-          accent
-        ),
-      LogStatus.done => (
-          (digital
-                  ? theme.colorScheme.primary
-                  : (isLight ? AppColors.doneLight : AppColors.done))
-              .withValues(alpha: digital ? 0.12 : 0.20),
-          AppIcons.done,
-          digital
-              ? theme.colorScheme.primary
-              : (isLight ? AppColors.doneLight : AppColors.done),
-        ),
-      LogStatus.late => (
-          (digital
-                  ? theme.colorScheme.onSurfaceVariant
-                  : (isLight ? AppColors.lateLight : AppColors.late))
-              .withValues(alpha: digital ? 0.14 : 0.18),
-          AppIcons.late,
-          digital
-              ? theme.colorScheme.onSurfaceVariant
-              : (isLight ? AppColors.lateLight : AppColors.late),
-        ),
-      LogStatus.skipped => (
-          (digital
-                  ? theme.colorScheme.onSurfaceVariant
-                  : (isLight ? AppColors.skippedLight : AppColors.skipped))
-              .withValues(alpha: digital ? 0.07 : 0.16),
-          AppIcons.skipped,
-          digital
-              ? theme.colorScheme.onSurfaceVariant
-              : (isLight ? AppColors.skippedLight : AppColors.skipped),
-        ),
+    final statusColor = status == null
+        ? accent
+        : AppColors.outcome(status, theme, digital: digital);
+    final tint = status == null
+        ? accent.withValues(alpha: digital ? 0.05 : 0.06)
+        : statusColor.withValues(alpha: digital ? 0.12 : 0.18);
+    final (Color iconTint, IconData? icon) = switch (status) {
+      null => (accent, null),
+      LogStatus.done => (statusColor, AppIcons.done),
+      LogStatus.late => (statusColor, AppIcons.late),
+      LogStatus.skipped => (statusColor, AppIcons.skipped),
     };
 
     final hasReason = log?.reason != null && log!.reason!.isNotEmpty;
@@ -1060,7 +996,7 @@ class _DeedCard extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(
             AppSpacing.screen, 0, AppSpacing.screen, AppSpacing.sm + 2),
         child: Opacity(
-        opacity: 0.85,
+        opacity: canLog ? 1 : 0.7,
         child: Material(
           color: theme.cardTheme.color,
           shape: RoundedRectangleBorder(
@@ -1132,15 +1068,6 @@ class _DeedCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  IconButton(
-                    onPressed: canLog ? onLongPress : null,
-                    tooltip: 'More actions',
-                    iconSize: 20,
-                    icon: Icon(
-                      Icons.more_horiz_rounded,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     width: logged ? 56 : 64,
@@ -1161,7 +1088,7 @@ class _DeedCard extends StatelessWidget {
                             size: 20,
                             color: theme.colorScheme.onSurfaceVariant,
                           )
-                        : Icon(icon, color: iconColor, size: 22),
+                        : Icon(icon, color: iconTint, size: 22),
                   ),
                 ],
               ),
@@ -1176,7 +1103,9 @@ class _DeedCard extends StatelessWidget {
 }
 
 class _CaughtUpCard extends StatelessWidget {
-  const _CaughtUpCard();
+  const _CaughtUpCard({required this.day});
+
+  final DateTime day;
 
   @override
   Widget build(BuildContext context) {
@@ -1211,7 +1140,8 @@ class _CaughtUpCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'You completed every deed for today. See you tomorrow!',
+                    'You completed every deed for '
+                    '${dateOnly(day) == dateOnly(DateTime.now()) ? 'today. See you tomorrow!' : '${DateFormat('d MMM').format(day)}.'}',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),

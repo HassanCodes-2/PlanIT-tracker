@@ -105,7 +105,7 @@ class SettingsScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: theme.cardTheme.color,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
               border: Border.all(color: theme.colorScheme.outline),
             ),
             child: SegmentedButton<ThemeMode>(
@@ -176,6 +176,7 @@ class SettingsScreen extends ConsumerWidget {
               physics: const NeverScrollableScrollPhysics(),
               mainAxisSpacing: 4,
               crossAxisSpacing: 4,
+              childAspectRatio: 1.5,
               children: List.generate(_accentPresets.length, (index) {
                 final color = _accentPresets[index];
                 final selected = accent.toARGB32() == color.toARGB32();
@@ -315,18 +316,12 @@ class SettingsScreen extends ConsumerWidget {
                 'Stored only on this phone. Export keeps a safe copy.',
           ),
           const SizedBox(height: 24),
-          _Label('ABOUT'),
-          const SizedBox(height: 10),
-          _InfoTile(
-            icon: Icons.apps_rounded,
-            title: 'PlanIT',
-            subtitle: 'Habit & deed tracker v1.6.0',
-          ),
+          _Label('NOTIFICATIONS'),
           const SizedBox(height: 10),
           Material(
             color: theme.cardTheme.color,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppShape.medium),
+              borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
               side: BorderSide(color: theme.colorScheme.outline),
             ),
             clipBehavior: Clip.antiAlias,
@@ -335,31 +330,38 @@ class SettingsScreen extends ConsumerWidget {
                 Icons.notifications_none_rounded,
                 color: theme.colorScheme.primary,
               ),
-              title: const Text('Reminders'),
+              title: const Text('Notification permission'),
               subtitle: Text(
-                'Check notification permission and per-deed schedules',
+                'Needed for deed reminders and focus-timer alerts',
                 style: theme.textTheme.bodySmall
                     ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
-              trailing: Icon(
-                Icons.chevron_right_rounded,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              onTap: () async {
-                final allowed =
-                    await NotificationService.instance.ensurePermission();
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      allowed == true
-                          ? 'Notifications are enabled.'
-                          : 'Notifications are off. Enable them in Android settings.',
+              trailing: TextButton(
+                onPressed: () async {
+                  final allowed =
+                      await NotificationService.instance.ensurePermission();
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        allowed == true
+                            ? 'Notifications are enabled.'
+                            : 'Notifications are off. Enable them in Android settings.',
+                      ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+                child: const Text('Check'),
+              ),
             ),
+          ),
+          const SizedBox(height: 24),
+          _Label('ABOUT'),
+          const SizedBox(height: 10),
+          _InfoTile(
+            icon: Icons.apps_rounded,
+            title: 'PlanIT',
+            subtitle: 'Habit & deed tracker v1.6.0',
           ),
         ],
       ),
@@ -388,7 +390,7 @@ class _StyleCard extends StatelessWidget {
     return Material(
       color: theme.cardTheme.color,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppShape.medium),
+        borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
         side: BorderSide(
           color: selected ? theme.colorScheme.primary : theme.colorScheme.outline,
           width: selected ? 1.5 : 1,
@@ -406,9 +408,15 @@ class _StyleCard extends StatelessWidget {
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF050506),
+                  color: theme.brightness == Brightness.dark
+                      ? const Color(0xFF050506)
+                      : const Color(0xFFF0F0F3),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFF26262B)),
+                  border: Border.all(
+                    color: theme.brightness == Brightness.dark
+                        ? const Color(0xFF26262B)
+                        : const Color(0xFFD8D8DE),
+                  ),
                 ),
                 child: Center(
                   child: Container(

@@ -1,5 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../../domain/enums.dart';
+
 /// PlanIT design tokens, taken from the demo screenshots.
 abstract final class AppColors {
   static const accent = Color(0xFF1B6CFF);
@@ -38,4 +40,34 @@ abstract final class AppColors {
   static const digitalLightBorder = Color(0xFFE1E1E5);
   static const digitalLightText = Color(0xFF0A0A0B);
   static const digitalLightMuted = Color(0xFF6E6E76);
+
+  /// One status palette shared by Today, Stats and deed history so a state
+  /// never changes meaning (or contrast) between screens.
+  static Color outcome(
+    LogStatus status,
+    ThemeData theme, {
+    required bool digital,
+  }) {
+    final scheme = theme.colorScheme;
+    if (digital) {
+      // Full-opacity grayscale ramp: each step stays above 3:1 on the HUD
+      // surface, while the glyph carries the meaning for color-blind users.
+      return switch (status) {
+        LogStatus.done => scheme.onSurface,
+        LogStatus.late => Color.lerp(scheme.onSurface, scheme.surface, 0.2)!,
+        LogStatus.skipped => scheme.onSurfaceVariant,
+      };
+    }
+    final isLight = theme.brightness == Brightness.light;
+    return switch (status) {
+      LogStatus.done => isLight ? doneLight : done,
+      LogStatus.late => isLight ? lateLight : late,
+      LogStatus.skipped => isLight ? skippedLight : skipped,
+    };
+  }
+
+  /// Unlogged scheduled days are neutral, never a low-contrast outline-only
+  /// cell. The missed glyph provides the non-color cue.
+  static Color missed(ThemeData theme, {required bool digital}) =>
+      theme.colorScheme.onSurfaceVariant;
 }

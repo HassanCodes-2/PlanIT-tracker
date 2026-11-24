@@ -58,7 +58,7 @@ abstract final class AppIcons {
   static const gear = Phosphor.gear;
   static const notes = Phosphor.notePencil;
   static const stats = Phosphor.trendUp;
-  static const today = Phosphor.checkCircle;
+  static const today = Phosphor.calendarCheck;
 }
 
 /// Maps icon names stored in the DB to Phosphor icons (bold weight).

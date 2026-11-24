@@ -151,7 +151,7 @@ abstract final class AppTheme {
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(cardRadius),
-          side: BorderSide(color: border),
+          side: BorderSide(color: fieldBorder),
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(

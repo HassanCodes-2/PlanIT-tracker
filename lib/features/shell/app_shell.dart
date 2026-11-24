@@ -12,45 +12,97 @@ class AppShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 720),
-          child: navigationShell,
-        ),
+    final theme = Theme.of(context);
+    final destinations = [
+      NavigationDestination(
+        icon: const Icon(AppIcons.today),
+        selectedIcon: const Icon(AppIcons.today),
+        label: 'Today',
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: navigationShell.currentIndex,
-        onDestinationSelected: (index) {
-          HapticFeedback.selectionClick();
-          navigationShell.goBranch(
-            index,
-            initialLocation: index == navigationShell.currentIndex,
-          );
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(AppIcons.today),
-            selectedIcon: Icon(AppIcons.today),
-            label: 'Today',
-          ),
-          NavigationDestination(
-            icon: Icon(AppIcons.notes),
-            selectedIcon: Icon(AppIcons.notes),
-            label: 'Notes',
-          ),
-          NavigationDestination(
-            icon: Icon(AppIcons.stats),
-            selectedIcon: Icon(AppIcons.stats),
-            label: 'Stats',
-          ),
-          NavigationDestination(
-            icon: Icon(AppIcons.gear),
-            selectedIcon: Icon(AppIcons.gear),
-            label: 'Settings',
-          ),
-        ],
+      NavigationDestination(
+        icon: const Icon(AppIcons.notes),
+        selectedIcon: const Icon(AppIcons.notes),
+        label: 'Notes',
       ),
+      NavigationDestination(
+        icon: const Icon(AppIcons.stats),
+        selectedIcon: const Icon(AppIcons.stats),
+        label: 'Stats',
+      ),
+      NavigationDestination(
+        icon: const Icon(AppIcons.gear),
+        selectedIcon: const Icon(AppIcons.gear),
+        label: 'Settings',
+      ),
+    ];
+
+    void onSelect(int index) {
+      HapticFeedback.selectionClick();
+      navigationShell.goBranch(
+        index,
+        initialLocation: index == navigationShell.currentIndex,
+      );
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= 800;
+        const content = BoxConstraints(maxWidth: 720);
+        return Scaffold(
+          body: wide
+              ? Row(
+                  children: [
+                    NavigationRail(
+                      backgroundColor: theme.colorScheme.surface,
+                      indicatorColor: theme.colorScheme.primary,
+                      selectedIndex: navigationShell.currentIndex,
+                      labelType: NavigationRailLabelType.all,
+                      onDestinationSelected: onSelect,
+                      destinations: [
+                        NavigationRailDestination(
+                          icon: const Icon(AppIcons.today),
+                          label: const Text('Today'),
+                        ),
+                        NavigationRailDestination(
+                          icon: const Icon(AppIcons.notes),
+                          label: const Text('Notes'),
+                        ),
+                        NavigationRailDestination(
+                          icon: const Icon(AppIcons.stats),
+                          label: const Text('Stats'),
+                        ),
+                        NavigationRailDestination(
+                          icon: const Icon(AppIcons.gear),
+                          label: const Text('Settings'),
+                        ),
+                      ],
+                    ),
+                    const VerticalDivider(width: 1),
+                    Expanded(
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: content,
+                          child: navigationShell,
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              : Center(
+                  child: ConstrainedBox(
+                    constraints: content,
+                    child: navigationShell,
+                  ),
+                ),
+          bottomNavigationBar: wide
+              ? null
+              : NavigationBar(
+                  selectedIndex: navigationShell.currentIndex,
+                  onDestinationSelected: onSelect,
+                  destinations: destinations,
+                ),
+        );
+      },
     );
   }
 }

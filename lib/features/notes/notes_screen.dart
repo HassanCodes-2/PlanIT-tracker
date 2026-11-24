@@ -176,7 +176,9 @@ class _NoteGrid extends StatelessWidget {
     final theme = Theme.of(context);
     final scale =
         MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.35);
-    return GridView.builder(
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.35,
+      child: GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -201,6 +203,7 @@ class _NoteGrid extends StatelessWidget {
               '${note.title.isEmpty ? 'Untitled note' : note.title}${note.pinned ? ', pinned' : ''}',
           onTap: () => onTap(note),
           onLongPress: () => onLongPress(note),
+          excludeSemantics: true,
           child: Material(
           color: theme.cardTheme.color,
           shape: RoundedRectangleBorder(
@@ -283,6 +286,7 @@ class _NoteGrid extends StatelessWidget {
           ),
         );
       },
+    ),
     );
   }
 }

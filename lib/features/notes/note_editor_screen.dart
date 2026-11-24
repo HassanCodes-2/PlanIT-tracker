@@ -289,7 +289,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
               onPressed: () {
                 HapticFeedback.selectionClick();
                 setState(() => _pinned = !_pinned);
-                _dirty = true;
+                _onChanged();
               },
               icon: Icon(
                 _pinned ? Icons.push_pin_rounded : Icons.push_pin_outlined,
@@ -326,7 +326,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
                         onTap: () {
                           HapticFeedback.selectionClick();
                           setState(() => _colorIndex = index);
-                          _dirty = true;
+                          _onChanged();
                         },
                         child: Center(
                           child: Container(

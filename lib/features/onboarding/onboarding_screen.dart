@@ -291,10 +291,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       minimumSize: const Size.fromHeight(52),
                     ),
                     child: _saving
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 22,
                             height: 22,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: theme.colorScheme.onSurface,
+                              semanticsLabel: 'Saving starter deeds',
+                            ),
                           )
                         : Row(
                             mainAxisSize: MainAxisSize.min,
@@ -418,7 +422,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   size: 18,
                   color: context.appStyle.isDigital
                       ? theme.colorScheme.onSurfaceVariant
-                      : colorFromHex(area.color),
+                      : AppTheme.ensureVisible(
+                          colorFromHex(area.color),
+                          theme.cardTheme.color ?? theme.colorScheme.surface,
+                          theme.brightness,
+                          ratio: 3.2,
+                        ),
                 ),
                 selected: selected,
                 onSelected: (value) {
@@ -484,7 +493,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   ? theme.colorScheme.primary.withValues(alpha: 0.10)
                   : theme.cardTheme.color,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
                 side: BorderSide(
                   color: selected
                       ? theme.colorScheme.primary
@@ -536,7 +545,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                             fallback: Icons.check_rounded),
                         color: context.appStyle.isDigital
                       ? theme.colorScheme.onSurfaceVariant
-                      : colorFromHex(area.color),
+                      : AppTheme.ensureVisible(
+                          colorFromHex(area.color),
+                          theme.cardTheme.color ?? theme.colorScheme.surface,
+                          theme.brightness,
+                          ratio: 3.2,
+                        ),
                         size: 20,
                       ),
                       const SizedBox(width: 12),

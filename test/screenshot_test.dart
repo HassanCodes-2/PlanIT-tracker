@@ -170,7 +170,7 @@ final List<Note> notes = [
     color: '#1B6CFF',
     pinned: true,
     createdAt: todayOnly.subtract(const Duration(days: 2)),
-    updatedAt: todayOnly.subtract(const Duration(hours: 3)),
+    updatedAt: DateTime.now().subtract(const Duration(hours: 3)),
   ),
   Note(
     id: 2,
@@ -179,7 +179,7 @@ final List<Note> notes = [
     color: '#22C55E',
     pinned: false,
     createdAt: todayOnly.subtract(const Duration(days: 1)),
-    updatedAt: todayOnly.subtract(const Duration(hours: 5)),
+    updatedAt: DateTime.now().subtract(const Duration(hours: 5)),
   ),
   Note(
     id: 3,
@@ -189,7 +189,7 @@ final List<Note> notes = [
     color: '#8B5CF6',
     pinned: false,
     createdAt: todayOnly.subtract(const Duration(days: 4)),
-    updatedAt: todayOnly.subtract(const Duration(days: 1)),
+    updatedAt: DateTime.now().subtract(const Duration(days: 1)),
   ),
   Note(
     id: 4,
@@ -198,7 +198,7 @@ final List<Note> notes = [
     color: '#F59E0B',
     pinned: false,
     createdAt: todayOnly.subtract(const Duration(days: 6)),
-    updatedAt: todayOnly.subtract(const Duration(days: 2)),
+    updatedAt: DateTime.now().subtract(const Duration(days: 2)),
   ),
 ];
 
