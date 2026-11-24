@@ -95,8 +95,9 @@ abstract final class AppTheme {
         : (brightness == Brightness.dark
             ? const Color(0xFF75757F)
             : const Color(0xFF8A8A93));
-    final accentText =
-        _accessibleAccent(accent, bg, brightness, ratio: 4.5);
+    var accentText =
+        _accessibleAccent(accent, surface, brightness, ratio: 4.5);
+    accentText = _accessibleAccent(accentText, bg, brightness, ratio: 4.5);
     final snackBg = brightness == Brightness.dark
         ? const Color(0xFF2E2E36)
         : const Color(0xFF202024);
@@ -114,6 +115,13 @@ abstract final class AppTheme {
       onSurfaceVariant: muted,
       error: digital ? muted : baseScheme.error,
       onError: digital ? surface : baseScheme.onError,
+      surfaceContainerLowest: bg,
+      surfaceContainerLow: surface,
+      surfaceContainer: surface,
+      surfaceContainerHigh: Color.lerp(surface, text, 0.05)!,
+      surfaceContainerHighest: Color.lerp(surface, text, 0.09)!,
+      secondaryContainer: accent.withValues(alpha: 0.16),
+      onSecondaryContainer: text,
     );
 
     final textTheme = _textTheme(text, muted);
@@ -161,8 +169,9 @@ abstract final class AppTheme {
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => TextStyle(
             fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: states.contains(WidgetState.selected) ? onAccent : muted,
+            fontWeight:
+                states.contains(WidgetState.selected) ? FontWeight.w700 : FontWeight.w600,
+            color: states.contains(WidgetState.selected) ? text : muted,
           ),
         ),
         height: digital ? 64 : 68,
@@ -208,6 +217,22 @@ abstract final class AppTheme {
         ),
       ),
       dividerTheme: DividerThemeData(color: border, thickness: 1),
+      popupMenuTheme: PopupMenuThemeData(color: surface),
+      menuTheme: MenuThemeData(
+        style: MenuStyle(
+          backgroundColor: WidgetStatePropertyAll(surface),
+        ),
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected) ? accent : muted,
+        ),
+        trackColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? accent.withValues(alpha: 0.5)
+              : border,
+        ),
+      ),
       datePickerTheme: DatePickerThemeData(
         backgroundColor: surface,
         headerBackgroundColor: accent,
@@ -291,7 +316,7 @@ abstract final class AppTheme {
         bodyMedium:
             TextStyle(fontSize: 14, height: 1.4, color: text),
         bodySmall:
-            TextStyle(fontSize: 12, height: 1.35, color: muted),
+            TextStyle(fontSize: 13, height: 1.35, color: muted),
         labelLarge: TextStyle(
             fontSize: 13, fontWeight: FontWeight.w600, height: 1.2, color: text),
         labelMedium: TextStyle(
@@ -300,7 +325,7 @@ abstract final class AppTheme {
             letterSpacing: 0.8,
             color: muted),
         labelSmall: TextStyle(
-            fontSize: 11,
+            fontSize: 12,
             fontWeight: FontWeight.w500,
             letterSpacing: 0.4,
             color: muted),

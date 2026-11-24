@@ -134,7 +134,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
         ? _earliest(deeds, logs, today)
         : today.subtract(Duration(days: _period.days - 1));
     final loggedDays = logs
-        .where((log) => LogStatus.fromDb(log.status) == LogStatus.done)
+        .where((log) {
+          final status = LogStatus.fromDb(log.status);
+          return status == LogStatus.done || status == LogStatus.late;
+        })
         .map((log) => dateOnly(log.day))
         .toSet();
     final streakNow = currentStreak(loggedDays, today: today);
@@ -210,7 +213,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                 const SizedBox(height: 20),
                 _Label(_period == StatsPeriodType.weeks
                     ? 'HEATMAP — LAST 7 DAYS'
-                    : 'HEATMAP — LAST 14 DAYS'),
+                    : 'HEATMAP — LAST 10 DAYS'),
                 const SizedBox(height: 10),
                 Card(
                   child: Padding(
@@ -220,7 +223,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                       logs: logs,
                       categories: categories,
                       today: today,
-                      days: _period == StatsPeriodType.weeks ? 7 : 14,
+                      days: _period == StatsPeriodType.weeks ? 7 : 10,
                     ),
                   ),
                 ),
@@ -275,7 +278,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                   physics: const NeverScrollableScrollPhysics(),
                   mainAxisSpacing: 10,
                   crossAxisSpacing: 10,
-                  childAspectRatio: 1.25,
+                  childAspectRatio: 1.1,
                   children: [
                     _RingStat(
                       label: 'On time',
@@ -391,13 +394,6 @@ class _Heatmap extends StatelessWidget {
   final DateTime today;
   final int days;
 
-  String? _categoryIcon(int? categoryId) {
-    for (final category in categories) {
-      if (category.id == categoryId) return category.icon;
-    }
-    return null;
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -446,8 +442,8 @@ class _Heatmap extends StatelessWidget {
       );
     }
 
-    final cellSize = days <= 7 ? 34.0 : 16.0;
-    final gap = days <= 7 ? 6.0 : 3.0;
+    final cellSize = days <= 7 ? 34.0 : 23.0;
+    final gap = days <= 7 ? 6.0 : 2.0;
     final isLight = theme.brightness == Brightness.light;
 
     Widget cell(db.Deed deed, DateTime day) {
@@ -511,7 +507,7 @@ class _Heatmap extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(
-              width: 38,
+              width: 56,
               child: Column(
                 children: [
                   SizedBox(height: headerHeight),
@@ -522,14 +518,13 @@ class _Heatmap extends StatelessWidget {
                         height: cellSize,
                         child: Tooltip(
                           message: deed.name,
-                          child: Icon(
-                            iconForDeed(
-                              deedIcon: deed.icon,
-                              categoryIcon: _categoryIcon(deed.categoryId),
-                              name: deed.name,
+                          child: Text(
+                            deed.name.split(' ').first,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
-                            size: 18,
-                            color: theme.colorScheme.primary,
                           ),
                         ),
                       ),
@@ -540,7 +535,6 @@ class _Heatmap extends StatelessWidget {
             Expanded(
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                reverse: true,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -585,7 +579,7 @@ class _Heatmap extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Padding(
-          padding: const EdgeInsets.only(left: 38),
+          padding: const EdgeInsets.only(left: 56),
           child: Text(
             days <= 7
                 ? '${DateFormat('d MMM').format(start)} - today'

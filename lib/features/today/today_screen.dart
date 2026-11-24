@@ -1060,7 +1060,7 @@ class _DeedCard extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(
             AppSpacing.screen, 0, AppSpacing.screen, AppSpacing.sm + 2),
         child: Opacity(
-        opacity: 1,
+        opacity: 0.85,
         child: Material(
           color: theme.cardTheme.color,
           shape: RoundedRectangleBorder(

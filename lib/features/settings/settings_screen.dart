@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/backup/backup_service.dart';
 import '../../core/prefs/prefs_providers.dart';
+import '../../core/notifications/notification_service.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/providers.dart';
@@ -168,76 +169,72 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 24),
           _Label('ACCENT PRESETS'),
           const SizedBox(height: 10),
-          Opacity(
-            opacity: digital ? 0.4 : 1,
-            child: IgnorePointer(
-              ignoring: digital,
-              child: Wrap(
-                spacing: 4,
-                runSpacing: 4,
-                children:
-                    List.generate(_accentPresets.length, (index) {
-                  final color = _accentPresets[index];
-                  final selected = accent.toARGB32() == color.toARGB32();
-                  return SizedBox(
-                    width: 48,
-                    height: 48,
-                    child: Semantics(
-                      button: true,
-                      selected: selected,
-                      label: 'Accent color ${_accentNames[index]}',
-                      child: InkResponse(
-                        radius: 24,
-                        onTap: () => ref
-                            .read(accentColorProvider.notifier)
-                            .setColor(color),
-                        child: Center(
-                          child: Container(
-                            width: 34,
-                            height: 34,
-                            decoration: BoxDecoration(
-                              color: color,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: selected
-                                    ? theme.colorScheme.onSurface
-                                    : theme.colorScheme.outline,
-                                width: selected ? 2.5 : 1,
-                              ),
-                              boxShadow: selected
-                                  ? [
-                                      BoxShadow(
-                                        color:
-                                            color.withValues(alpha: 0.45),
-                                        blurRadius: 10,
-                                      ),
-                                    ]
-                                  : null,
-                            ),
-                            child: selected
-                                ? Icon(
-                                    Icons.check_rounded,
-                                    size: 16,
-                                    color: AppTheme.onColor(color),
-                                  )
-                                : null,
+          if (!digital) ...[
+            GridView.count(
+              crossAxisCount: 4,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 4,
+              crossAxisSpacing: 4,
+              children: List.generate(_accentPresets.length, (index) {
+                final color = _accentPresets[index];
+                final selected = accent.toARGB32() == color.toARGB32();
+                return Semantics(
+                  button: true,
+                  selected: selected,
+                  label: 'Accent color ${_accentNames[index]}',
+                  child: InkResponse(
+                    radius: 24,
+                    onTap: () => ref
+                        .read(accentColorProvider.notifier)
+                        .setColor(color),
+                    child: Center(
+                      child: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: selected
+                                ? theme.colorScheme.onSurface
+                                : theme.colorScheme.outline,
+                            width: selected ? 2.5 : 1,
                           ),
+                          boxShadow: selected
+                              ? [
+                                  BoxShadow(
+                                    color: color.withValues(alpha: 0.45),
+                                    blurRadius: 10,
+                                  ),
+                                ]
+                              : null,
                         ),
+                        child: selected
+                            ? Icon(
+                                Icons.check_rounded,
+                                size: 16,
+                                color: AppTheme.onColor(color),
+                              )
+                            : null,
                       ),
                     ),
-                  );
-                }),
-              ),
+                  ),
+                );
+              }),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            digital
-                ? 'Digital is monochrome — the accent applies to Midnight.'
-                : 'Auto-tuned for contrast. Used for buttons, progress and selections.',
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-          ),
+            const SizedBox(height: 8),
+            Text(
+              'Auto-tuned for contrast. Used for buttons, progress and selections.',
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
+          ] else
+            Text(
+              'Accent presets apply to the Midnight style.',
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
           const SizedBox(height: 24),
           _Label('YOU'),
           const SizedBox(height: 10),
@@ -326,10 +323,43 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: 'Habit & deed tracker v1.6.0',
           ),
           const SizedBox(height: 10),
-          _InfoTile(
-            icon: Icons.notifications_none_rounded,
-            title: 'Reminders',
-            subtitle: 'Per-deed reminder times are saved with each deed.',
+          Material(
+            color: theme.cardTheme.color,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppShape.medium),
+              side: BorderSide(color: theme.colorScheme.outline),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: ListTile(
+              leading: Icon(
+                Icons.notifications_none_rounded,
+                color: theme.colorScheme.primary,
+              ),
+              title: const Text('Reminders'),
+              subtitle: Text(
+                'Check notification permission and per-deed schedules',
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+              trailing: Icon(
+                Icons.chevron_right_rounded,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              onTap: () async {
+                final allowed =
+                    await NotificationService.instance.ensurePermission();
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      allowed == true
+                          ? 'Notifications are enabled.'
+                          : 'Notifications are off. Enable them in Android settings.',
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),

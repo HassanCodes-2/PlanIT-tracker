@@ -249,29 +249,36 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         button: true,
                         selected: active,
                         label: 'Step ${index + 1}',
-                        child: SizedBox(
-                          width: 40,
-                          height: 48,
-                          child: Center(
-                            child: GestureDetector(
+                        onTap: () => _pageController.animateToPage(
+                          index,
+                          duration: const Duration(milliseconds: 250),
+                          curve: Curves.easeOutCubic,
+                        ),
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
                           onTap: () => _pageController.animateToPage(
                             index,
                             duration: const Duration(milliseconds: 250),
                             curve: Curves.easeOutCubic,
                           ),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            width: active ? 22 : 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: active
-                                  ? theme.colorScheme.primary
-                                  : theme.colorScheme.onSurfaceVariant,
-                              borderRadius: BorderRadius.circular(4),
+                          child: SizedBox(
+                            width: 40,
+                            height: 48,
+                            child: Center(
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                margin:
+                                    const EdgeInsets.symmetric(horizontal: 4),
+                                width: active ? 22 : 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: active
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.onSurfaceVariant,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
                           ),
                         ),
                       );
