@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/icons.dart';
+import '../../core/widgets/load_error.dart';
 import '../../data/providers.dart';
 
 class ArchivedDeedsScreen extends ConsumerWidget {
@@ -18,7 +19,9 @@ class ArchivedDeedsScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Archived deeds')),
       body: archived == null
           ? const Center(child: CircularProgressIndicator())
-          : archived.isEmpty
+          : archivedAsync.hasError
+              ? LoadError(onRetry: () => ref.invalidate(archivedDeedsProvider))
+              : archived.isEmpty
               ? Center(
                   child: Padding(
                     padding: const EdgeInsets.all(AppSpacing.huge),

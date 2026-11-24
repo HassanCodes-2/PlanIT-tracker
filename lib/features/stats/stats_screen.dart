@@ -7,6 +7,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/icons.dart';
+import '../../core/widgets/load_error.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/providers.dart';
 import '../../domain/deed_schedule.dart';
@@ -109,6 +110,20 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
     final deeds = deedsAsync.value;
     final logs = logsAsync.value;
     final categories = categoriesAsync.value ?? const <db.Category>[];
+
+    if (deedsAsync.hasError ||
+        logsAsync.hasError ||
+        categoriesAsync.hasError) {
+      return Scaffold(
+        body: LoadError(
+          onRetry: () {
+            ref.invalidate(deedsProvider);
+            ref.invalidate(allLogsProvider);
+            ref.invalidate(categoriesProvider);
+          },
+        ),
+      );
+    }
 
     if (deeds == null || logs == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -770,7 +785,11 @@ class _SlidingPeriodBar extends StatelessWidget {
             children: periods
                 .map(
                   (period) => Expanded(
-                    child: GestureDetector(
+                    child: Semantics(
+                      button: true,
+                      selected: period == selected,
+                      label: '${period.label} period',
+                      child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: () => onSelect(period),
                       child: Center(
@@ -787,6 +806,7 @@ class _SlidingPeriodBar extends StatelessWidget {
                         ),
                       ),
                     ),
+                  ),
                   ),
                 )
                 .toList(),

@@ -10,6 +10,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/icons.dart';
 import '../../core/widgets/confetti.dart';
+import '../../core/widgets/load_error.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/providers.dart';
 import '../../domain/deed_schedule.dart';
@@ -33,6 +34,22 @@ class TodayScreen extends ConsumerWidget {
     final deeds = deedsAsync.value;
     final logs = logsAsync.value ?? const <int, db.DeedLog>{};
     final allLogs = allLogsAsync.value ?? const <db.DeedLog>[];
+
+    if (categoriesAsync.hasError ||
+        deedsAsync.hasError ||
+        logsAsync.hasError ||
+        allLogsAsync.hasError) {
+      return Scaffold(
+        body: LoadError(
+          onRetry: () {
+            ref.invalidate(categoriesProvider);
+            ref.invalidate(deedsProvider);
+            ref.invalidate(logsForDayProvider(day));
+            ref.invalidate(allLogsProvider);
+          },
+        ),
+      );
+    }
 
     if (categories == null || deeds == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));

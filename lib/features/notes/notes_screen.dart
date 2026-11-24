@@ -6,6 +6,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/icons.dart';
+import '../../core/widgets/load_error.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/providers.dart';
 
@@ -30,6 +31,15 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
   Widget build(BuildContext context) {
     final notesAsync = ref.watch(notesProvider);
     final notes = notesAsync.value;
+
+    if (notesAsync.hasError) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Notes')),
+        body: LoadError(
+          onRetry: () => ref.invalidate(notesProvider),
+        ),
+      );
+    }
 
     if (notes == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -177,7 +187,11 @@ class _NoteGrid extends StatelessWidget {
           theme.brightness,
           ratio: 3.2,
         );
-        return Material(
+        return Semantics(
+          button: true,
+          label:
+              '${note.title.isEmpty ? 'Untitled note' : note.title}${note.pinned ? ', pinned' : ''}',
+          child: Material(
           color: theme.cardTheme.color,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -255,6 +269,7 @@ class _NoteGrid extends StatelessWidget {
                 ],
               ),
             ),
+          ),
           ),
         );
       },

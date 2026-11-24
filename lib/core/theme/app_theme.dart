@@ -266,7 +266,7 @@ abstract final class AppTheme {
         headlineMedium: TextStyle(
             fontSize: 28, fontWeight: FontWeight.w700, height: 1.25, color: text),
         titleSmall: TextStyle(
-            fontSize: 14, fontWeight: FontWeight.w600, color: text),
+            fontSize: 14, fontWeight: FontWeight.w600, height: 1.3, color: text),
         bodyLarge:
             TextStyle(fontSize: 15, height: 1.4, color: text),
         bodyMedium:
@@ -274,7 +274,7 @@ abstract final class AppTheme {
         bodySmall:
             TextStyle(fontSize: 12, height: 1.35, color: muted),
         labelLarge: TextStyle(
-            fontSize: 13, fontWeight: FontWeight.w600, color: text),
+            fontSize: 13, fontWeight: FontWeight.w600, height: 1.2, color: text),
         labelMedium: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
