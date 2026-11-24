@@ -44,6 +44,15 @@ void main() {
       expect(_contrast(side.color, cardColor), greaterThanOrEqualTo(3.0));
     });
 
+    test('${entry.key}: navigation rail selection is readable', () {
+      final rail = theme.navigationRailTheme;
+      final icon = rail.selectedIconTheme?.color;
+      final indicator =
+          rail.indicatorColor ?? theme.colorScheme.secondaryContainer;
+      expect(icon, isNotNull);
+      expect(_contrast(icon!, indicator), greaterThanOrEqualTo(3.0));
+    });
+
     test('${entry.key}: status glyphs stay visible on cards', () {
       final cardColor =
           theme.cardTheme.color ?? theme.colorScheme.surface;

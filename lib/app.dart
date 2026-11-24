@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -30,6 +31,8 @@ class _PlanItAppState extends ConsumerState<PlanItApp> {
     final style = ref.watch(themeStyleProvider);
     final isDigital = style == AppThemeStyle.digital;
     final accent = ref.watch(accentColorProvider);
+    final reduceMotion = WidgetsBinding
+        .instance.platformDispatcher.accessibilityFeatures.disableAnimations;
 
     return MaterialApp.router(
       title: 'PlanIT',
@@ -37,8 +40,26 @@ class _PlanItAppState extends ConsumerState<PlanItApp> {
       theme: isDigital ? AppTheme.digitalLight : AppTheme.lightWith(accent),
       darkTheme: isDigital ? AppTheme.digitalDark : AppTheme.darkWith(accent),
       themeMode: ref.watch(themeModeProvider),
+      builder: (context, child) {
+        final active = Theme.of(context);
+        final dark = active.brightness == Brightness.dark;
+        final overlay = (dark
+                ? SystemUiOverlayStyle.light
+                : SystemUiOverlayStyle.dark)
+            .copyWith(
+          statusBarColor: Colors.transparent,
+          systemNavigationBarColor: active.scaffoldBackgroundColor,
+          systemNavigationBarIconBrightness:
+              dark ? Brightness.light : Brightness.dark,
+        );
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: overlay,
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
       routerConfig: ref.watch(appRouterProvider),
-      themeAnimationDuration: const Duration(milliseconds: 300),
+      themeAnimationDuration:
+          reduceMotion ? Duration.zero : const Duration(milliseconds: 300),
       themeAnimationCurve: Curves.easeOutCubic,
     );
   }

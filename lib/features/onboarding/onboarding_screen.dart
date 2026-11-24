@@ -92,7 +92,33 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   int _page = 0;
   final Set<int> _selectedAreas = {0, 1, 2, 3};
   final Set<int> _selectedSuggestions = {0, 3, 6};
+  Set<String> _existingNames = {};
   bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadExistingDeeds();
+  }
+
+  Future<void> _loadExistingDeeds() async {
+    try {
+      final deeds = await ref.read(deedsProvider.future);
+      if (!mounted) return;
+      setState(() {
+        _existingNames = deeds
+            .map((deed) => deed.name.trim().toLowerCase())
+            .toSet();
+      });
+    } catch (_) {
+      // First-run setup still works if the list cannot be read yet.
+    }
+  }
+
+  int get _newStarterCount => _selectedSuggestions.where((index) {
+        final name = _suggestions[index].name.toLowerCase();
+        return !_existingNames.contains(name);
+      }).length;
 
   @override
   void dispose() {
@@ -143,28 +169,36 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           .toSet();
       var categories = await repository.allCategories();
 
+      db.Category? categoryFor(_Area area) {
+        for (final candidate in categories) {
+          if (candidate.name.toLowerCase() == area.name.toLowerCase()) {
+            return candidate;
+          }
+        }
+        return null;
+      }
+
+      // Persist every chosen focus area as a category, even if the user
+      // unchecks all suggestions inside it.
+      for (final areaIndex in _selectedAreas) {
+        final area = _areas[areaIndex];
+        if (categoryFor(area) != null) continue;
+        final id = await repository.createCategory(
+          name: area.name,
+          icon: area.icon,
+          color: area.color,
+          sortOrder: 10 + areaIndex,
+        );
+        final created = await repository.categoryById(id);
+        if (created != null) categories = [...categories, created];
+      }
+
       for (final index in _selectedSuggestions) {
         final suggestion = _suggestions[index];
         if (existing.contains(suggestion.name.toLowerCase())) continue;
 
         final area = _areas[suggestion.area];
-        db.Category? category;
-        for (final candidate in categories) {
-          if (candidate.name.toLowerCase() == area.name.toLowerCase()) {
-            category = candidate;
-            break;
-          }
-        }
-        if (category == null) {
-          final id = await repository.createCategory(
-            name: area.name,
-            icon: area.icon,
-            color: area.color,
-            sortOrder: 10 + suggestion.area,
-          );
-          category = await repository.categoryById(id);
-          categories = [...categories, ?category];
-        }
+        final category = categoryFor(area);
 
         await repository.createDeed(
           db.DeedsCompanion(
@@ -466,7 +500,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         ),
         const SizedBox(height: 6),
         Text(
-          '${_selectedSuggestions.length} starter deeds will be created.',
+          _newStarterCount == 0
+              ? 'No new starter deeds — your existing ones are kept.'
+              : '$_newStarterCount new starter ${_newStarterCount == 1 ? 'deed' : 'deeds'} will be added.',
           style: theme.textTheme.bodySmall
               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),

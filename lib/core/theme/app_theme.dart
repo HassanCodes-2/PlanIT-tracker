@@ -177,6 +177,23 @@ abstract final class AppTheme {
         height: digital ? 64 : 68,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       ),
+      navigationRailTheme: NavigationRailThemeData(
+        backgroundColor: surface,
+        indicatorColor: accent,
+        useIndicator: true,
+        selectedIconTheme: IconThemeData(color: onAccent),
+        unselectedIconTheme: IconThemeData(color: muted),
+        selectedLabelTextStyle: TextStyle(
+          color: text,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+        ),
+        unselectedLabelTextStyle: TextStyle(
+          color: muted,
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           minimumSize: const Size(64, 48),

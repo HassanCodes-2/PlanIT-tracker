@@ -102,6 +102,14 @@ class OnboardedNotifier extends Notifier<bool> {
         .setBool('onboarding_done', true);
     state = true;
   }
+
+  /// Re-opens setup without deleting any existing deeds or notes.
+  Future<void> reset() async {
+    await ref
+        .read(sharedPreferencesProvider)
+        .setBool('onboarding_done', false);
+    state = false;
+  }
 }
 
 final onboardedProvider =

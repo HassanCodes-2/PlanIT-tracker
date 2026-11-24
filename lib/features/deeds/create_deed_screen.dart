@@ -26,6 +26,7 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _timesController = TextEditingController(text: '3');
+  final _scrollController = ScrollController();
 
   db.Deed? _existing;
   bool _loading = false;
@@ -107,6 +108,7 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
   void dispose() {
     _nameController.dispose();
     _timesController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -141,9 +143,28 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Check the highlighted fields before saving.'),
+        ),
+      );
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic,
+        );
+      }
+      return;
+    }
     if (_frequency == FrequencyType.weekdays && _weekdays.isEmpty) {
       setState(() => _weekdayError = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pick at least one weekday for this deed.'),
+        ),
+      );
       return;
     }
     setState(() {
@@ -322,13 +343,17 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
+          controller: _scrollController,
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
           children: [
             TextFormField(
               controller: _nameController,
               autofocus: _existing == null,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(hintText: 'Deed name'),
+              decoration: const InputDecoration(
+                labelText: 'Deed name *',
+                hintText: 'e.g. Read 20 pages',
+              ),
               validator: (value) => (value == null || value.trim().isEmpty)
                   ? 'Give your deed a name'
                   : null,
@@ -406,7 +431,6 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
                 );
               },
             ),
-            const SizedBox(height: 20),
             const SizedBox(height: 20),
             _Label('CATEGORY'),
             const SizedBox(height: 8),
@@ -582,23 +606,6 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
                   },
             ),
             const SizedBox(height: 24),
-            FilledButton(
-              onPressed: _saving ? null : _save,
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(52),
-              ),
-              child: _saving
-                  ? SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: theme.colorScheme.onSurface,
-                        semanticsLabel: 'Saving deed',
-                      ),
-                    )
-                  : Text(_existing == null ? 'Create deed' : 'Save changes'),
-            ),
             if (_existing != null) ...[
               const SizedBox(height: 8),
               TextButton(
@@ -610,6 +617,33 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
               ),
             ],
           ],
+        ),
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor,
+          border: Border(top: BorderSide(color: theme.colorScheme.outline)),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 10, 20, 12),
+        child: SafeArea(
+          top: false,
+          child: FilledButton(
+            onPressed: _saving ? null : _save,
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(52),
+            ),
+            child: _saving
+                ? SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: theme.colorScheme.onSurface,
+                      semanticsLabel: 'Saving deed',
+                    ),
+                  )
+                : Text(_existing == null ? 'Create deed' : 'Save changes'),
+          ),
         ),
       ),
       ),

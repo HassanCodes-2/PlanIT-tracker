@@ -1,15 +1,42 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../core/notifications/notification_service.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/icons.dart';
 import '../../core/widgets/load_error.dart';
+import '../../data/db/app_database.dart' as db;
 import '../../data/providers.dart';
 
 class ArchivedDeedsScreen extends ConsumerWidget {
   const ArchivedDeedsScreen({super.key});
+
+  Future<void> _restore(
+    BuildContext context,
+    WidgetRef ref,
+    db.Deed deed,
+  ) async {
+    final repository = ref.read(repositoryProvider);
+    final notifications = ref.read(notificationServiceProvider);
+    await repository.unarchiveDeed(deed.id);
+    await notifications.syncAll(await repository.allDeeds());
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('"${deed.name}" restored to Today'),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: () async {
+            await repository.archiveDeed(deed.id);
+            await notifications.syncAll(await repository.allDeeds());
+          },
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -72,6 +99,7 @@ class ArchivedDeedsScreen extends ConsumerWidget {
                       ),
                       clipBehavior: Clip.antiAlias,
                       child: ListTile(
+                        onTap: () => context.push('/deed?id=${deed.id}'),
                         leading: Icon(
                           iconForName(deed.icon,
                               fallback: AppIcons.done),
@@ -87,19 +115,7 @@ class ArchivedDeedsScreen extends ConsumerWidget {
                         trailing: IconButton(
                           tooltip: 'Restore deed',
                           icon: const Icon(Icons.restore_rounded),
-                          onPressed: () async {
-                            await ref
-                                .read(repositoryProvider)
-                                .unarchiveDeed(deed.id);
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                      '"${deed.name}" restored to Today'),
-                                ),
-                              );
-                            }
-                          },
+                          onPressed: () => _restore(context, ref, deed),
                         ),
                       ),
                     );

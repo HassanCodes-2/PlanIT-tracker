@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/services.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -175,10 +176,8 @@ class _NoteGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scale =
-        MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.35);
-    return MediaQuery.withClampedTextScaling(
-      maxScaleFactor: 1.35,
-      child: GridView.builder(
+        MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 2.0);
+    return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -200,19 +199,24 @@ class _NoteGrid extends StatelessWidget {
         return Semantics(
           button: true,
           label:
-              '${note.title.isEmpty ? 'Untitled note' : note.title}${note.pinned ? ', pinned' : ''}',
+              '${note.title.isEmpty ? 'Untitled note' : note.title}${note.pinned ? ', pinned' : ''}. '
+              '${note.body.trim().isEmpty ? 'No text' : note.body.trim().replaceAll(RegExp(r'\s+'), ' ')}. '
+              'Edited ${_relativeTime(note.updatedAt)}.',
           onTap: () => onTap(note),
           onLongPress: () => onLongPress(note),
+          customSemanticsActions: {
+            CustomSemanticsAction(
+              label: note.pinned ? 'Unpin note' : 'Pin note',
+            ): () => onLongPress(note),
+          },
           excludeSemantics: true,
           child: Material(
           color: theme.cardTheme.color,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
             side: BorderSide(
-              color: digital
-                  ? theme.colorScheme.outline
-                  : accent.withValues(alpha: 0.55),
-            ),
+            color: theme.colorScheme.outline,
+          ),
           ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
@@ -286,7 +290,6 @@ class _NoteGrid extends StatelessWidget {
           ),
         );
       },
-    ),
     );
   }
 }

@@ -65,7 +65,7 @@ adb install -r dist\planit-release.apk
 
 ## Features in the current build
 
-- **Local-first data** — SQLite (Drift) with starter categories and deeds on first launch
+- **Local-first data** — SQLite (Drift) with starter categories and deeds only after onboarding choices
 - **Notes & ideas** — a full notepad tab: Keep-style colored cards, pin-to-top, instant search, auto-save editor, "edited 2h ago" timestamps; included in backups
 - **Onboarding** — first-launch welcome: your name, focus areas, starter deeds
 - **Today** - personal greeting, streak and daily progress, date picker + day scroller, category sections with color stripes; tap to log "done" (with confetti when you clear the day), long-press for focus timer / done late / skipped (+ reason) / history / clear - all with undo

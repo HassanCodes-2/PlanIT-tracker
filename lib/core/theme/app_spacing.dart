@@ -1,4 +1,4 @@
-/// 8dp-based spacing tokens (Material 3 guidance).
+/// 4dp spacing scale; major sections follow an 8dp rhythm.
 abstract final class AppSpacing {
   static const double xxs = 2;
   static const double xs = 4;

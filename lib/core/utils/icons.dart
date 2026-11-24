@@ -1,5 +1,7 @@
 import 'package:material_ui/material_ui.dart' show Color, IconData;
 
+import '../../domain/enums.dart';
+
 /// Phosphor Bold icons, embedded directly via assets/fonts/Phosphor-Bold.ttf.
 /// Codepoints sourced from phosphor_flutter 2.1.0 (MIT license).
 abstract final class Phosphor {
@@ -23,9 +25,13 @@ abstract final class Phosphor {
   static const heart = IconData(0xe2a8, fontFamily: _f);
   static const star = IconData(0xe46a, fontFamily: _f);
   static const checkCircle = IconData(0xe184, fontFamily: _f);
+  static const checkSquare = IconData(0xe186, fontFamily: _f);
   static const clock = IconData(0xe19a, fontFamily: _f);
   static const xCircle = IconData(0xe4f8, fontFamily: _f);
+  static const xSquare = IconData(0xe4fa, fontFamily: _f);
   static const minusCircle = IconData(0xe32c, fontFamily: _f);
+  static const minusSquare = IconData(0xed4c, fontFamily: _f);
+  static const square = IconData(0xe45e, fontFamily: _f);
   static const caretRight = IconData(0xe13a, fontFamily: _f);
   static const lightbulb = IconData(0xe2dc, fontFamily: _f);
   static const fire = IconData(0xe242, fontFamily: _f);
@@ -41,9 +47,13 @@ abstract final class Phosphor {
 /// Standard icons used across the app.
 abstract final class AppIcons {
   static const done = Phosphor.checkCircle;
+  static const doneSquare = Phosphor.checkSquare;
   static const late = Phosphor.clock;
   static const skipped = Phosphor.xCircle;
+  static const skippedSquare = Phosphor.xSquare;
   static const missed = Phosphor.minusCircle;
+  static const missedSquare = Phosphor.minusSquare;
+  static const uncheckedSquare = Phosphor.square;
   static const caretRight = Phosphor.caretRight;
   static const lightbulb = Phosphor.lightbulb;
   static const fire = Phosphor.fire;
@@ -60,6 +70,16 @@ abstract final class AppIcons {
   static const stats = Phosphor.trendUp;
   static const today = Phosphor.calendarCheck;
 }
+
+/// Digital uses square checks for direct states; Midnight uses circles.
+/// Late remains a clock because the time cue matters more than geometry.
+IconData statusIcon(LogStatus status, {required bool digital}) =>
+    switch (status) {
+      LogStatus.done => digital ? AppIcons.doneSquare : AppIcons.done,
+      LogStatus.late => AppIcons.late,
+      LogStatus.skipped =>
+        digital ? AppIcons.skippedSquare : AppIcons.skipped,
+    };
 
 /// Maps icon names stored in the DB to Phosphor icons (bold weight).
 /// Falls back to a Material icon when explicitly provided.

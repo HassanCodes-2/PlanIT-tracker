@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:planit/core/prefs/prefs_providers.dart';
 import 'package:planit/core/theme/app_theme.dart';
+import 'package:planit/core/utils/icons.dart';
 import 'package:planit/data/db/app_database.dart';
 import 'package:planit/data/providers.dart';
 import 'package:planit/features/deeds/create_deed_screen.dart';
@@ -156,6 +157,10 @@ List<DeedLog> _history() {
       result.add(DeedLog(
           id: id++, deedId: 5, day: day, status: 'done', loggedAt: day));
     }
+    if (offset % 4 == 2) {
+      result.add(DeedLog(
+          id: id++, deedId: 6, day: day, status: 'done', loggedAt: day));
+    }
   }
   return result;
 }
@@ -259,17 +264,13 @@ Widget _app({
                   selectedIndex: navIndex,
                   destinations: const [
                     NavigationDestination(
-                        icon: Icon(Icons.checklist_rounded),
-                        label: 'Today'),
+                        icon: Icon(AppIcons.today), label: 'Today'),
                     NavigationDestination(
-                        icon: Icon(Icons.sticky_note_2_outlined),
-                        label: 'Notes'),
+                        icon: Icon(AppIcons.notes), label: 'Notes'),
                     NavigationDestination(
-                        icon: Icon(Icons.bar_chart_rounded),
-                        label: 'Stats'),
+                        icon: Icon(AppIcons.stats), label: 'Stats'),
                     NavigationDestination(
-                        icon: Icon(Icons.settings_outlined),
-                        label: 'Settings'),
+                        icon: Icon(AppIcons.gear), label: 'Settings'),
                   ],
                 )
               : null,
@@ -428,6 +429,7 @@ void main() {
       ProviderScope(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(_prefs()),
+          deedsProvider.overrideWith((ref) => Stream.value(const <Deed>[])),
         ],
         child: RepaintBoundary(
           key: captureKey,

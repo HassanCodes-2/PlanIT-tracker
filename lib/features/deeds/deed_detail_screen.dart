@@ -30,6 +30,11 @@ class DeedDetailScreen extends ConsumerWidget {
         title: const Text('Deed'),
         actions: [
           IconButton(
+            tooltip: 'Start focus session',
+            icon: const Icon(AppIcons.timer),
+            onPressed: () => context.push('/focus?id=$deedId'),
+          ),
+          IconButton(
             tooltip: 'Edit deed',
             icon: const Icon(Icons.edit_rounded),
             onPressed: () => context.push('/create-deed?id=$deedId'),
@@ -272,11 +277,10 @@ class DeedDetailScreen extends ConsumerWidget {
                             child: Row(
                               children: [
                                 Icon(
-                                  switch (LogStatus.fromDb(log.status)) {
-                                    LogStatus.done => AppIcons.done,
-                                    LogStatus.late => AppIcons.late,
-                                    LogStatus.skipped => AppIcons.skipped,
-                                  },
+                                  statusIcon(
+                                    LogStatus.fromDb(log.status),
+                                    digital: digital,
+                                  ),
                                   size: 18,
                                   semanticLabel:
                                       LogStatus.fromDb(log.status).label,
@@ -366,16 +370,12 @@ class _SingleDeedHeatmap extends StatelessWidget {
             IconData? glyph;
             if (status != null) {
               color = AppColors.outcome(status, theme, digital: digital);
-              glyph = switch (status) {
-                LogStatus.done => AppIcons.done,
-                LogStatus.late => AppIcons.late,
-                LogStatus.skipped => AppIcons.skipped,
-              };
+              glyph = statusIcon(status, digital: digital);
               glyphColor = AppTheme.onColor(color);
             } else if (missed) {
               color = theme.colorScheme.onSurfaceVariant
                   .withValues(alpha: digital ? 0.16 : 0.10);
-              glyph = AppIcons.missed;
+              glyph = digital ? AppIcons.missedSquare : AppIcons.missed;
               glyphColor = AppColors.missed(theme, digital: digital);
             } else {
               color = theme.colorScheme.onSurfaceVariant
@@ -412,13 +412,13 @@ class _SingleDeedHeatmap extends StatelessWidget {
           spacing: 12,
           runSpacing: 4,
           children: [
-            _legendItem(theme, AppIcons.done, 'Done',
+            _legendItem(theme, statusIcon(LogStatus.done, digital: digital), 'Done',
                 AppColors.outcome(LogStatus.done, theme, digital: digital)),
-            _legendItem(theme, AppIcons.late, 'Late',
+            _legendItem(theme, statusIcon(LogStatus.late, digital: digital), 'Late',
                 AppColors.outcome(LogStatus.late, theme, digital: digital)),
-            _legendItem(theme, AppIcons.skipped, 'Skipped',
+            _legendItem(theme, statusIcon(LogStatus.skipped, digital: digital), 'Skipped',
                 AppColors.outcome(LogStatus.skipped, theme, digital: digital)),
-            _legendItem(theme, AppIcons.missed, 'Missed',
+            _legendItem(theme, digital ? AppIcons.missedSquare : AppIcons.missed, 'Missed',
                 AppColors.missed(theme, digital: digital)),
           ],
         ),

@@ -1,4 +1,5 @@
 import 'package:flutter/services.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -58,7 +59,10 @@ class TodayScreen extends ConsumerWidget {
     final today = dateOnly(DateTime.now());
     final isFuture = day.isAfter(today);
     final scheduled = deeds.where((deed) => isScheduledOn(deed, day)).toList();
-    final doneCount = scheduled.where((deed) {
+    final dailyScheduled = scheduled
+        .where((deed) => !frequencyOf(deed).isCountBased)
+        .toList();
+    final doneCount = dailyScheduled.where((deed) {
       final log = logs[deed.id];
       if (log == null) return false;
       final status = LogStatus.fromDb(log.status);
@@ -131,7 +135,7 @@ class TodayScreen extends ConsumerWidget {
               },
               streak: streak,
               done: doneCount,
-              total: scheduled.length,
+              total: dailyScheduled.length,
               showToday: !(day.year == today.year &&
                   day.month == today.month &&
                   day.day == today.day),
@@ -145,8 +149,6 @@ class TodayScreen extends ConsumerWidget {
                 ref.read(selectedDayProvider.notifier).select(value);
               },
             ),
-            if (!isFuture)
-              const SizedBox.shrink(),
             if (isFuture)
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
@@ -159,7 +161,7 @@ class TodayScreen extends ConsumerWidget {
               )
             else if (!isFuture &&
                 scheduled.isNotEmpty &&
-                doneCount < scheduled.length)
+                dailyScheduled.isNotEmpty && doneCount < dailyScheduled.length)
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
                 child: Text(
@@ -187,10 +189,11 @@ class TodayScreen extends ConsumerWidget {
                     day,
                     logs,
                     doneCount,
-                    scheduled.length,
+                    dailyScheduled.length,
                   ),
                   onLongPress: (deed) =>
                       _showOutcomeSheet(context, ref, deed, day, logs),
+                  onFocus: (deed) => _openFocus(context, deed, day),
 
                 ),
               ),
@@ -209,14 +212,20 @@ class TodayScreen extends ConsumerWidget {
                     day,
                     logs,
                     doneCount,
-                    scheduled.length,
+                    dailyScheduled.length,
                   ),
                   onLongPress: (deed) =>
                       _showOutcomeSheet(context, ref, deed, day, logs),
+                  onFocus: (deed) => _openFocus(context, deed, day),
 
                 ),
-              if (doneCount >= scheduled.length && !isFuture)
-                _CaughtUpCard(day: day),
+              if (dailyScheduled.isNotEmpty &&
+                  doneCount >= dailyScheduled.length &&
+                  !isFuture)
+                _CaughtUpCard(
+                  day: day,
+                  hasGoals: scheduled.length > dailyScheduled.length,
+                ),
             ],
           ],
         ),
@@ -236,6 +245,12 @@ class TodayScreen extends ConsumerWidget {
             ? null
             : SnackBarAction(label: 'Undo', onPressed: undo),
       ));
+  }
+
+  void _openFocus(BuildContext context, db.Deed deed, DateTime day) {
+    context.push(
+      '/focus?id=${deed.id}&day=${DateFormat('yyyy-MM-dd').format(day)}',
+    );
   }
 
   Future<void> _onTapDeed(
@@ -270,7 +285,9 @@ class TodayScreen extends ConsumerWidget {
       HapticFeedback.mediumImpact();
       if (context.mounted) {
         final name = ref.read(userNameProvider);
-        final allDone = doneCount + 1 >= total && total > 0;
+        final allDone = !frequencyOf(deed).isCountBased &&
+            doneCount + 1 >= total &&
+            total > 0;
         if (allDone) {
           HapticFeedback.heavyImpact();
           showConfetti(context);
@@ -278,7 +295,7 @@ class TodayScreen extends ConsumerWidget {
         _snack(
           context,
           allDone
-              ? 'All deeds done${name.isEmpty ? '' : ', $name'}! 🎉'
+              ? 'All daily deeds done${name.isEmpty ? '' : ', $name'}! 🎉'
               : 'Marked "${deed.name}" done',
           () => repository.clearLog(deed.id, day),
         );
@@ -639,7 +656,7 @@ class _DateHeader extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      total == 0 ? 'No deeds' : '$done of $total done',
+                      total == 0 ? 'No daily deeds' : '$done of $total done',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -676,22 +693,48 @@ class _DayScrollerState extends State<_DayScroller> {
   );
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _controller.hasClients) {
+        _centerSelected(animate: false);
+      }
+    });
+  }
+
+  void _centerSelected({required bool animate}) {
+    final index =
+        widget.selected.difference(dateOnly(widget.today)).inDays + _window;
+    final scale = MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.6);
+    final tileWidth = 48.0 * scale;
+    final itemExtent = tileWidth + 6;
+    final leadingItems =
+        (((MediaQuery.sizeOf(context).width - tileWidth) / 2) / itemExtent)
+            .floor()
+            .toInt();
+    final target = ((index - leadingItems) * itemExtent + AppSpacing.screen)
+        .clamp(0.0, _controller.position.maxScrollExtent);
+    if (animate) {
+      _controller.animateTo(
+        target,
+        duration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+      );
+    } else {
+      _controller.jumpTo(target);
+    }
+  }
+
+  @override
   void didUpdateWidget(covariant _DayScroller oldWidget) {
     super.didUpdateWidget(oldWidget);
     final changed = oldWidget.selected.year != widget.selected.year ||
         oldWidget.selected.month != widget.selected.month ||
         oldWidget.selected.day != widget.selected.day;
     if (!changed || !_controller.hasClients) return;
-    final index =
-        widget.selected.difference(dateOnly(widget.today)).inDays + _window;
-    final target = (index * 54.0 -
-            (MediaQuery.sizeOf(context).width - 48) / 2)
-        .clamp(0.0, _controller.position.maxScrollExtent);
-    _controller.animateTo(
-      target,
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeOutCubic,
-    );
+    _centerSelected(animate: true);
   }
 
   @override
@@ -710,11 +753,10 @@ class _DayScrollerState extends State<_DayScroller> {
         widget.today.day - _window + index,
       ),
     );
-    return MediaQuery.withClampedTextScaling(
-      maxScaleFactor: 1.35,
-      child: SizedBox(
-      height: 68 *
-          MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.35),
+    final scale = MediaQuery.textScalerOf(context).scale(1.0);
+    final tileWidth = 48.0 * scale.clamp(1.0, 1.6);
+    return SizedBox(
+      height: 68 + 80 * (scale - 1).clamp(0, 1.5),
       child: ListView.separated(
         controller: _controller,
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
@@ -738,7 +780,7 @@ class _DayScrollerState extends State<_DayScroller> {
                 borderRadius: BorderRadius.circular(digital ? 8 : 12),
                 onTap: () => widget.onSelect(day),
                 child: Container(
-                  width: 48,
+                  width: tileWidth,
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   decoration: BoxDecoration(
                     color: isSelected
@@ -785,7 +827,6 @@ class _DayScrollerState extends State<_DayScroller> {
           );
         },
       ),
-      ),
     );
   }
 }
@@ -815,8 +856,7 @@ class _SegmentBar extends StatelessWidget {
               decoration: BoxDecoration(
                 color: index < filled
                     ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurfaceVariant
-                        .withValues(alpha: 0.18),
+                    : theme.colorScheme.outline,
                 borderRadius: BorderRadius.circular(2),
                 boxShadow: digital && index < filled
                     ? [
@@ -846,6 +886,7 @@ class _CategorySection extends StatelessWidget {
     required this.canLog,
     required this.onTap,
     required this.onLongPress,
+    required this.onFocus,
   });
 
   final db.Category? category;
@@ -856,6 +897,7 @@ class _CategorySection extends StatelessWidget {
   final bool canLog;
   final ValueChanged<db.Deed> onTap;
   final ValueChanged<db.Deed> onLongPress;
+  final ValueChanged<db.Deed> onFocus;
 
 
   String? _progressFor(db.Deed deed) {
@@ -915,7 +957,7 @@ class _CategorySection extends StatelessWidget {
               canLog: canLog,
               onTap: () => onTap(deed),
               onLongPress: () => onLongPress(deed),
-
+              onFocus: () => onFocus(deed),
             ),
           ),
         ],
@@ -933,6 +975,7 @@ class _DeedCard extends StatelessWidget {
     required this.canLog,
     required this.onTap,
     required this.onLongPress,
+    required this.onFocus,
   });
 
   final db.Deed deed;
@@ -942,7 +985,18 @@ class _DeedCard extends StatelessWidget {
   final bool canLog;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
+  final VoidCallback onFocus;
 
+
+  String? _reminderLabel(BuildContext context, String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    final parts = raw.split(':');
+    if (parts.length != 2) return null;
+    final hour = int.tryParse(parts[0]);
+    final minute = int.tryParse(parts[1]);
+    if (hour == null || minute == null) return null;
+    return 'Reminder at ${TimeOfDay(hour: hour, minute: minute).format(context)}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -969,20 +1023,18 @@ class _DeedCard extends StatelessWidget {
         : statusColor.withValues(alpha: digital ? 0.12 : 0.18);
     final (Color iconTint, IconData? icon) = switch (status) {
       null => (accent, null),
-      LogStatus.done => (statusColor, AppIcons.done),
-      LogStatus.late => (statusColor, AppIcons.late),
-      LogStatus.skipped => (statusColor, AppIcons.skipped),
+      LogStatus.done => (statusColor, statusIcon(status, digital: digital)),
+      LogStatus.late => (statusColor, statusIcon(status, digital: digital)),
+      LogStatus.skipped => (statusColor, statusIcon(status, digital: digital)),
     };
 
     final hasReason = log?.reason != null && log!.reason!.isNotEmpty;
     final reminder = deed.reminderTime;
-    final reminderLabel = (reminder != null && reminder.isNotEmpty)
-        ? 'Reminder at $reminder'
-        : null;
+    final reminderLabel = _reminderLabel(context, reminder);
     final subtitle = hasReason ? log!.reason! : (progressText ?? reminderLabel);
     final statusLabel = status?.label;
     final semanticsLabel = '${deed.name}'
-        '${statusLabel != null ? ', $statusLabel' : ', not logged'}'
+        '${statusLabel != null ? ', $statusLabel' : (!canLog ? ', planned' : ', not logged')}'
         '${subtitle != null && subtitle.isNotEmpty ? ', $subtitle' : ''}';
 
     return Semantics(
@@ -991,12 +1043,16 @@ class _DeedCard extends StatelessWidget {
       label: semanticsLabel,
       onTap: canLog ? onTap : null,
       onLongPress: canLog ? onLongPress : null,
+      customSemanticsActions: canLog
+          ? {
+              const CustomSemanticsAction(label: 'Start focus session'):
+                  onFocus,
+            }
+          : null,
       excludeSemantics: true,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
             AppSpacing.screen, 0, AppSpacing.screen, AppSpacing.sm + 2),
-        child: Opacity(
-        opacity: canLog ? 1 : 0.7,
         child: Material(
           color: theme.cardTheme.color,
           shape: RoundedRectangleBorder(
@@ -1068,6 +1124,16 @@ class _DeedCard extends StatelessWidget {
                       ],
                     ),
                   ),
+                  if (canLog)
+                    IconButton(
+                      onPressed: onFocus,
+                      tooltip: 'Start focus session',
+                      iconSize: 20,
+                      icon: Icon(
+                        AppIcons.timer,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     width: logged ? 56 : 64,
@@ -1081,14 +1147,40 @@ class _DeedCard extends StatelessWidget {
                       ),
                     ),
                     child: icon == null
-                        ? Icon(
-                            context.appStyle.isDigital
-                                ? Icons.check_box_outline_blank_rounded
-                                : Icons.radio_button_unchecked_rounded,
-                            size: 20,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          )
-                        : Icon(icon, color: iconTint, size: 22),
+                        ? (!canLog
+                            ? Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    AppIcons.calendar,
+                                    size: 18,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  MediaQuery.withClampedTextScaling(
+                                    maxScaleFactor: 1.2,
+                                    child: Text(
+                                      'PLAN',
+                                      style: theme.textTheme.labelSmall
+                                          ?.copyWith(
+                                        fontSize: 8,
+                                        letterSpacing: 0.8,
+                                        fontWeight: FontWeight.w700,
+                                        color: theme
+                                            .colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Icon(
+                                context.appStyle.isDigital
+                                    ? AppIcons.uncheckedSquare
+                                    : Icons.radio_button_unchecked_rounded,
+                                size: 20,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ))
+                        : Icon(icon, color: iconTint, size: 20),
                   ),
                 ],
               ),
@@ -1097,19 +1189,20 @@ class _DeedCard extends StatelessWidget {
           ),
         ),
       ),
-      ),
     );
   }
 }
 
 class _CaughtUpCard extends StatelessWidget {
-  const _CaughtUpCard({required this.day});
+  const _CaughtUpCard({required this.day, required this.hasGoals});
 
   final DateTime day;
+  final bool hasGoals;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isToday = dateOnly(day) == dateOnly(DateTime.now());
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
       child: Container(
@@ -1134,14 +1227,16 @@ class _CaughtUpCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'All caught up!',
+                    hasGoals ? 'Daily deeds complete' : 'All caught up!',
                     style: theme.textTheme.titleMedium
                         ?.copyWith(fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'You completed every deed for '
-                    '${dateOnly(day) == dateOnly(DateTime.now()) ? 'today. See you tomorrow!' : '${DateFormat('d MMM').format(day)}.'}',
+                    hasGoals
+                        ? 'All daily deeds for ${isToday ? 'today' : DateFormat('d MMM').format(day)} are done. Weekly goals stay open below.'
+                        : 'You completed every deed for '
+                            '${isToday ? 'today. See you tomorrow!' : '${DateFormat('d MMM').format(day)}.'}',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -1215,6 +1310,8 @@ class _OutcomeTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return ListTile(
+      selected: selected,
+      selectedTileColor: theme.colorScheme.primary.withValues(alpha: 0.08),
       leading: Icon(icon, color: color),
       title: Text(label),
       trailing: selected

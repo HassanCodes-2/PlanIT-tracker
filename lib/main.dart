@@ -9,7 +9,6 @@ import 'core/prefs/prefs_providers.dart';
 import 'core/supabase/supabase_bootstrap.dart';
 import 'data/db/app_database.dart';
 import 'data/providers.dart';
-import 'data/repositories/deed_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,8 +16,6 @@ Future<void> main() async {
 
   final prefs = await SharedPreferences.getInstance();
   final database = AppDatabase(driftDatabase(name: 'planit'));
-  final repository = DeedRepository(database);
-  await repository.ensureSeeded();
 
   final notifications = NotificationService.instance;
   try {

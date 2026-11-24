@@ -78,6 +78,9 @@ class SettingsScreen extends ConsumerWidget {
       await ref
           .read(backupServiceProvider)
           .shareBackup(ref.read(repositoryProvider));
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Export shared successfully.')),
+      );
     } catch (_) {
       messenger.showSnackBar(
         const SnackBar(content: Text('Backup failed. Please try again.')),
@@ -108,63 +111,97 @@ class SettingsScreen extends ConsumerWidget {
               borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
               border: Border.all(color: theme.colorScheme.outline),
             ),
-            child: SegmentedButton<ThemeMode>(
-              segments: const [
-                ButtonSegment(
-                  value: ThemeMode.system,
-                  label: Text('System'),
-                ),
-                ButtonSegment(
-                  value: ThemeMode.light,
-                  label: Text('Light'),
-                ),
-                ButtonSegment(
-                  value: ThemeMode.dark,
-                  label: Text('Dark'),
-                ),
-              ],
-              selected: {mode},
-              showSelectedIcon: false,
-              onSelectionChanged: (selection) =>
-                  ref.read(themeModeProvider.notifier).setMode(selection.first),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final large =
+                    MediaQuery.textScalerOf(context).scale(1) > 1.4 ||
+                        constraints.maxWidth < 300;
+                IconData iconFor(ThemeMode mode) => switch (mode) {
+                      ThemeMode.system => Icons.brightness_auto_rounded,
+                      ThemeMode.light => Icons.light_mode_rounded,
+                      ThemeMode.dark => Icons.dark_mode_rounded,
+                    };
+                String labelFor(ThemeMode mode) => switch (mode) {
+                      ThemeMode.system => 'System',
+                      ThemeMode.light => 'Light',
+                      ThemeMode.dark => 'Dark',
+                    };
+                return SegmentedButton<ThemeMode>(
+                  segments: ThemeMode.values
+                      .map(
+                        (mode) => ButtonSegment(
+                          value: mode,
+                          icon: large
+                              ? Icon(
+                                  iconFor(mode),
+                                  size: 22,
+                                  semanticLabel: labelFor(mode),
+                                )
+                              : null,
+                          label: large ? null : Text(labelFor(mode)),
+                        ),
+                      )
+                      .toList(),
+                  selected: {mode},
+                  showSelectedIcon: false,
+                  onSelectionChanged: (selection) => ref
+                      .read(themeModeProvider.notifier)
+                      .setMode(selection.first),
+                );
+              },
             ),
           ),
           const SizedBox(height: 24),
           _Label('THEME STYLE'),
           const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: _StyleCard(
-                  title: 'Midnight',
-                  subtitle: _accentName(accent),
-                  selected:
-                      ref.watch(themeStyleProvider) == AppThemeStyle.midnight,
-                  previewColor: AppTheme.ensureVisible(
-                    accent,
-                    theme.colorScheme.surface,
-                    theme.brightness,
-                    ratio: 3.0,
-                  ),
-                  onTap: () => ref
-                      .read(themeStyleProvider.notifier)
-                      .setStyle(AppThemeStyle.midnight),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final textScale = MediaQuery.textScalerOf(context).scale(1);
+              final stack =
+                  constraints.maxWidth < 300 || textScale > 1.4;
+              final midnight = _StyleCard(
+                title: 'Midnight',
+                subtitle: _accentName(accent),
+                selected:
+                    ref.watch(themeStyleProvider) == AppThemeStyle.midnight,
+                previewColor: AppTheme.ensureVisible(
+                  accent,
+                  theme.colorScheme.surface,
+                  theme.brightness,
+                  ratio: 3.0,
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _StyleCard(
-                  title: 'Digital',
-                  subtitle: 'Monochrome HUD',
-                  selected:
-                      ref.watch(themeStyleProvider) == AppThemeStyle.digital,
-                  previewColor: Colors.white,
-                  onTap: () => ref
-                      .read(themeStyleProvider.notifier)
-                      .setStyle(AppThemeStyle.digital),
-                ),
-              ),
-            ],
+                onTap: () => ref
+                    .read(themeStyleProvider.notifier)
+                    .setStyle(AppThemeStyle.midnight),
+              );
+              final digitalCard = _StyleCard(
+                title: 'Digital',
+                subtitle: 'Monochrome HUD',
+                selected:
+                    ref.watch(themeStyleProvider) == AppThemeStyle.digital,
+                previewColor: Colors.white,
+                onTap: () => ref
+                    .read(themeStyleProvider.notifier)
+                    .setStyle(AppThemeStyle.digital),
+              );
+              if (stack) {
+                return Column(
+                  children: [
+                    midnight,
+                    const SizedBox(height: 10),
+                    digitalCard,
+                  ],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: midnight),
+                  const SizedBox(width: 10),
+                  Expanded(child: digitalCard),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 24),
           _Label('ACCENT PRESETS'),
@@ -309,11 +346,57 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 10),
+          Material(
+            color: theme.cardTheme.color,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
+              side: BorderSide(color: theme.colorScheme.outline),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: ListTile(
+              leading: Icon(
+                Icons.restart_alt_rounded,
+                color: theme.colorScheme.primary,
+              ),
+              title: const Text('Run setup again'),
+              subtitle: Text(
+                'Revisit focus areas and starter deeds. Existing data is kept.',
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+              onTap: () async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (dialogContext) => AlertDialog(
+                    title: const Text('Run setup again?'),
+                    content: const Text(
+                      'You can pick focus areas and add starter deeds again. '
+                      'Nothing you already have will be deleted.',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(dialogContext, false),
+                        child: const Text('Cancel'),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.pop(dialogContext, true),
+                        child: const Text('Run setup'),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed != true || !context.mounted) return;
+                await ref.read(onboardedProvider.notifier).reset();
+                if (context.mounted) context.go('/welcome');
+              },
+            ),
+          ),
+          const SizedBox(height: 10),
           _InfoTile(
             icon: Icons.storage_rounded,
             title: 'Storage',
             subtitle:
-                'Stored only on this phone. Export keeps a safe copy.',
+                'Stored only on this phone. Export shares a copy you can keep.',
           ),
           const SizedBox(height: 24),
           _Label('NOTIFICATIONS'),
@@ -387,7 +470,12 @@ class _StyleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Material(
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: '$title style, $subtitle${selected ? ', active' : ''}',
+      excludeSemantics: true,
+      child: Material(
       color: theme.cardTheme.color,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
@@ -466,6 +554,7 @@ class _StyleCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }
