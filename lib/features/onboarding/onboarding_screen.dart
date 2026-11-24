@@ -466,7 +466,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     }
                   });
                 },
-                child: Padding(
+                child: Semantics(
+                  button: true,
+                  toggled: selected,
+                  label: suggestion.name,
+                  child: Padding(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   child: Row(
@@ -519,6 +523,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   ),
                 ),
               ),
+            ),
             ),
           );
         }),

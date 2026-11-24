@@ -27,6 +27,15 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
     Color(0xFFEC4899),
   ];
 
+  static const List<String> _colorNames = [
+    'Blue',
+    'Emerald',
+    'Amber',
+    'Red',
+    'Violet',
+    'Rose',
+  ];
+
   final _titleController = TextEditingController();
   final _bodyController = TextEditingController();
 
@@ -183,6 +192,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
       child: Scaffold(
         appBar: AppBar(
           leading: IconButton(
+            tooltip: 'Back',
             icon: const Icon(Icons.arrow_back_rounded),
             onPressed: _exit,
           ),
@@ -223,7 +233,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
                     child: Semantics(
                       button: true,
                       selected: selected,
-                      label: 'Note color ${index + 1}',
+                      label: 'Note color ${_colorNames[index]}',
                       child: InkResponse(
                         radius: 24,
                         onTap: () {
@@ -240,8 +250,8 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
                               border: Border.all(
                                 color: selected
                                     ? theme.colorScheme.onSurface
-                                    : Colors.transparent,
-                                width: 2.5,
+                                    : theme.colorScheme.outline,
+                                width: selected ? 2.5 : 1,
                               ),
                             ),
                             child: selected

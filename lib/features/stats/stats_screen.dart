@@ -158,7 +158,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
         ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.55)
         : (isLight ? AppColors.skippedLight : AppColors.skipped);
     final missedColor = digital
-        ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.35)
+        ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.55)
         : theme.colorScheme.onSurfaceVariant;
 
     return Scaffold(
@@ -275,7 +275,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                   physics: const NeverScrollableScrollPhysics(),
                   mainAxisSpacing: 10,
                   crossAxisSpacing: 10,
-                  childAspectRatio: 1.22,
+                  childAspectRatio: 1.0,
                   children: [
                     _RingStat(
                       label: 'Done',
@@ -481,8 +481,8 @@ class _Heatmap extends StatelessWidget {
         };
         glyphColor = AppTheme.onColor(base);
       } else if (scheduled && day.isBefore(today)) {
-        fill = theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.10);
-        border = theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.55);
+        fill = theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.16);
+        border = theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7);
       } else {
         fill = theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.08);
       }
@@ -502,44 +502,24 @@ class _Heatmap extends StatelessWidget {
       );
     }
 
+    final headerHeight = days <= 7 ? 20.0 : 0.0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          reverse: true,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (days <= 7)
-                Row(
-                  children: [
-                    const SizedBox(width: 38),
-                    ...dateList.map(
-                      (day) => SizedBox(
-                        width: cellSize + gap,
-                        child: Text(
-                          DateFormat('EE').format(day).substring(0, 1),
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              if (days <= 7) const SizedBox(height: 4),
-              for (final deed in deeds)
-                Semantics(
-                  label: rowLabel(deed),
-                  child: ExcludeSemantics(
-                    child: Padding(
-                  padding: const EdgeInsets.only(bottom: 5),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 38,
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 38,
+              child: Column(
+                children: [
+                  SizedBox(height: headerHeight),
+                  for (final deed in deeds)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 5),
+                      child: SizedBox(
+                        height: cellSize,
                         child: Tooltip(
                           message: deed.name,
                           child: Icon(
@@ -553,20 +533,63 @@ class _Heatmap extends StatelessWidget {
                           ),
                         ),
                       ),
-                      ...dateList.map((day) => cell(deed, day)),
-                    ],
-                  ),
+                    ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                reverse: true,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (days <= 7)
+                      Row(
+                        children: dateList
+                            .map(
+                              (day) => SizedBox(
+                                width: cellSize + gap,
+                                child: Text(
+                                  DateFormat('EE').format(day).substring(0, 1),
+                                  textAlign: TextAlign.center,
+                                  style:
+                                      theme.textTheme.labelSmall?.copyWith(
+                                    color:
+                                        theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    for (final deed in deeds)
+                      Semantics(
+                        label: rowLabel(deed),
+                        child: ExcludeSemantics(
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 5),
+                            child: Row(
+                              children: dateList
+                                  .map((day) => cell(deed, day))
+                                  .toList(),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-                  ),
-                ),
-            ],
-          ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
         Padding(
           padding: const EdgeInsets.only(left: 38),
           child: Text(
-            '${DateFormat('d MMM').format(start)} — today',
+            days <= 7
+                ? '${DateFormat('d MMM').format(start)} - today'
+                : '${DateFormat('d MMM').format(start)} - today · swipe for earlier',
             style: theme.textTheme.labelSmall
                 ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),

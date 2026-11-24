@@ -94,6 +94,7 @@ GoRouter _createRouter({required bool onboarded}) {
         path: '/focus',
         builder: (context, state) => FocusScreen(
           deedId: int.tryParse(state.uri.queryParameters['id'] ?? '') ?? 0,
+          date: DateTime.tryParse(state.uri.queryParameters['day'] ?? ''),
         ),
       ),
       GoRoute(

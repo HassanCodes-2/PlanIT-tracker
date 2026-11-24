@@ -5,7 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../core/notifications/notification_service.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/icons.dart';
 import '../../core/widgets/confetti.dart';
 import '../../data/db/app_database.dart' as db;
@@ -13,9 +15,10 @@ import '../../data/providers.dart';
 import '../../domain/enums.dart';
 
 class FocusScreen extends ConsumerStatefulWidget {
-  const FocusScreen({super.key, required this.deedId});
+  const FocusScreen({super.key, required this.deedId, this.date});
 
   final int deedId;
+  final DateTime? date;
 
   @override
   ConsumerState<FocusScreen> createState() => _FocusScreenState();
@@ -52,6 +55,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    unawaited(NotificationService.instance.cancelFocusNotification());
     super.dispose();
   }
 
@@ -60,6 +64,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
     if (_running) {
       _timer?.cancel();
       final ends = _endsAt;
+      unawaited(ref.read(notificationServiceProvider).cancelFocusNotification());
       setState(() {
         _running = false;
         if (ends != null) {
@@ -70,6 +75,12 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
       return;
     }
     _endsAt = DateTime.now().add(Duration(seconds: _remaining));
+    final notifications = ref.read(notificationServiceProvider);
+    unawaited(notifications.ensurePermission());
+    final deed = _deed;
+    if (deed != null && _endsAt != null) {
+      unawaited(notifications.scheduleFocusNotification(_endsAt!, deed.name));
+    }
     _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
     setState(() => _running = true);
   }
@@ -80,6 +91,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
     final seconds = ends.difference(DateTime.now()).inSeconds;
     if (seconds <= 0) {
       _timer?.cancel();
+      unawaited(ref.read(notificationServiceProvider).cancelFocusNotification());
       setState(() {
         _remaining = 0;
         _running = false;
@@ -114,7 +126,8 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
             onPressed: () async {
               await ref
                   .read(repositoryProvider)
-                  .setLog(deed.id, dateOnly(DateTime.now()), LogStatus.done);
+                  .setLog(deed.id, dateOnly(widget.date ?? DateTime.now()),
+                      LogStatus.done);
               if (dialogContext.mounted) Navigator.pop(dialogContext);
               if (mounted && context.mounted) context.pop();
             },
@@ -148,7 +161,10 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
         ],
       ),
     );
-    if (leave == true && mounted) context.pop();
+    if (leave == true && mounted) {
+      unawaited(ref.read(notificationServiceProvider).cancelFocusNotification());
+      context.pop();
+    }
   }
 
   Future<void> _markDoneNow() async {
@@ -173,10 +189,12 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
     );
     if (confirm != true) return;
     _timer?.cancel();
+    unawaited(ref.read(notificationServiceProvider).cancelFocusNotification());
     HapticFeedback.mediumImpact();
     await ref
         .read(repositoryProvider)
-        .setLog(deed.id, dateOnly(DateTime.now()), LogStatus.done);
+        .setLog(deed.id, dateOnly(widget.date ?? DateTime.now()),
+                      LogStatus.done);
     if (mounted) context.pop();
   }
 
@@ -196,6 +214,12 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
       _finished = false;
       if (_running && _endsAt != null) {
         _endsAt = _endsAt!.add(const Duration(minutes: 5));
+        final deed = _deed;
+        if (deed != null) {
+          unawaited(ref
+              .read(notificationServiceProvider)
+              .scheduleFocusNotification(_endsAt!, deed.name));
+        }
       }
     });
   }
@@ -256,6 +280,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
       child: Scaffold(
         appBar: AppBar(
           leading: IconButton(
+            tooltip: 'Close focus session',
             icon: const Icon(Icons.close_rounded),
             onPressed: _confirmExit,
           ),
@@ -313,8 +338,15 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
                         children: [
                           Text(
                             _timeLabel,
-                            style: theme.textTheme.displaySmall
-                                ?.copyWith(fontWeight: FontWeight.w700),
+                            style: theme.textTheme.displaySmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              fontFamily: context.appStyle.isDigital
+                                  ? 'RobotoMono'
+                                  : null,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures()
+                              ],
+                            ),
                           ),
                           const SizedBox(height: 6),
                           Text(

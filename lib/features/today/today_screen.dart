@@ -71,9 +71,6 @@ class TodayScreen extends ConsumerWidget {
     final streak = currentStreak(loggedDays, today: today);
 
     final mode = ref.watch(themeModeProvider);
-    final isDark = mode == ThemeMode.dark ||
-        (mode == ThemeMode.system &&
-            MediaQuery.platformBrightnessOf(context) == Brightness.dark);
 
     final now = ref.watch(clockProvider).value ?? DateTime.now();
     final timeLabel = DateFormat('HH:mm').format(now);
@@ -121,8 +118,8 @@ class TodayScreen extends ConsumerWidget {
                 final picked = await showDatePicker(
                   context: context,
                   initialDate: day,
-                  firstDate: DateTime(today.year, today.month, today.day - 60),
-                  lastDate: DateTime(today.year, today.month, today.day + 60),
+                  firstDate: DateTime(today.year, today.month, today.day - 365),
+                  lastDate: DateTime(today.year, today.month, today.day + 365),
                 );
                 if (picked != null) {
                   ref.read(selectedDayProvider.notifier).select(picked);
@@ -131,8 +128,11 @@ class TodayScreen extends ConsumerWidget {
               streak: streak,
               done: doneCount,
               total: scheduled.length,
-              isDark: isDark,
-              onToggleTheme: () => _toggleTheme(context, ref),
+              mode: mode,
+              onThemeSelected: (selected) {
+                HapticFeedback.selectionClick();
+                ref.read(themeModeProvider.notifier).setMode(selected);
+              },
             ),
             _DayScroller(
               today: today,
@@ -229,17 +229,6 @@ class TodayScreen extends ConsumerWidget {
           ),
         ),
     );
-  }
-
-  void _toggleTheme(BuildContext context, WidgetRef ref) {
-    HapticFeedback.selectionClick();
-    final mode = ref.read(themeModeProvider);
-    final next = switch (mode) {
-      ThemeMode.dark => ThemeMode.light,
-      ThemeMode.light => ThemeMode.system,
-      ThemeMode.system => ThemeMode.dark,
-    };
-    ref.read(themeModeProvider.notifier).setMode(next);
   }
 
   void _snack(BuildContext context, String message, VoidCallback? undo) {
@@ -373,7 +362,9 @@ class TodayScreen extends ConsumerWidget {
                 selected: false,
                 onTap: () {
                   Navigator.pop(sheetContext);
-                  context.push('/focus?id=${deed.id}');
+                  context.push(
+                    '/focus?id=${deed.id}&day=${DateFormat('yyyy-MM-dd').format(day)}',
+                  );
                 },
               ),
               _OutcomeTile(
@@ -382,6 +373,7 @@ class TodayScreen extends ConsumerWidget {
                 label: 'Done on time',
                 selected: existing?.status == LogStatus.done.dbValue,
                 onTap: () async {
+                  final previous = existing;
                   Navigator.of(sheetContext).pop();
                   await repository.setLog(deed.id, day, LogStatus.done);
                   HapticFeedback.mediumImpact();
@@ -389,7 +381,14 @@ class TodayScreen extends ConsumerWidget {
                     _snack(
                       context,
                       'Marked "${deed.name}" done',
-                      () => repository.clearLog(deed.id, day),
+                      () => previous == null
+                          ? repository.clearLog(deed.id, day)
+                          : repository.setLog(
+                              deed.id,
+                              day,
+                              LogStatus.fromDb(previous.status),
+                              reason: previous.reason,
+                            ),
                     );
                   }
                 },
@@ -400,6 +399,7 @@ class TodayScreen extends ConsumerWidget {
                 label: 'Done late',
                 selected: existing?.status == LogStatus.late.dbValue,
                 onTap: () async {
+                  final previous = existing;
                   Navigator.of(sheetContext).pop();
                   HapticFeedback.selectionClick();
                   await repository.setLog(deed.id, day, LogStatus.late);
@@ -407,7 +407,14 @@ class TodayScreen extends ConsumerWidget {
                     _snack(
                       context,
                       'Logged "${deed.name}" as late',
-                      () => repository.clearLog(deed.id, day),
+                      () => previous == null
+                          ? repository.clearLog(deed.id, day)
+                          : repository.setLog(
+                              deed.id,
+                              day,
+                              LogStatus.fromDb(previous.status),
+                              reason: previous.reason,
+                            ),
                     );
                   }
                 },
@@ -518,8 +525,8 @@ class _DateHeader extends StatelessWidget {
     required this.streak,
     required this.done,
     required this.total,
-    required this.isDark,
-    required this.onToggleTheme,
+    required this.mode,
+    required this.onThemeSelected,
   });
 
   final String timeLabel;
@@ -528,8 +535,8 @@ class _DateHeader extends StatelessWidget {
   final int streak;
   final int done;
   final int total;
-  final bool isDark;
-  final VoidCallback onToggleTheme;
+  final ThemeMode mode;
+  final ValueChanged<ThemeMode> onThemeSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -571,14 +578,45 @@ class _DateHeader extends StatelessWidget {
                 onPressed: onPickDate,
                 icon: const Icon(Icons.calendar_month_rounded),
               ),
-              IconButton(
-                tooltip: 'Theme: cycle dark, light, system',
-                onPressed: onToggleTheme,
+              PopupMenuButton<ThemeMode>(
+                tooltip: 'Theme',
                 icon: Icon(
-                  isDark
-                      ? Icons.light_mode_rounded
-                      : Icons.dark_mode_rounded,
+                  mode == ThemeMode.system
+                      ? Icons.brightness_auto_rounded
+                      : (mode == ThemeMode.light
+                          ? Icons.light_mode_rounded
+                          : Icons.dark_mode_rounded),
                 ),
+                onSelected: onThemeSelected,
+                itemBuilder: (context) => ThemeMode.values.map((value) {
+                  final selected = value == mode;
+                  final icon = switch (value) {
+                    ThemeMode.system => Icons.brightness_auto_rounded,
+                    ThemeMode.light => Icons.light_mode_rounded,
+                    ThemeMode.dark => Icons.dark_mode_rounded,
+                  };
+                  final label = switch (value) {
+                    ThemeMode.system => 'System',
+                    ThemeMode.light => 'Light',
+                    ThemeMode.dark => 'Dark',
+                  };
+                  return PopupMenuItem<ThemeMode>(
+                    value: value,
+                    child: Row(
+                      children: [
+                        Icon(
+                          selected ? Icons.check_rounded : icon,
+                          size: 18,
+                          color: selected
+                              ? theme.colorScheme.secondary
+                              : theme.colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(label),
+                      ],
+                    ),
+                  );
+                }).toList(),
               ),
             ],
           ),
@@ -592,7 +630,12 @@ class _DateHeader extends StatelessWidget {
                   size: 16,
                   color: context.appStyle.isDigital
                       ? theme.colorScheme.primary
-                      : const Color(0xFFF97316),
+                      : AppTheme.ensureVisible(
+                          const Color(0xFFF97316),
+                          theme.colorScheme.surface,
+                          theme.brightness,
+                          ratio: 3.0,
+                        ),
                 ),
                 const SizedBox(width: 4),
                 Text(
@@ -607,7 +650,12 @@ class _DateHeader extends StatelessWidget {
                   size: 16,
                   color: context.appStyle.isDigital
                       ? theme.colorScheme.onSurfaceVariant
-                      : const Color(0xFF22C55E),
+                      : AppTheme.ensureVisible(
+                          const Color(0xFF22C55E),
+                          theme.colorScheme.surface,
+                          theme.brightness,
+                          ratio: 3.0,
+                        ),
                 ),
                 const SizedBox(width: 4),
                 Text(
@@ -640,7 +688,7 @@ class _DayScroller extends StatefulWidget {
 }
 
 class _DayScrollerState extends State<_DayScroller> {
-  static const int _window = 60;
+  static const int _window = 365;
   final ScrollController _controller = ScrollController(
     initialScrollOffset: _window * 54.0 - 151,
   );
@@ -681,7 +729,8 @@ class _DayScrollerState extends State<_DayScroller> {
       ),
     );
     return SizedBox(
-      height: 68,
+      height: 68 *
+          MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.35),
       child: ListView.separated(
         controller: _controller,
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
@@ -840,6 +889,7 @@ class _CategorySection extends StatelessWidget {
     final done = allLogs
         .where((log) =>
             log.deedId == deed.id &&
+            LogStatus.fromDb(log.status) == LogStatus.done &&
             !dateOnly(log.day).isBefore(start) &&
             !dateOnly(log.day).isAfter(end))
         .length;
@@ -917,7 +967,9 @@ class _DeedCard extends StatelessWidget {
             ratio: 3.2,
           );
     final status = log == null ? null : LogStatus.fromDb(log!.status);
-    final completed = status != null;
+    final logged = status != null;
+    final succeeded =
+        status == LogStatus.done || status == LogStatus.late;
 
     final isLight = theme.brightness == Brightness.light;
 
@@ -1034,8 +1086,8 @@ class _DeedCard extends StatelessWidget {
                           style: theme.textTheme.bodyLarge?.copyWith(
                             fontWeight: FontWeight.w500,
                             decoration:
-                                completed ? TextDecoration.lineThrough : null,
-                            color: completed
+                                succeeded ? TextDecoration.lineThrough : null,
+                            color: succeeded
                                 ? theme.colorScheme.onSurface
                                     .withValues(alpha: 0.65)
                                 : theme.colorScheme.onSurface,
@@ -1064,7 +1116,7 @@ class _DeedCard extends StatelessWidget {
                   ),
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
-                    width: completed ? 56 : 84,
+                    width: logged ? 56 : 84,
                     height: double.infinity,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(

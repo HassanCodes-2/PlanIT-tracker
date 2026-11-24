@@ -49,6 +49,47 @@ class NotificationService {
     _ready = true;
   }
 
+  static const int _focusId = 900001;
+
+  /// Schedules a single completion notification for a focus session.
+  Future<void> scheduleFocusNotification(
+    DateTime endsAt,
+    String deedName,
+  ) async {
+    if (!_ready) return;
+    try {
+      await _plugin.cancel(id: _focusId);
+      await _plugin.zonedSchedule(
+        id: _focusId,
+        title: 'Focus complete',
+        body: 'Your session for $deedName is finished.',
+        scheduledDate: tz.TZDateTime.from(endsAt, tz.local),
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'focus_timer',
+            'Focus timer',
+            channelDescription: 'Focus session completion alerts',
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+          iOS: DarwinNotificationDetails(),
+        ),
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      );
+    } catch (_) {
+      // Best-effort only.
+    }
+  }
+
+  Future<void> cancelFocusNotification() async {
+    if (!_ready) return;
+    try {
+      await _plugin.cancel(id: _focusId);
+    } catch (_) {
+      // Best-effort only.
+    }
+  }
+
   /// Requests notification permission (Android 13+). Call after the first frame.
   Future<void> ensurePermission() async {
     if (!_ready) return;

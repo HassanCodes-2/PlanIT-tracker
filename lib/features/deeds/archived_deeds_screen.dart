@@ -18,10 +18,10 @@ class ArchivedDeedsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Archived deeds')),
-      body: archived == null
-          ? const Center(child: CircularProgressIndicator())
-          : archivedAsync.hasError
-              ? LoadError(onRetry: () => ref.invalidate(archivedDeedsProvider))
+      body: archivedAsync.hasError
+          ? LoadError(onRetry: () => ref.invalidate(archivedDeedsProvider))
+          : archived == null
+              ? const Center(child: CircularProgressIndicator())
               : archived.isEmpty
               ? Center(
                   child: Padding(

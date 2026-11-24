@@ -201,8 +201,8 @@ class SettingsScreen extends ConsumerWidget {
                               border: Border.all(
                                 color: selected
                                     ? theme.colorScheme.onSurface
-                                    : Colors.transparent,
-                                width: 2.5,
+                                    : theme.colorScheme.outline,
+                                width: selected ? 2.5 : 1,
                               ),
                               boxShadow: selected
                                   ? [

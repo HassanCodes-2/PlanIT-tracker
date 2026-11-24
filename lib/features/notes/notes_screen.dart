@@ -76,6 +76,7 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
                 suffixIcon: _query.isEmpty
                     ? null
                     : IconButton(
+                        tooltip: 'Clear search',
                         icon: const Icon(Icons.close_rounded),
                         onPressed: () {
                           _searchController.clear();
@@ -168,14 +169,16 @@ class _NoteGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scale =
+        MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.35);
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         mainAxisSpacing: 10,
         crossAxisSpacing: 10,
-        mainAxisExtent: 164,
+        mainAxisExtent: 164 * scale,
       ),
       itemCount: notes.length,
       itemBuilder: (context, index) {

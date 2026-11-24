@@ -289,6 +289,7 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
       child: Scaffold(
       appBar: AppBar(
         leading: IconButton(
+          tooltip: 'Back',
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: _leave,
         ),
