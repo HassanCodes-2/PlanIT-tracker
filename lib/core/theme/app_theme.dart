@@ -354,6 +354,9 @@ class AppStyle extends ThemeExtension<AppStyle> {
 
   final bool isDigital;
 
+  /// Card corner radius for the active style (Digital is tighter).
+  double get cardRadius => isDigital ? 10 : 16;
+
   @override
   AppStyle copyWith({bool? isDigital}) =>
       AppStyle(isDigital: isDigital ?? this.isDigital);

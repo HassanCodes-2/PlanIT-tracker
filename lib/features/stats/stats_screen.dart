@@ -618,7 +618,7 @@ class _StreakCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
         border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
       child: Row(
@@ -683,7 +683,7 @@ class _RingStat extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: theme.cardTheme.color,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
           border: Border.all(color: theme.colorScheme.outlineVariant),
         ),
         child: Column(
@@ -876,7 +876,7 @@ class _DeedStatsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final percent = (stats.completionRate * 100).round();
+    final percent = (stats.completionRate * 100).round().clamp(0, 100);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Material(

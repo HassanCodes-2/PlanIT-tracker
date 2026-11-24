@@ -198,7 +198,7 @@ class _NoteGrid extends StatelessWidget {
           child: Material(
           color: theme.cardTheme.color,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
             side: BorderSide(
               color: digital
                   ? theme.colorScheme.outline

@@ -244,7 +244,7 @@ class SettingsScreen extends ConsumerWidget {
           Material(
             color: theme.cardTheme.color,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
               side: BorderSide(color: theme.colorScheme.outlineVariant),
             ),
             clipBehavior: Clip.antiAlias,
@@ -270,7 +270,7 @@ class SettingsScreen extends ConsumerWidget {
           Material(
             color: theme.cardTheme.color,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
               side: BorderSide(color: theme.colorScheme.outlineVariant),
             ),
             clipBehavior: Clip.antiAlias,
@@ -292,7 +292,7 @@ class SettingsScreen extends ConsumerWidget {
           Material(
             color: theme.cardTheme.color,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
               side: BorderSide(color: theme.colorScheme.outlineVariant),
             ),
             clipBehavior: Clip.antiAlias,
@@ -450,7 +450,7 @@ class _InfoTile extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
         border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
       child: ListTile(

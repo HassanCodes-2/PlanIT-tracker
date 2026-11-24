@@ -2,6 +2,8 @@ import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/utils/icons.dart';
+
 /// Bottom navigation shell: Today / Notes / Stats / Settings.
 class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.navigationShell});
@@ -23,23 +25,23 @@ class AppShell extends StatelessWidget {
         },
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.checklist_rounded),
-            selectedIcon: Icon(Icons.checklist_rounded),
+            icon: Icon(AppIcons.today),
+            selectedIcon: Icon(AppIcons.today),
             label: 'Today',
           ),
           NavigationDestination(
-            icon: Icon(Icons.sticky_note_2_outlined),
-            selectedIcon: Icon(Icons.sticky_note_2_rounded),
+            icon: Icon(AppIcons.notes),
+            selectedIcon: Icon(AppIcons.notes),
             label: 'Notes',
           ),
           NavigationDestination(
-            icon: Icon(Icons.bar_chart_rounded),
-            selectedIcon: Icon(Icons.bar_chart_rounded),
+            icon: Icon(AppIcons.stats),
+            selectedIcon: Icon(AppIcons.stats),
             label: 'Stats',
           ),
           NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings_rounded),
+            icon: Icon(AppIcons.gear),
+            selectedIcon: Icon(AppIcons.gear),
             label: 'Settings',
           ),
         ],

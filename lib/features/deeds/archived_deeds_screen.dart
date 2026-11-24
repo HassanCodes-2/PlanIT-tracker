@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/icons.dart';
 import '../../core/widgets/load_error.dart';
 import '../../data/providers.dart';
@@ -65,7 +66,7 @@ class ArchivedDeedsScreen extends ConsumerWidget {
                     return Material(
                       color: theme.cardTheme.color,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
                         side: BorderSide(
                             color: theme.colorScheme.outlineVariant),
                       ),

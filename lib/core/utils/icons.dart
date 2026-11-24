@@ -55,6 +55,10 @@ abstract final class AppIcons {
   static const reset = Phosphor.arrowsClockwise;
   static const history = Phosphor.clockCounterClockwise;
   static const calendar = Phosphor.calendarDots;
+  static const gear = Phosphor.gear;
+  static const notes = Phosphor.notePencil;
+  static const stats = Phosphor.trendUp;
+  static const today = Phosphor.checkCircle;
 }
 
 /// Maps icon names stored in the DB to Phosphor icons (bold weight).

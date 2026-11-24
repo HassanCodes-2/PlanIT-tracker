@@ -36,6 +36,11 @@ final archivedDeedsProvider = StreamProvider<List<Deed>>(
   (ref) => ref.watch(repositoryProvider).watchArchivedDeeds(),
 );
 
+/// Cached single-deed lookup (avoids refetch spinner flash on rebuilds).
+final deedByIdProvider = FutureProvider.family<Deed?, int>(
+  (ref, id) => ref.watch(repositoryProvider).deedById(id),
+);
+
 /// The day currently shown on the Today screen.
 class SelectedDay extends Notifier<DateTime> {
   @override

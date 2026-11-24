@@ -23,7 +23,7 @@ class DeedDetailScreen extends ConsumerWidget {
     final digital = context.appStyle.isDigital;
     final isLight = theme.brightness == Brightness.light;
     final repository = ref.read(repositoryProvider);
-    final deedFuture = repository.deedById(deedId);
+    final deedFuture = ref.watch(deedByIdProvider(deedId).future);
     final categoriesAsync = ref.watch(categoriesProvider);
 
     return Scaffold(
@@ -121,7 +121,7 @@ class DeedDetailScreen extends ConsumerWidget {
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
                       color: theme.cardTheme.color,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
                       border: Border.all(color: theme.colorScheme.outlineVariant),
                     ),
                     child: Row(
@@ -214,14 +214,17 @@ class DeedDetailScreen extends ConsumerWidget {
                             value: '${stats.skipped}',
                             color: digital
                                 ? theme.colorScheme.onSurfaceVariant
-                                    .withValues(alpha: 0.45)
+                                    .withValues(alpha: 0.55)
                                 : (isLight
                                     ? AppColors.skippedLight
                                     : AppColors.skipped)),
                         _MiniStat(
                             label: 'Missed',
                             value: '${stats.missed}',
-                            color: theme.colorScheme.onSurfaceVariant),
+                            color: digital
+                                ? theme.colorScheme.onSurfaceVariant
+                                    .withValues(alpha: 0.35)
+                                : theme.colorScheme.onSurfaceVariant),
                       ],
                     ),
                   ],
@@ -303,7 +306,7 @@ class DeedDetailScreen extends ConsumerWidget {
                                             : AppColors.late),
                                     LogStatus.skipped => digital
                                         ? theme.colorScheme.onSurfaceVariant
-                                            .withValues(alpha: 0.6)
+                                            .withValues(alpha: 0.55)
                                         : (isLight
                                             ? AppColors.skippedLight
                                             : AppColors.skipped),

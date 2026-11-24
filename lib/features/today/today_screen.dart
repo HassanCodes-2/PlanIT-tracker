@@ -133,6 +133,10 @@ class TodayScreen extends ConsumerWidget {
                 HapticFeedback.selectionClick();
                 ref.read(themeModeProvider.notifier).setMode(selected);
               },
+              showToday: !(day.year == today.year &&
+                  day.month == today.month &&
+                  day.day == today.day),
+              onToday: () => ref.read(selectedDayProvider.notifier).select(today),
             ),
             _DayScroller(
               today: today,
@@ -543,6 +547,8 @@ class _DateHeader extends StatelessWidget {
     required this.total,
     required this.mode,
     required this.onThemeSelected,
+    required this.showToday,
+    required this.onToday,
   });
 
   final String timeLabel;
@@ -553,6 +559,8 @@ class _DateHeader extends StatelessWidget {
   final int total;
   final ThemeMode mode;
   final ValueChanged<ThemeMode> onThemeSelected;
+  final bool showToday;
+  final VoidCallback onToday;
 
   @override
   Widget build(BuildContext context) {
@@ -589,6 +597,16 @@ class _DateHeader extends StatelessWidget {
                   ],
                 ),
               ),
+              if (showToday)
+                TextButton(
+                  onPressed: onToday,
+                  style: TextButton.styleFrom(
+                    minimumSize: const Size(0, 40),
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    foregroundColor: theme.colorScheme.secondary,
+                  ),
+                  child: const Text('Today'),
+                ),
               IconButton(
                 tooltip: 'Pick a date',
                 onPressed: onPickDate,
@@ -1060,7 +1078,7 @@ class _DeedCard extends StatelessWidget {
         child: Material(
           color: theme.cardTheme.color,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
             side: BorderSide(color: theme.colorScheme.outlineVariant),
           ),
           clipBehavior: Clip.antiAlias,
@@ -1190,7 +1208,7 @@ class _CaughtUpCard extends StatelessWidget {
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           color: theme.cardTheme.color,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
           border: Border.all(color: theme.colorScheme.outlineVariant),
         ),
         child: Row(
