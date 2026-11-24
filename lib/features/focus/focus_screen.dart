@@ -378,13 +378,15 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(52),
+                    Center(
+                      child: TextButton.icon(
+                        onPressed: _markDoneNow,
+                        style: TextButton.styleFrom(
+                          foregroundColor: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        icon: const Icon(Icons.check_rounded, size: 18),
+                        label: const Text('Mark done now'),
                       ),
-                      onPressed: _markDoneNow,
-                      icon: const Icon(Icons.check_rounded),
-                      label: const Text('Done'),
                     ),
                   ],
                 ),

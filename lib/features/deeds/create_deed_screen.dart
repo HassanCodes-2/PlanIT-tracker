@@ -165,10 +165,22 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
     );
 
     final repository = ref.read(repositoryProvider);
-    if (_existing == null) {
-      await repository.createDeed(companion);
-    } else {
-      await repository.updateDeed(_existing!, companion);
+    try {
+      if (_existing == null) {
+        await repository.createDeed(companion);
+      } else {
+        await repository.updateDeed(_existing!, companion);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _saving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not save the deed. Try again.'),
+          ),
+        );
+      }
+      return;
     }
 
     // Close first, then refresh reminders in the background.
@@ -308,9 +320,21 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
                 itemBuilder: (context, index) {
                   final name = _icons[index];
                   final selected = name == _icon;
-                  return InkWell(
+                  return Semantics(
+                    button: true,
+                    selected: selected,
+                    label: name.replaceAll('_', ' '),
+                    onTap: () {
+                      setState(() => _icon = name);
+                      _dirty = true;
+                    },
+                    child: ExcludeSemantics(
+                      child: InkWell(
                     borderRadius: BorderRadius.circular(12),
-                    onTap: () => setState(() => _icon = name),
+                    onTap: () {
+                      setState(() => _icon = name);
+                      _dirty = true;
+                    },
                     child: Container(
                       width: 52,
                       decoration: BoxDecoration(
@@ -325,12 +349,29 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
                                   .withValues(alpha: 0.35),
                         ),
                       ),
-                      child: Icon(
-                        iconForName(name, fallback: Icons.star_rounded),
-                        color: selected
-                            ? theme.colorScheme.primary
-                            : theme.colorScheme.onSurfaceVariant,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Icon(
+                            iconForName(name, fallback: Icons.star_rounded),
+                            color: selected
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.onSurfaceVariant,
+                          ),
+                          if (selected)
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: Icon(
+                                Icons.check_circle_rounded,
+                                size: 12,
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                        ],
                       ),
+                    ),
+                  ),
                     ),
                   );
                 },
@@ -352,8 +393,10 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
                       size: 18,
                     ),
                     selected: selected,
-                    onSelected: (_) =>
-                        setState(() => _categoryId = category.id),
+                    onSelected: (_) => setState(() {
+                        _categoryId = category.id;
+                        _dirty = true;
+                      }),
                   );
                 }),
                 ActionChip(
@@ -378,7 +421,10 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
                   )
                   .toList(),
               onChanged: (value) {
-                if (value != null) setState(() => _frequency = value);
+                if (value != null) {
+                setState(() => _frequency = value);
+                _dirty = true;
+              }
               },
             ),
             if (_frequency == FrequencyType.weekdays) ...[
@@ -398,6 +444,7 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
                         } else {
                           _weekdays.remove(weekday);
                         }
+                        _dirty = true;
                       });
                     },
                   );
@@ -447,14 +494,20 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
                     ? const Icon(Icons.chevron_right_rounded)
                     : IconButton(
                         icon: const Icon(Icons.close_rounded),
-                        onPressed: () => setState(() => _reminder = null),
+                        onPressed: () {
+                        setState(() => _reminder = null);
+                        _dirty = true;
+                      },
                       ),
                 onTap: () async {
                   final picked = await showTimePicker(
                     context: context,
                     initialTime: _reminder ?? const TimeOfDay(hour: 8, minute: 0),
                   );
-                  if (picked != null) setState(() => _reminder = picked);
+                  if (picked != null) {
+                    setState(() => _reminder = picked);
+                    _dirty = true;
+                  }
                 },
               ),
             ),
@@ -468,7 +521,10 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
                     ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
               value: _reasonsEnabled,
-              onChanged: (value) => setState(() => _reasonsEnabled = value),
+              onChanged: (value) {
+                    setState(() => _reasonsEnabled = value);
+                    _dirty = true;
+                  },
             ),
             const SizedBox(height: 24),
             FilledButton(

@@ -209,6 +209,10 @@ ThemeData _fontTheme(ThemeData base) => base.copyWith(
         titleTextStyle:
             base.appBarTheme.titleTextStyle?.copyWith(fontFamily: 'Roboto'),
       ),
+      chipTheme: base.chipTheme.copyWith(
+        labelStyle:
+            base.chipTheme.labelStyle?.copyWith(fontFamily: 'Roboto'),
+      ),
       filledButtonTheme: FilledButtonThemeData(
         style: base.filledButtonTheme.style?.copyWith(
           textStyle: const WidgetStatePropertyAll(

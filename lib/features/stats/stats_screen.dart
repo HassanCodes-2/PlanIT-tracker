@@ -65,13 +65,13 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
       color = theme.colorScheme.onSurfaceVariant;
     } else if (digital) {
       color = up
-          ? theme.colorScheme.primary
+          ? theme.colorScheme.secondary
           : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7);
     } else {
       final isLight = theme.brightness == Brightness.light;
       color = up
-          ? (isLight ? AppColors.doneLight : AppColors.done)
-          : (isLight ? AppColors.skippedLight : AppColors.skipped);
+          ? (isLight ? AppColors.doneLight : const Color(0xFF4ADE80))
+          : (isLight ? AppColors.skippedLight : const Color(0xFFFF9B9B));
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -411,6 +411,33 @@ class _Heatmap extends StatelessWidget {
             LogStatus.fromDb(log.status),
     };
 
+    String rowLabel(db.Deed deed) {
+      var done = 0;
+      var late = 0;
+      var skipped = 0;
+      var missed = 0;
+      for (final day in dateList) {
+        final status =
+            logIndex['${deed.id}/${day.year}-${day.month}-${day.day}'];
+        if (status != null) {
+          switch (status) {
+            case LogStatus.done:
+              done++;
+            case LogStatus.late:
+              late++;
+            case LogStatus.skipped:
+              skipped++;
+          }
+        } else if (isScheduledOn(deed, day) &&
+            !frequencyOf(deed).isCountBased &&
+            day.isBefore(today)) {
+          missed++;
+        }
+      }
+      return '${deed.name}: $done done, $late late, $skipped skipped, '
+          '$missed missed in the last $days days';
+    }
+
     if (deeds.isEmpty) {
       return Text(
         'No scheduled deeds.',
@@ -447,14 +474,12 @@ class _Heatmap extends StatelessWidget {
               : (isLight ? AppColors.skippedLight : AppColors.skipped),
         };
         fill = base;
-        if (digital) {
-          if (status == LogStatus.late) {
-            glyph = AppIcons.late;
-          } else if (status == LogStatus.skipped) {
-            glyph = AppIcons.skipped;
-          }
-          if (glyph != null) glyphColor = AppTheme.onColor(base);
-        }
+        glyph = switch (status) {
+          LogStatus.done => AppIcons.done,
+          LogStatus.late => AppIcons.late,
+          LogStatus.skipped => AppIcons.skipped,
+        };
+        glyphColor = AppTheme.onColor(base);
       } else if (scheduled && day.isBefore(today)) {
         fill = theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.10);
         border = theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.55);
@@ -462,22 +487,18 @@ class _Heatmap extends StatelessWidget {
         fill = theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.08);
       }
 
-      final label = status?.label ?? (scheduled ? 'missed' : 'no deed');
-      return Semantics(
-        label: '${DateFormat('d MMM').format(day)}, $label',
-        child: Container(
-          width: cellSize,
-          height: cellSize,
-          margin: EdgeInsets.only(right: gap),
-          decoration: BoxDecoration(
-            color: fill,
-            borderRadius: BorderRadius.circular(3),
-            border: border != null ? Border.all(color: border) : null,
-          ),
-          child: glyph == null
-              ? null
-              : Icon(glyph, size: cellSize * 0.55, color: glyphColor),
+      return Container(
+        width: cellSize,
+        height: cellSize,
+        margin: EdgeInsets.only(right: gap),
+        decoration: BoxDecoration(
+          color: fill,
+          borderRadius: BorderRadius.circular(3),
+          border: border != null ? Border.all(color: border) : null,
         ),
+        child: glyph == null
+            ? null
+            : Icon(glyph, size: cellSize * 0.55, color: glyphColor),
       );
     }
 
@@ -486,6 +507,7 @@ class _Heatmap extends StatelessWidget {
       children: [
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
+          reverse: true,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -509,7 +531,10 @@ class _Heatmap extends StatelessWidget {
                 ),
               if (days <= 7) const SizedBox(height: 4),
               for (final deed in deeds)
-                Padding(
+                Semantics(
+                  label: rowLabel(deed),
+                  child: ExcludeSemantics(
+                    child: Padding(
                   padding: const EdgeInsets.only(bottom: 5),
                   child: Row(
                     children: [
@@ -530,6 +555,8 @@ class _Heatmap extends StatelessWidget {
                       ),
                       ...dateList.map((day) => cell(deed, day)),
                     ],
+                  ),
+                ),
                   ),
                 ),
             ],

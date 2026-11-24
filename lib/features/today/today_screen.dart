@@ -146,7 +146,7 @@ class TodayScreen extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 10, 24, 0),
                 child: Text(
-                  '“${quoteForDay(today)}”',
+                  '“${quoteForDay(day)}”',
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
@@ -164,11 +164,13 @@ class TodayScreen extends ConsumerWidget {
                       ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
               )
-            else if (scheduled.isNotEmpty && logs.isEmpty)
+            else if (!isFuture &&
+                scheduled.isNotEmpty &&
+                doneCount < scheduled.length)
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
                 child: Text(
-                  'Tap a deed to mark it done · long-press for more options',
+                  'Tap a card to log it · long-press for more options',
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
@@ -570,7 +572,7 @@ class _DateHeader extends StatelessWidget {
                 icon: const Icon(Icons.calendar_month_rounded),
               ),
               IconButton(
-                tooltip: 'Switch theme',
+                tooltip: 'Theme: cycle dark, light, system',
                 onPressed: onToggleTheme,
                 icon: Icon(
                   isDark
@@ -640,7 +642,7 @@ class _DayScroller extends StatefulWidget {
 class _DayScrollerState extends State<_DayScroller> {
   static const int _window = 60;
   final ScrollController _controller = ScrollController(
-    initialScrollOffset: _window * 54.0 - 171,
+    initialScrollOffset: _window * 54.0 - 151,
   );
 
   @override
@@ -697,6 +699,7 @@ class _DayScrollerState extends State<_DayScroller> {
             button: true,
             selected: isSelected,
             label: DateFormat('EEEE d MMMM').format(day),
+            onTap: () => widget.onSelect(day),
             child: ExcludeSemantics(
               child: InkWell(
                 borderRadius: BorderRadius.circular(digital ? 8 : 12),
@@ -971,6 +974,8 @@ class _DeedCard extends StatelessWidget {
       container: true,
       button: canLog,
       label: semanticsLabel,
+      onTap: canLog ? onTap : null,
+      onLongPress: canLog ? onLongPress : null,
       excludeSemantics: true,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
@@ -1061,6 +1066,7 @@ class _DeedCard extends StatelessWidget {
                     duration: const Duration(milliseconds: 200),
                     width: completed ? 56 : 84,
                     height: double.infinity,
+                    alignment: Alignment.center,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.centerLeft,
@@ -1069,7 +1075,12 @@ class _DeedCard extends StatelessWidget {
                       ),
                     ),
                     child: icon == null
-                        ? null
+                        ? Icon(
+                            Icons.radio_button_unchecked_rounded,
+                            size: 20,
+                            color: theme.colorScheme.onSurfaceVariant
+                                .withValues(alpha: 0.6),
+                          )
                         : Icon(icon, color: iconColor, size: 22),
                   ),
                 ],

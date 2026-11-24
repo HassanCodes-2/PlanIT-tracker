@@ -112,6 +112,23 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
   }
 
+  Future<void> _skip() async {
+    try {
+      final name = _nameController.text.trim();
+      if (name.isNotEmpty) {
+        await ref.read(userNameProvider.notifier).set(name);
+      }
+      await ref.read(onboardedProvider.notifier).complete();
+      if (mounted) context.go('/today');
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not skip setup. Try again.')),
+        );
+      }
+    }
+  }
+
   Future<void> _finish() async {
     setState(() => _saving = true);
     try {
@@ -203,7 +220,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     const SizedBox(width: 76),
                   const Spacer(),
                   TextButton(
-                    onPressed: _saving ? null : _finish,
+                    onPressed: _saving ? null : _skip,
                     child: const Text('Skip'),
                   ),
                 ],
@@ -232,7 +249,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         button: true,
                         selected: active,
                         label: 'Step ${index + 1}',
-                        child: GestureDetector(
+                        child: SizedBox(
+                          width: 40,
+                          height: 48,
+                          child: Center(
+                            child: GestureDetector(
                           onTap: () => _pageController.animateToPage(
                             index,
                             duration: const Duration(milliseconds: 250),
@@ -249,6 +270,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                                   : theme.colorScheme.onSurfaceVariant,
                               borderRadius: BorderRadius.circular(4),
                             ),
+                          ),
+                        ),
                           ),
                         ),
                       );
@@ -290,8 +313,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Widget _welcomePage(ThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.stretch,

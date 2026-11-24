@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/theme/app_spacing.dart';
@@ -85,10 +86,18 @@ class ArchivedDeedsScreen extends ConsumerWidget {
                         trailing: IconButton(
                           tooltip: 'Restore deed',
                           icon: const Icon(Icons.restore_rounded),
-                          onPressed: () {
-                            ref
+                          onPressed: () async {
+                            await ref
                                 .read(repositoryProvider)
                                 .unarchiveDeed(deed.id);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                      '"${deed.name}" restored to Today'),
+                                ),
+                              );
+                            }
                           },
                         ),
                       ),
@@ -100,6 +109,6 @@ class ArchivedDeedsScreen extends ConsumerWidget {
 
   String _date(DateTime? value) {
     if (value == null) return '';
-    return '${value.day}/${value.month}/${value.year}';
+    return DateFormat('d MMM yyyy').format(value);
   }
 }

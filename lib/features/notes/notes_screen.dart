@@ -191,6 +191,8 @@ class _NoteGrid extends StatelessWidget {
           button: true,
           label:
               '${note.title.isEmpty ? 'Untitled note' : note.title}${note.pinned ? ', pinned' : ''}',
+          onTap: () => onTap(note),
+          onLongPress: () => onLongPress(note),
           child: Material(
           color: theme.cardTheme.color,
           shape: RoundedRectangleBorder(

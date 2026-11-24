@@ -242,6 +242,15 @@ abstract final class AppTheme {
           borderRadius: BorderRadius.circular(radius - 4),
         ),
       ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(foregroundColor: accentText),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: accentText,
+          side: BorderSide(color: fieldBorder),
+        ),
+      ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: accent,
         foregroundColor: onAccent,

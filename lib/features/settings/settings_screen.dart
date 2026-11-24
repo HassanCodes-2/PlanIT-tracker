@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../core/backup/backup_service.dart';
 import '../../core/prefs/prefs_providers.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_theme.dart';
 import '../../data/providers.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -138,7 +139,12 @@ class SettingsScreen extends ConsumerWidget {
                   subtitle: _accentName(accent),
                   selected:
                       ref.watch(themeStyleProvider) == AppThemeStyle.midnight,
-                  previewColor: accent,
+                  previewColor: AppTheme.ensureVisible(
+                    accent,
+                    theme.colorScheme.surface,
+                    theme.brightness,
+                    ratio: 3.0,
+                  ),
                   onTap: () => ref
                       .read(themeStyleProvider.notifier)
                       .setStyle(AppThemeStyle.midnight),
@@ -160,7 +166,7 @@ class SettingsScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 24),
-          _Label('ACCENT COLOR'),
+          _Label('ACCENT PRESETS'),
           const SizedBox(height: 10),
           Opacity(
             opacity: digital ? 0.4 : 1,
@@ -230,7 +236,7 @@ class SettingsScreen extends ConsumerWidget {
           Text(
             digital
                 ? 'Digital is monochrome — the accent applies to Midnight.'
-                : 'Used for buttons, progress, highlights and selected states.',
+                : 'Auto-tuned for contrast. Used for buttons, progress and selections.',
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
