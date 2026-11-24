@@ -8,6 +8,17 @@ import '../../data/providers.dart';
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
+  static const List<Color> _accentPresets = [
+    Color(0xFF1B6CFF),
+    Color(0xFF8B5CF6),
+    Color(0xFF10B981),
+    Color(0xFFF59E0B),
+    Color(0xFFF43F5E),
+    Color(0xFF06B6D4),
+    Color(0xFFF97316),
+    Color(0xFF84CC16),
+  ];
+
   Future<void> _editName(BuildContext context, WidgetRef ref) async {
     final controller =
         TextEditingController(text: ref.read(userNameProvider));
@@ -57,6 +68,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final mode = ref.watch(themeModeProvider);
+    final accent = ref.watch(accentColorProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
@@ -124,6 +136,58 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 24),
+          _Label('ACCENT COLOR'),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: _accentPresets.map((color) {
+              final selected =
+                  accent.toARGB32() == color.toARGB32();
+              return GestureDetector(
+                onTap: () =>
+                    ref.read(accentColorProvider.notifier).setColor(color),
+                child: Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: selected
+                          ? theme.colorScheme.onSurface
+                          : Colors.transparent,
+                      width: 2.5,
+                    ),
+                    boxShadow: selected
+                        ? [
+                            BoxShadow(
+                              color: color.withValues(alpha: 0.45),
+                              blurRadius: 10,
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: selected
+                      ? Icon(
+                          Icons.check_rounded,
+                          size: 16,
+                          color: color.computeLuminance() > 0.45
+                              ? Colors.black
+                              : Colors.white,
+                        )
+                      : null,
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Used for buttons, progress, highlights and selected states.',
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 24),
           _Label('YOU'),

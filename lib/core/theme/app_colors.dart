@@ -9,14 +9,14 @@ abstract final class AppColors {
   static const darkSurface = Color(0xFF1E1E22);
   static const darkBorder = Color(0xFF2A2A30);
   static const darkText = Color(0xFFEDEDF0);
-  static const darkMuted = Color(0xFF8E8E96);
+  static const darkMuted = Color(0xFF9A9AA5);
 
   // Light theme
   static const lightBg = Color(0xFFF7F7FA);
   static const lightSurface = Color(0xFFFFFFFF);
   static const lightBorder = Color(0xFFE6E6EC);
   static const lightText = Color(0xFF1A1A1E);
-  static const lightMuted = Color(0xFF7A7A85);
+  static const lightMuted = Color(0xFF6B6B75);
 
   // Outcome colors
   static const done = Color(0xFF22C55E);

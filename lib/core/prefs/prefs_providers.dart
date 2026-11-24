@@ -1,6 +1,8 @@
-import 'package:material_ui/material_ui.dart' show ThemeMode;
+import 'package:material_ui/material_ui.dart' show Color, ThemeMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../theme/app_colors.dart';
 
 /// Overridden in main() with the loaded instance.
 final sharedPreferencesProvider = Provider<SharedPreferences>(
@@ -42,6 +44,32 @@ enum AppThemeStyle {
         orElse: () => AppThemeStyle.midnight,
       );
 }
+
+/// The accent used by the Midnight style. Persisted as #RRGGBB.
+class AccentColorNotifier extends Notifier<Color> {
+  static const _key = 'accent_color';
+
+  @override
+  Color build() {
+    final stored = ref.watch(sharedPreferencesProvider).getString(_key);
+    if (stored == null || stored.length != 7 || !stored.startsWith('#')) {
+      return AppColors.accent;
+    }
+    final value = int.tryParse(stored.substring(1), radix: 16);
+    if (value == null) return AppColors.accent;
+    return Color(0xFF000000 | value);
+  }
+
+  Future<void> setColor(Color color) async {
+    final hex =
+        '#${color.toARGB32().toRadixString(16).substring(2, 8).toUpperCase()}';
+    await ref.read(sharedPreferencesProvider).setString(_key, hex);
+    state = color;
+  }
+}
+
+final accentColorProvider =
+    NotifierProvider<AccentColorNotifier, Color>(AccentColorNotifier.new);
 
 class ThemeStyleNotifier extends Notifier<AppThemeStyle> {
   static const _key = 'theme_style';

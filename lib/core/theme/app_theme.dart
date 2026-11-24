@@ -3,26 +3,42 @@ import 'package:material_ui/material_ui.dart';
 import 'app_colors.dart';
 
 /// Material 3 themes for PlanIT.
-/// Two styles: Midnight (blue accent) and Digital (monochrome HUD),
+/// Two styles: Midnight (customizable accent) and Digital (monochrome HUD),
 /// each with a dark and a light variant.
 abstract final class AppTheme {
-  static ThemeData get dark => _build(
-        brightness: Brightness.dark,
-        bg: AppColors.darkBg,
-        surface: AppColors.darkSurface,
-        border: AppColors.darkBorder,
-        text: AppColors.darkText,
-        muted: AppColors.darkMuted,
-      );
+  static ThemeData get dark => darkWith(AppColors.accent);
 
-  static ThemeData get light => _build(
-        brightness: Brightness.light,
-        bg: AppColors.lightBg,
-        surface: AppColors.lightSurface,
-        border: AppColors.lightBorder,
-        text: AppColors.lightText,
-        muted: AppColors.lightMuted,
-      );
+  static ThemeData get light => lightWith(AppColors.accent);
+
+  /// Midnight dark with a user-chosen accent, auto-corrected for contrast.
+  static ThemeData darkWith(Color accent) {
+    final safe = _accessibleAccent(accent, AppColors.darkBg, Brightness.dark);
+    return _build(
+      brightness: Brightness.dark,
+      bg: AppColors.darkBg,
+      surface: AppColors.darkSurface,
+      border: AppColors.darkBorder,
+      text: AppColors.darkText,
+      muted: AppColors.darkMuted,
+      accent: safe,
+      onAccent: _idealOn(safe),
+    );
+  }
+
+  /// Midnight light with a user-chosen accent, auto-corrected for contrast.
+  static ThemeData lightWith(Color accent) {
+    final safe = _accessibleAccent(accent, AppColors.lightBg, Brightness.light);
+    return _build(
+      brightness: Brightness.light,
+      bg: AppColors.lightBg,
+      surface: AppColors.lightSurface,
+      border: AppColors.lightBorder,
+      text: AppColors.lightText,
+      muted: AppColors.lightMuted,
+      accent: safe,
+      onAccent: _idealOn(safe),
+    );
+  }
 
   static ThemeData get digitalDark => _build(
         brightness: Brightness.dark,
@@ -77,11 +93,14 @@ abstract final class AppTheme {
       onSurfaceVariant: muted,
     );
 
+    final textTheme = _textTheme(text, muted);
+
     return ThemeData(
       useMaterial3: true,
       brightness: brightness,
       colorScheme: scheme,
       scaffoldBackgroundColor: bg,
+      textTheme: textTheme,
       extensions: [AppStyle(isDigital: digital)],
       appBarTheme: AppBarTheme(
         backgroundColor: bg,
@@ -145,9 +164,30 @@ abstract final class AppTheme {
         ),
       ),
       dividerTheme: DividerThemeData(color: border, thickness: 1),
+      dialogTheme: DialogThemeData(
+        backgroundColor: surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+      ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? accent
+                : Colors.transparent,
+          ),
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (states) =>
+                states.contains(WidgetState.selected) ? onAccent : text,
+          ),
+          side: WidgetStatePropertyAll(BorderSide(color: border)),
+        ),
+      ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: surface,
         contentTextStyle: TextStyle(color: text),
+        actionTextColor: accent,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radius - 4),
@@ -163,6 +203,68 @@ abstract final class AppTheme {
       ),
     );
   }
+
+  /// Material 3 type scale tuned for a calm productivity app.
+  static TextTheme _textTheme(Color text, Color muted) => TextTheme(
+        displaySmall: TextStyle(
+            fontSize: 32, fontWeight: FontWeight.w700, height: 1.2, color: text),
+        headlineSmall: TextStyle(
+            fontSize: 24, fontWeight: FontWeight.w700, height: 1.25, color: text),
+        titleLarge: TextStyle(
+            fontSize: 20, fontWeight: FontWeight.w600, height: 1.3, color: text),
+        titleMedium: TextStyle(
+            fontSize: 16, fontWeight: FontWeight.w600, height: 1.35, color: text),
+        titleSmall: TextStyle(
+            fontSize: 14, fontWeight: FontWeight.w600, color: text),
+        bodyLarge:
+            TextStyle(fontSize: 15, height: 1.4, color: text),
+        bodyMedium:
+            TextStyle(fontSize: 14, height: 1.4, color: text),
+        bodySmall:
+            TextStyle(fontSize: 12, height: 1.35, color: muted),
+        labelLarge: TextStyle(
+            fontSize: 13, fontWeight: FontWeight.w600, color: text),
+        labelMedium: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.8,
+            color: muted),
+        labelSmall: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+            letterSpacing: 0.4,
+            color: muted),
+      );
+
+  static double _contrastRatio(Color a, Color b) {
+    final l1 = a.computeLuminance();
+    final l2 = b.computeLuminance();
+    final hi = l1 > l2 ? l1 : l2;
+    final lo = l1 > l2 ? l2 : l1;
+    return (hi + 0.05) / (lo + 0.05);
+  }
+
+  /// Nudges the accent toward white/black until it reaches WCAG AA (4.5:1)
+  /// against the app background, so custom accents always stay readable.
+  static Color _accessibleAccent(
+    Color accent,
+    Color bg,
+    Brightness brightness,
+  ) {
+    if (_contrastRatio(accent, bg) >= 4.5) return accent;
+    final target = brightness == Brightness.dark ? Colors.white : Colors.black;
+    for (var t = 0.05; t <= 0.95; t += 0.05) {
+      final candidate = Color.lerp(accent, target, t)!;
+      if (_contrastRatio(candidate, bg) >= 4.5) return candidate;
+    }
+    return target;
+  }
+
+  /// Picks black or white text for the best contrast on the accent fill.
+  static Color _idealOn(Color fill) =>
+      _contrastRatio(Colors.white, fill) >= _contrastRatio(Colors.black, fill)
+          ? Colors.white
+          : Colors.black;
 }
 
 /// Marks the active visual style so widgets can fine-tune details.

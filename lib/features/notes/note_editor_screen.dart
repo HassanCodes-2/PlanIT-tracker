@@ -222,6 +222,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
                 children: [
                   TextField(
                     controller: _titleController,
+                    autofocus: widget.noteId == null,
                     textCapitalization: TextCapitalization.sentences,
                     style: theme.textTheme.headlineSmall
                         ?.copyWith(fontWeight: FontWeight.w600),

@@ -859,7 +859,11 @@ class _DeedCard extends StatelessWidget {
     };
 
     final hasReason = log?.reason != null && log!.reason!.isNotEmpty;
-    final subtitle = hasReason ? log!.reason! : progressText;
+    final reminder = deed.reminderTime;
+    final reminderLabel = (reminder != null && reminder.isNotEmpty)
+        ? 'Reminder at $reminder'
+        : null;
+    final subtitle = hasReason ? log!.reason! : (progressText ?? reminderLabel);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
@@ -933,6 +937,16 @@ class _DeedCard extends StatelessWidget {
                             ),
                           ),
                       ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: canLog ? onLongPress : null,
+                    tooltip: 'More actions',
+                    visualDensity: VisualDensity.compact,
+                    iconSize: 18,
+                    icon: Icon(
+                      Icons.more_horiz_rounded,
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                   AnimatedContainer(

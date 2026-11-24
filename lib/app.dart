@@ -30,12 +30,13 @@ class _PlanItAppState extends ConsumerState<PlanItApp> {
   Widget build(BuildContext context) {
     final style = ref.watch(themeStyleProvider);
     final isDigital = style == AppThemeStyle.digital;
+    final accent = ref.watch(accentColorProvider);
 
     return MaterialApp.router(
       title: 'PlanIT',
       debugShowCheckedModeBanner: false,
-      theme: isDigital ? AppTheme.digitalLight : AppTheme.light,
-      darkTheme: isDigital ? AppTheme.digitalDark : AppTheme.dark,
+      theme: isDigital ? AppTheme.digitalLight : AppTheme.lightWith(accent),
+      darkTheme: isDigital ? AppTheme.digitalDark : AppTheme.darkWith(accent),
       themeMode: ref.watch(themeModeProvider),
       routerConfig: ref.watch(appRouterProvider),
     );
