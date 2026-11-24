@@ -359,6 +359,12 @@ class _Legend extends StatelessWidget {
         _item(theme, AppIcons.late, 'Late', lateColor),
         _item(theme, AppIcons.skipped, 'Skipped', skippedColor),
         _item(theme, AppIcons.missed, 'Missed', missedColor),
+        _item(
+          theme,
+          Icons.circle_outlined,
+          'No entry',
+          theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+        ),
       ],
     );
   }
@@ -498,7 +504,7 @@ class _Heatmap extends StatelessWidget {
       );
     }
 
-    final headerHeight = days <= 7 ? 20.0 : 0.0;
+    final headerHeight = 20.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -538,17 +544,19 @@ class _Heatmap extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (days <= 7)
-                      Row(
+                    Row(
                         children: dateList
                             .map(
                               (day) => SizedBox(
                                 width: cellSize + gap,
                                 child: Text(
-                                  DateFormat('EE').format(day),
+                                  days <= 7
+                                      ? DateFormat('EE').format(day)
+                                      : '${day.day}',
                                   textAlign: TextAlign.center,
                                   style:
                                       theme.textTheme.labelSmall?.copyWith(
+                                    fontSize: 10,
                                     color:
                                         theme.colorScheme.onSurfaceVariant,
                                   ),

@@ -100,6 +100,8 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
                         const SizedBox(height: 8),
                         _NoteGrid(
                           notes: pinned,
+                          columns: 1,
+                          extent: 150,
                           onTap: (note) => context.push('/note?id=${note.id}'),
                           onLongPress: (note) => _togglePin(note),
                         ),
@@ -159,11 +161,15 @@ class _NoteGrid extends StatelessWidget {
     required this.notes,
     required this.onTap,
     required this.onLongPress,
+    this.columns = 2,
+    this.extent = 164,
   });
 
   final List<db.Note> notes;
   final ValueChanged<db.Note> onTap;
   final ValueChanged<db.Note> onLongPress;
+  final int columns;
+  final double extent;
 
   @override
   Widget build(BuildContext context) {
@@ -174,10 +180,10 @@ class _NoteGrid extends StatelessWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+        crossAxisCount: columns,
         mainAxisSpacing: 10,
         crossAxisSpacing: 10,
-        mainAxisExtent: 164 * scale,
+        mainAxisExtent: extent * scale,
       ),
       itemCount: notes.length,
       itemBuilder: (context, index) {
