@@ -35,6 +35,41 @@ bool isScheduledOn(Deed deed, DateTime day) {
   }
 }
 
+/// The week/month window a count-based goal is measured over.
+({DateTime start, DateTime end})? goalPeriod(Deed deed, DateTime day) {
+  final frequency = frequencyOf(deed);
+  if (!frequency.isCountBased) return null;
+  final selected = dateOnly(day);
+  if (frequency == FrequencyType.timesPerWeek) {
+    final start =
+        selected.subtract(Duration(days: selected.weekday - 1));
+    return (start: start, end: start.add(const Duration(days: 6)));
+  }
+  final start = DateTime(selected.year, selected.month, 1);
+  final end =
+      DateTime(selected.year, selected.month + 1, 1).subtract(const Duration(days: 1));
+  return (start: start, end: end);
+}
+
+/// Completed days (done or late) inside the goal's active period.
+int goalDoneCount(Deed deed, Iterable<DeedLog> logs, DateTime day) {
+  final period = goalPeriod(deed, day);
+  if (period == null) return 0;
+  return logs
+      .where((log) =>
+          log.deedId == deed.id &&
+          (LogStatus.fromDb(log.status) == LogStatus.done ||
+              LogStatus.fromDb(log.status) == LogStatus.late) &&
+          !dateOnly(log.day).isBefore(period.start) &&
+          !dateOnly(log.day).isAfter(period.end))
+      .length;
+}
+
+bool goalIsMet(Deed deed, Iterable<DeedLog> logs, DateTime day) {
+  if (!frequencyOf(deed).isCountBased) return false;
+  return goalDoneCount(deed, logs, day) >= (deed.timesPerPeriod ?? 1);
+}
+
 /// Expected number of completions in [from, to] (inclusive).
 int expectedOccurrences(Deed deed, DateTime from, DateTime to) {
   final start = dateOnly(from);

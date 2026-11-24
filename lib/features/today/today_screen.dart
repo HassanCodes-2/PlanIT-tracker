@@ -71,6 +71,9 @@ class TodayScreen extends ConsumerWidget {
       final status = LogStatus.fromDb(log.status);
       return status == LogStatus.done || status == LogStatus.late;
     }).length;
+    final hasIncompleteGoals = scheduled.any(
+      (deed) => frequencyOf(deed).isCountBased && !goalIsMet(deed, allLogs, day),
+    );
 
     final loggedDays = allLogs
         .where((log) {
@@ -228,7 +231,7 @@ class TodayScreen extends ConsumerWidget {
                   !isFuture)
                 _CaughtUpCard(
                   day: day,
-                  hasGoals: scheduled.length > dailyScheduled.length,
+                  hasGoals: hasIncompleteGoals,
                 ),
             ],
           ],
@@ -922,34 +925,11 @@ class _CategorySection extends StatelessWidget {
   }
 
   int? _goalDoneFor(db.Deed deed) {
-    final frequency = frequencyOf(deed);
-    if (!frequency.isCountBased) return null;
-    final DateTime start;
-    final DateTime end;
-    if (frequency == FrequencyType.timesPerWeek) {
-      start = selectedDay.subtract(Duration(days: selectedDay.weekday - 1));
-      end = start.add(const Duration(days: 6));
-    } else {
-      start = DateTime(selectedDay.year, selectedDay.month, 1);
-      end = DateTime(selectedDay.year, selectedDay.month + 1, 1)
-          .subtract(const Duration(days: 1));
-    }
-    return allLogs
-        .where((log) =>
-            log.deedId == deed.id &&
-            (LogStatus.fromDb(log.status) == LogStatus.done ||
-                LogStatus.fromDb(log.status) == LogStatus.late) &&
-            !dateOnly(log.day).isBefore(start) &&
-            !dateOnly(log.day).isAfter(end))
-        .length;
+    if (!frequencyOf(deed).isCountBased) return null;
+    return goalDoneCount(deed, allLogs, selectedDay);
   }
 
-  bool _goalMet(db.Deed deed) {
-    final frequency = frequencyOf(deed);
-    if (!frequency.isCountBased) return false;
-    final target = deed.timesPerPeriod ?? 1;
-    return (_goalDoneFor(deed) ?? 0) >= target;
-  }
+  bool _goalMet(db.Deed deed) => goalIsMet(deed, allLogs, selectedDay);
 
   void _goalAlreadyMet(
     BuildContext context,

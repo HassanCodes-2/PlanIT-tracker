@@ -477,7 +477,7 @@ class _Heatmap extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final textScale =
-            MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 2.0);
+            MediaQuery.textScalerOf(context).scale(1);
 
         Widget cell(db.Deed deed, DateTime day, double size) {
           final status =
@@ -532,23 +532,31 @@ class _Heatmap extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Text(
-                    textScale > 1.4
-                        ? DateFormat('EE').format(day).substring(0, 2)
-                        : DateFormat('EE').format(day),
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontSize: textScale > 1.4 ? 10 : 11,
-                      height: 1.1,
-                      color: theme.colorScheme.onSurfaceVariant,
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      textScale > 1.4
+                          ? DateFormat('EE').format(day).substring(0, 2)
+                          : DateFormat('EE').format(day),
+                      maxLines: 1,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontSize: textScale > 1.4 ? 10 : 11,
+                        height: 1.1,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
-                  Text(
-                    '${day.day}',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontSize: 12,
-                      height: 1.2,
-                      fontWeight: FontWeight.w700,
-                      color: theme.colorScheme.onSurface,
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      '${day.day}',
+                      maxLines: 1,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontSize: 12,
+                        height: 1.2,
+                        fontWeight: FontWeight.w700,
+                        color: theme.colorScheme.onSurface,
+                      ),
                     ),
                   ),
                 ],
@@ -1000,7 +1008,20 @@ class _SlidingPeriodBar extends StatelessWidget {
                                 ? theme.colorScheme.onPrimary
                                 : theme.colorScheme.onSurfaceVariant,
                           ),
-                          child: Text(period.label),
+                          child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (period == selected) ...[
+                              Icon(
+                                AppIcons.check,
+                                size: 13,
+                                color: theme.colorScheme.onPrimary,
+                              ),
+                              const SizedBox(width: 3),
+                            ],
+                            Text(period.label),
+                          ],
+                        ),
                         ),
                       ),
                     ),

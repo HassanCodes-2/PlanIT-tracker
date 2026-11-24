@@ -176,7 +176,7 @@ class _NoteGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scale =
-        MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 2.0);
+        MediaQuery.textScalerOf(context).scale(1.0);
     return LayoutBuilder(
       builder: (context, constraints) {
         final count = columns == 1
