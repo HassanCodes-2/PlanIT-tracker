@@ -131,7 +131,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   Future<void> _next() async {
     if (_page < 2) {
       await _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
+        duration: AppTheme.motion(context, 300),
         curve: Curves.easeOutCubic,
       );
     } else {
@@ -245,7 +245,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   if (_page > 0)
                     TextButton.icon(
                       onPressed: () => _pageController.previousPage(
-                        duration: const Duration(milliseconds: 250),
+                        duration: AppTheme.motion(context, 250),
                         curve: Curves.easeOutCubic,
                       ),
                       icon: const Icon(AppIcons.back, size: 18),
@@ -286,14 +286,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         label: 'Step ${index + 1}',
                         onTap: () => _pageController.animateToPage(
                           index,
-                          duration: const Duration(milliseconds: 250),
+                          duration: AppTheme.motion(context, 250),
                           curve: Curves.easeOutCubic,
                         ),
                         child: GestureDetector(
                           behavior: HitTestBehavior.opaque,
                           onTap: () => _pageController.animateToPage(
                             index,
-                            duration: const Duration(milliseconds: 250),
+                            duration: AppTheme.motion(context, 250),
                             curve: Curves.easeOutCubic,
                           ),
                           child: SizedBox(
@@ -301,7 +301,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                             height: 48,
                             child: Center(
                               child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
+                                duration: AppTheme.motion(context, 200),
                                 margin:
                                     const EdgeInsets.symmetric(horizontal: 4),
                                 width: active ? 22 : 8,
@@ -562,7 +562,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   child: Row(
                     children: [
                       AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
+                        duration: AppTheme.motion(context, 150),
                         width: 22,
                         height: 22,
                         decoration: BoxDecoration(

@@ -293,7 +293,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
                 _onChanged();
               },
               icon: Icon(
-                _pinned ? AppIcons.pin : AppIcons.pin,
+                _pinned ? AppIcons.pin : AppIcons.pinOff,
                 color: _pinned ? theme.colorScheme.primary : null,
               ),
             ),

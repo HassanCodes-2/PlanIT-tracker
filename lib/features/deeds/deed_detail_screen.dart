@@ -19,6 +19,59 @@ class DeedDetailScreen extends ConsumerWidget {
 
   final int deedId;
 
+  Future<void> _archive(
+    BuildContext context,
+    WidgetRef ref,
+    db.Deed deed,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Archive this deed?'),
+        content: const Text(
+          'It disappears from Today and Stats. Past logs are kept.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Archive'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final repository = ref.read(repositoryProvider);
+    final notifications = ref.read(notificationServiceProvider);
+    await repository.archiveDeed(deed.id);
+    await notifications.syncAll(await repository.allDeeds());
+    if (!context.mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text('"${deed.name}" archived'),
+          duration: const Duration(seconds: 5),
+          action: SnackBarAction(
+            label: 'Undo',
+            onPressed: () async {
+              await repository.unarchiveDeed(deed.id);
+              await notifications.syncAll(await repository.allDeeds());
+            },
+          ),
+        ),
+      );
+    if (context.mounted) context.pop();
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
@@ -65,6 +118,30 @@ class DeedDetailScreen extends ConsumerWidget {
               tooltip: 'Edit deed',
               icon: const Icon(AppIcons.edit),
               onPressed: () => context.push('/create-deed?id=$deedId'),
+            ),
+            PopupMenuButton<String>(
+              tooltip: 'More deed actions',
+              icon: const Icon(AppIcons.more),
+              onSelected: (value) {
+                if (value == 'archive') {
+                  _archive(context, ref, cachedDeed);
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: 'archive',
+                  child: Row(
+                    children: [
+                      Icon(
+                        AppIcons.archive,
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                      const SizedBox(width: 10),
+                      const Text('Archive deed'),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ],
         ],

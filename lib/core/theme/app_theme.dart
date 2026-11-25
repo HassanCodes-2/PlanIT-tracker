@@ -113,7 +113,7 @@ abstract final class AppTheme {
       outline: fieldBorder,
       outlineVariant: border,
       onSurfaceVariant: muted,
-      error: digital ? muted : baseScheme.error,
+      error: digital ? text : baseScheme.error,
       onError: digital ? surface : baseScheme.onError,
       surfaceContainerLowest: bg,
       surfaceContainerLow: surface,
@@ -218,6 +218,17 @@ abstract final class AppTheme {
         filled: true,
         fillColor: surface,
         hintStyle: TextStyle(color: muted, fontSize: 15),
+        labelStyle: TextStyle(color: muted, fontSize: 14),
+        floatingLabelStyle: TextStyle(
+          color: accentText,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+        errorStyle: TextStyle(
+          color: digital ? text : baseScheme.error,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         border: OutlineInputBorder(
@@ -398,6 +409,13 @@ abstract final class AppTheme {
 
   /// Best black/white foreground for an arbitrary fill color.
   static Color onColor(Color fill) => _idealOn(fill);
+
+  /// Respect the platform reduce-motion setting for every explicit or
+  /// implicit animation.
+  static Duration motion(BuildContext context, int milliseconds) =>
+      MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : Duration(milliseconds: milliseconds);
 }
 
 /// Marks the active visual style so widgets can fine-tune details.

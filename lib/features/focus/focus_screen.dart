@@ -460,10 +460,10 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
                       onPressed: _finished ? _restart : _startPause,
                       icon: Icon(
                         _finished
-                            ? Icons.replay_rounded
+                            ? AppIcons.restore
                             : (_running
-                                ? Icons.pause_rounded
-                                : Icons.play_arrow_rounded),
+                                ? AppIcons.pause
+                                : AppIcons.focus),
                       ),
                       label: Text(
                         _finished
@@ -482,7 +482,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
                         style: TextButton.styleFrom(
                           foregroundColor: theme.colorScheme.onSurfaceVariant,
                         ),
-                        icon: const Icon(Icons.check_rounded, size: 18),
+                        icon: const Icon(AppIcons.check, size: 18),
                         label: const Text('Mark done now'),
                       ),
                     ),

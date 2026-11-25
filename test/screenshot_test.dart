@@ -14,6 +14,7 @@ import 'package:planit/data/providers.dart';
 import 'package:planit/features/deeds/create_deed_screen.dart';
 import 'package:planit/features/notes/notes_screen.dart';
 import 'package:planit/features/onboarding/onboarding_screen.dart';
+import 'package:planit/features/settings/categories_screen.dart';
 import 'package:planit/features/settings/settings_screen.dart';
 import 'package:planit/features/stats/stats_screen.dart';
 import 'package:planit/features/today/today_screen.dart';
@@ -420,6 +421,22 @@ void main() {
     await expectLater(
       find.byKey(captureKey),
       matchesGoldenFile('goldens/settings.png'),
+    );
+  });
+
+  testWidgets('categories', (tester) async {
+    await _prepare(tester);
+    await tester.pumpWidget(
+      _app(
+        child: const CategoriesScreen(),
+        theme: AppTheme.dark,
+        withNav: false,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await expectLater(
+      find.byKey(captureKey),
+      matchesGoldenFile('goldens/categories.png'),
     );
   });
 

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/prefs/prefs_providers.dart';
+import '../../core/notifications/notification_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
@@ -260,6 +261,57 @@ class TodayScreen extends ConsumerWidget {
     );
   }
 
+  Future<void> _archiveDeed(
+    BuildContext context,
+    WidgetRef ref,
+    db.Deed deed,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Archive this deed?'),
+        content: const Text(
+          'It disappears from Today and Stats. Past logs are kept.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Archive'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final repository = ref.read(repositoryProvider);
+    final notifications = ref.read(notificationServiceProvider);
+    await repository.archiveDeed(deed.id);
+    await notifications.syncAll(await repository.allDeeds());
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text('"${deed.name}" archived'),
+          duration: const Duration(seconds: 5),
+          action: SnackBarAction(
+            label: 'Undo',
+            onPressed: () async {
+              await repository.unarchiveDeed(deed.id);
+              await notifications.syncAll(await repository.allDeeds());
+            },
+          ),
+        ),
+      );
+  }
+
   Future<void> _onTapDeed(
     BuildContext context,
     WidgetRef ref,
@@ -504,6 +556,17 @@ class TodayScreen extends ConsumerWidget {
                     }
                   },
                 ),
+              const Divider(height: 12),
+              _OutcomeTile(
+                icon: AppIcons.archive,
+                color: theme.colorScheme.error,
+                label: 'Archive deed',
+                selected: false,
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _archiveDeed(context, ref, deed);
+                },
+              ),
               const SizedBox(height: 12),
             ],
           ),
@@ -864,7 +927,7 @@ class _SegmentBar extends StatelessWidget {
           child: Padding(
             padding: EdgeInsets.only(right: index == count - 1 ? 0 : 3),
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
+              duration: AppTheme.motion(context, 300),
               height: digital ? 6 : 5,
               decoration: BoxDecoration(
                 color: index < filled
@@ -1177,7 +1240,7 @@ class _DeedCard extends StatelessWidget {
                       ),
                     ),
                   AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
+                    duration: AppTheme.motion(context, 200),
                     width: logged ? 56 : 64,
                     height: double.infinity,
                     alignment: Alignment.center,
@@ -1257,7 +1320,7 @@ class _CaughtUpCard extends StatelessWidget {
         child: Row(
           children: [
             Icon(
-              Icons.celebration_rounded,
+              AppIcons.confetti,
               color: AppColors.outcome(
                 LogStatus.done,
                 theme,
@@ -1308,7 +1371,8 @@ class _EmptyState extends StatelessWidget {
           AppSpacing.screen, AppSpacing.huge, AppSpacing.screen, 0),
       child: Column(
         children: [
-          Icon(Icons.event_available_rounded,
+          Icon(
+              AppIcons.calendar,
               size: 56, color: theme.colorScheme.primary),
           const SizedBox(height: 16),
           Text(

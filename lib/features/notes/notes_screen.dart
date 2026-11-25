@@ -72,7 +72,7 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
               controller: _searchController,
               onChanged: (value) => setState(() => _query = value),
               decoration: InputDecoration(
-                hintText: 'Search your notes',
+                hintText: 'Search notes',
                 prefixIcon: const Icon(AppIcons.search),
                 suffixIcon: _query.isEmpty
                     ? null
@@ -262,7 +262,7 @@ class _NoteGrid extends StatelessWidget {
                         icon: Icon(
                           note.pinned
                               ? AppIcons.pin
-                              : AppIcons.pin,
+                              : AppIcons.pinOff,
                           color: note.pinned
                               ? theme.colorScheme.secondary
                               : theme.colorScheme.onSurfaceVariant,
@@ -327,8 +327,8 @@ class _EmptyNotes extends StatelessWidget {
           children: [
             Icon(
               searching
-                  ? Icons.search_off_rounded
-                  : Icons.lightbulb_rounded,
+                  ? AppIcons.search
+                  : AppIcons.lightbulb,
               size: 56,
               color: theme.colorScheme.primary,
             ),

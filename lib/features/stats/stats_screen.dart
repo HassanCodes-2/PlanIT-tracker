@@ -69,10 +69,22 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
           : theme.colorScheme.onSurfaceVariant;
     } else {
       final isLight = theme.brightness == Brightness.light;
+      final surface = theme.cardTheme.color ?? theme.colorScheme.surface;
       color = up
-          ? (isLight ? AppColors.doneLight : const Color(0xFF4ADE80))
-          : (isLight ? AppColors.skippedLight : const Color(0xFFFF9B9B));
+          ? AppTheme.ensureVisible(
+              isLight ? AppColors.doneLight : const Color(0xFF4ADE80),
+              surface,
+              theme.brightness,
+              ratio: isLight ? 4.8 : 3.0,
+            )
+          : AppTheme.ensureVisible(
+              isLight ? AppColors.skippedLight : const Color(0xFFFF9B9B),
+              surface,
+              theme.brightness,
+              ratio: isLight ? 4.8 : 3.0,
+            );
     }
+    final points = diff.abs().round();
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
@@ -89,7 +101,8 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
           ),
           const SizedBox(width: 4),
           Text(
-            '${diff.abs().round()} pts vs last ${period.label.toLowerCase()}',
+            '$points ${points == 1 ? 'pt' : 'pts'} vs last '
+            '${period.label.toLowerCase()}',
             style: theme.textTheme.labelSmall?.copyWith(
               color: color,
               fontWeight: FontWeight.w600,
@@ -198,7 +211,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                   AppSpacing.screen,
                   AppSpacing.xxl),
               children: [
-                _Label('CONSISTENCY · LAST 7 DAYS'),
+                _Label('RECENT WEEK · CONSISTENCY'),
                 const SizedBox(height: 10),
                 Card(
                   child: Padding(
@@ -240,8 +253,12 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                 const SizedBox(height: 10),
                 LayoutBuilder(
                   builder: (context, constraints) {
+                    final textScale =
+                        MediaQuery.textScalerOf(context).scale(1);
                     final columns =
-                        constraints.maxWidth >= 340 ? 4 : 2;
+                        constraints.maxWidth >= 340 && textScale <= 1.3
+                            ? 4
+                            : 2;
                     final width =
                         (constraints.maxWidth - 10 * (columns - 1)) / columns;
                     return Wrap(
@@ -388,7 +405,7 @@ class _Legend extends StatelessWidget {
             missedColor),
         _item(
           theme,
-          Icons.crop_square_rounded,
+          AppIcons.empty,
           'No entry',
           theme.colorScheme.onSurfaceVariant,
         ),
@@ -807,7 +824,7 @@ class _RingStat extends StatelessWidget {
           children: [
             TweenAnimationBuilder<double>(
               tween: Tween(begin: 0, end: (percent / 100).clamp(0.0, 1.0)),
-              duration: const Duration(milliseconds: 900),
+              duration: AppTheme.motion(context, 900),
               curve: Curves.easeOutCubic,
               builder: (context, value, _) {
                 return SizedBox(
@@ -858,7 +875,8 @@ class _RingStat extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               label,
-              maxLines: 1,
+              maxLines: 2,
+              textAlign: TextAlign.center,
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.labelSmall
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant),

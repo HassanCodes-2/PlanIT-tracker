@@ -69,6 +69,16 @@ void main() {
         greaterThanOrEqualTo(3.0),
       );
     });
+
+    test('${entry.key}: form labels and errors meet AA', () {
+      final surface = theme.cardTheme.color ?? theme.colorScheme.surface;
+      final floating = theme.inputDecorationTheme.floatingLabelStyle?.color;
+      final error = theme.inputDecorationTheme.errorStyle?.color;
+      expect(floating, isNotNull);
+      expect(error, isNotNull);
+      expect(_contrast(floating!, surface), greaterThanOrEqualTo(4.5));
+      expect(_contrast(error!, surface), greaterThanOrEqualTo(4.5));
+    });
   }
 
   test('status icon vocabulary is shared', () {

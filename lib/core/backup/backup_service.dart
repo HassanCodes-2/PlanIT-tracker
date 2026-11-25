@@ -14,7 +14,7 @@ final backupServiceProvider =
 /// Exports every category, deed and log to a JSON file
 /// and opens the Android share sheet so it can be saved anywhere.
 class BackupService {
-  Future<void> shareBackup(DeedRepository repository) async {
+  Future<ShareResult> shareBackup(DeedRepository repository) async {
     final categories = await repository.allCategories();
     final deeds = await repository.allDeedsIncludingArchived();
     final logs =
@@ -76,7 +76,7 @@ class BackupService {
     await file
         .writeAsString(const JsonEncoder.withIndent('  ').convert(payload));
 
-    await SharePlus.instance.share(
+    return SharePlus.instance.share(
       ShareParams(
         files: [XFile(file.path)],
         title: 'PlanIT backup',

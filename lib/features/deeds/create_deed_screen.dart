@@ -7,6 +7,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/notifications/notification_service.dart';
 import '../../core/prefs/prefs_providers.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/icons.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/providers.dart';
@@ -455,6 +456,12 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
                     avatar: Icon(
                       iconForName(category.icon, fallback: Icons.star_rounded),
                       size: 18,
+                      color: AppTheme.ensureVisible(
+                        colorFromHex(category.color),
+                        theme.colorScheme.surface,
+                        theme.brightness,
+                        ratio: 3.2,
+                      ),
                     ),
                     selected: selected,
                     onSelected: (_) => setState(() {
@@ -569,7 +576,7 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
                       : _reminder!.format(context),
                 ),
                 trailing: _reminder == null
-                    ? const Icon(Icons.chevron_right_rounded)
+                    ? const Icon(AppIcons.caretRight)
                     : IconButton(
                         tooltip: 'Clear reminder',
                         icon: const Icon(AppIcons.close),

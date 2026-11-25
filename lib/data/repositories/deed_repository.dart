@@ -41,6 +41,23 @@ class DeedRepository {
         );
   }
 
+  Future<void> updateCategory(
+    int id,
+    CategoriesCompanion changes,
+  ) =>
+      (_db.update(_db.categories)..where((row) => row.id.equals(id)))
+          .write(changes);
+
+  Future<void> deleteCategory(int id) async {
+    await _db.transaction(() async {
+      await (_db.update(_db.deeds)
+            ..where((row) => row.categoryId.equals(id)))
+          .write(DeedsCompanion(categoryId: Value<int?>(null)));
+      await (_db.delete(_db.categories)..where((row) => row.id.equals(id)))
+          .go();
+    });
+  }
+
   // ---------- Deeds ----------
 
   Stream<List<Deed>> watchDeeds() {

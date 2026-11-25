@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../core/backup/backup_service.dart';
 import '../../core/prefs/prefs_providers.dart';
@@ -38,7 +39,7 @@ class SettingsScreen extends ConsumerWidget {
   String _accentName(Color color) {
     final index = _accentPresets
         .indexWhere((preset) => preset.toARGB32() == color.toARGB32());
-    return index == -1 ? 'Custom accent' : '${_accentNames[index]} accent';
+    return index == -1 ? 'Accent' : '${_accentNames[index]} accent';
   }
 
   Future<void> _editName(BuildContext context, WidgetRef ref) async {
@@ -76,12 +77,20 @@ class SettingsScreen extends ConsumerWidget {
   Future<void> _backup(BuildContext context, WidgetRef ref) async {
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await ref
+      final result = await ref
           .read(backupServiceProvider)
           .shareBackup(ref.read(repositoryProvider));
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Export shared successfully.')),
-      );
+      if (result.status == ShareResultStatus.success) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Export shared successfully.')),
+        );
+      } else if (result.status == ShareResultStatus.unavailable) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Could not open sharing. Try again.'),
+          ),
+        );
+      }
     } catch (_) {
       messenger.showSnackBar(
         const SnackBar(content: Text('Backup failed. Please try again.')),
@@ -346,7 +355,7 @@ class SettingsScreen extends ConsumerWidget {
             clipBehavior: Clip.antiAlias,
             child: ListTile(
               leading: Icon(
-                AppIcons.restore,
+                AppIcons.history,
                 color: theme.colorScheme.primary,
               ),
               title: const Text('Archived deeds'),
@@ -368,7 +377,29 @@ class SettingsScreen extends ConsumerWidget {
             clipBehavior: Clip.antiAlias,
             child: ListTile(
               leading: Icon(
-                AppIcons.restore,
+                AppIcons.tag,
+                color: theme.colorScheme.primary,
+              ),
+              title: const Text('Categories'),
+              subtitle: Text(
+                'Rename, recolor or remove your groups',
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+              onTap: () => context.push('/categories'),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Material(
+            color: theme.cardTheme.color,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
+              side: BorderSide(color: theme.colorScheme.outline),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: ListTile(
+              leading: Icon(
+                AppIcons.refresh,
                 color: theme.colorScheme.primary,
               ),
               title: const Text('Run setup again'),
@@ -487,6 +518,7 @@ class _StyleCard extends StatelessWidget {
       button: true,
       selected: selected,
       label: '$title style, $subtitle${selected ? ', active' : ''}',
+      onTap: onTap,
       excludeSemantics: true,
       child: Material(
       color: theme.cardTheme.color,

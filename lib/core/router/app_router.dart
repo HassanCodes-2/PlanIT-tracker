@@ -9,6 +9,7 @@ import '../../features/focus/focus_screen.dart';
 import '../../features/notes/note_editor_screen.dart';
 import '../../features/notes/notes_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
+import '../../features/settings/categories_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/shell/app_shell.dart';
 import '../../features/stats/stats_screen.dart';
@@ -79,6 +80,10 @@ GoRouter _createRouter({required bool onboarded}) {
       GoRoute(
         path: '/archived',
         builder: (context, state) => const ArchivedDeedsScreen(),
+      ),
+      GoRoute(
+        path: '/categories',
+        builder: (context, state) => const CategoriesScreen(),
       ),
       GoRoute(
         path: '/note',
