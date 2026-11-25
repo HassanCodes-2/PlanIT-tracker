@@ -9,6 +9,7 @@ import '../../core/notifications/notification_service.dart';
 import '../../core/prefs/prefs_providers.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/icons.dart';
+import '../../core/widgets/app_toast.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/providers.dart';
 import '../../domain/deed_schedule.dart';
@@ -145,10 +146,10 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Check the highlighted fields before saving.'),
-        ),
+      AppToast.show(
+        context,
+        'Check the highlighted fields before saving.',
+        duration: const Duration(milliseconds: 3000),
       );
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -161,10 +162,10 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
     }
     if (_frequency == FrequencyType.weekdays && _weekdays.isEmpty) {
       setState(() => _weekdayError = true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Pick at least one weekday for this deed.'),
-        ),
+      AppToast.show(
+        context,
+        'Pick at least one weekday for this deed.',
+        duration: const Duration(milliseconds: 3000),
       );
       return;
     }
@@ -173,7 +174,6 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
       _weekdayError = false;
     });
 
-    final messenger = ScaffoldMessenger.of(context);
     final frequencyValue = _frequency.dbValue;
     final weekdaysValue = _frequency == FrequencyType.weekdays
         ? encodeWeekdays(_weekdays)
@@ -205,11 +205,8 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
     } catch (_) {
       if (mounted) {
         setState(() => _saving = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not save the deed. Try again.'),
-          ),
-        );
+        AppToast.show(context, 'Could not save the deed. Try again.',
+            duration: const Duration(milliseconds: 3000));
       }
       return;
     }
@@ -219,13 +216,11 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
     final notifications = ref.read(notificationServiceProvider);
     if (reminderValue != null) {
       final allowed = await notifications.ensurePermission();
-      if (allowed == false) {
-        messenger.showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Reminder saved, but notifications are off in Android settings.',
-            ),
-          ),
+      if (allowed == false && mounted) {
+        AppToast.show(
+          context,
+          'Reminder saved, but notifications are off in Android settings.',
+          duration: const Duration(milliseconds: 3600),
         );
       }
     }

@@ -7,6 +7,7 @@ import '../../core/prefs/prefs_providers.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/icons.dart';
+import '../../core/widgets/app_toast.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/providers.dart';
 import '../../domain/enums.dart';
@@ -149,9 +150,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       if (mounted) context.go('/today');
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not skip setup. Try again.')),
-        );
+        AppToast.show(context, 'Could not skip setup. Try again.',
+            duration: const Duration(milliseconds: 3000));
       }
     }
   }
@@ -218,11 +218,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     } catch (_) {
       if (mounted) {
         setState(() => _saving = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not finish setup. Please try again.'),
-          ),
-        );
+        AppToast.show(context, 'Could not finish setup. Please try again.',
+            duration: const Duration(milliseconds: 3000));
       }
     }
   }

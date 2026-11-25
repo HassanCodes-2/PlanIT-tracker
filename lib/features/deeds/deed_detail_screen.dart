@@ -8,6 +8,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/icons.dart';
+import '../../core/widgets/app_toast.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/providers.dart';
 import '../../domain/deed_schedule.dart';
@@ -53,22 +54,16 @@ class DeedDetailScreen extends ConsumerWidget {
     await repository.archiveDeed(deed.id);
     await notifications.syncAll(await repository.allDeeds());
     if (!context.mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
-    messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text('"${deed.name}" archived'),
-          duration: const Duration(seconds: 5),
-          action: SnackBarAction(
-            label: 'Undo',
-            onPressed: () async {
-              await repository.unarchiveDeed(deed.id);
-              await notifications.syncAll(await repository.allDeeds());
-            },
-          ),
-        ),
-      );
+    AppToast.show(
+      context,
+      '"${deed.name}" archived',
+      actionLabel: 'Undo',
+      onAction: () async {
+        await repository.unarchiveDeed(deed.id);
+        await notifications.syncAll(await repository.allDeeds());
+      },
+      duration: const Duration(seconds: 5),
+    );
     if (context.mounted) context.pop();
   }
 
@@ -102,9 +97,7 @@ class DeedDetailScreen extends ConsumerWidget {
                     .syncAll(await repository.allDeeds());
                 ref.invalidate(deedByIdProvider(deedId));
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Deed restored to Today')),
-                  );
+                  AppToast.show(context, 'Deed restored to Today');
                 }
               },
             )
@@ -269,10 +262,9 @@ class DeedDetailScreen extends ConsumerWidget {
                                   .syncAll(await repository.allDeeds());
                               ref.invalidate(deedByIdProvider(deedId));
                               if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Deed restored to Today'),
-                                  ),
+                                AppToast.show(
+                                  context,
+                                  'Deed restored to Today',
                                 );
                               }
                             },

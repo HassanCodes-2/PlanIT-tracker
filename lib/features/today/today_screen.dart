@@ -8,6 +8,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../core/prefs/prefs_providers.dart';
 import '../../core/notifications/notification_service.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/widgets/app_toast.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/icons.dart';
@@ -242,15 +243,15 @@ class TodayScreen extends ConsumerWidget {
   }
 
   void _snack(BuildContext context, String message, VoidCallback? undo) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 5),
-        action: undo == null
-            ? null
-            : SnackBarAction(label: 'Undo', onPressed: undo),
-      ));
+    AppToast.show(
+      context,
+      message,
+      actionLabel: undo == null ? null : 'Undo',
+      onAction: undo,
+      duration: undo == null
+          ? const Duration(milliseconds: 2400)
+          : const Duration(seconds: 5),
+    );
   }
 
   void _openFocus(BuildContext context, db.Deed deed, DateTime day) {
@@ -293,21 +294,16 @@ class TodayScreen extends ConsumerWidget {
     await repository.archiveDeed(deed.id);
     await notifications.syncAll(await repository.allDeeds());
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text('"${deed.name}" archived'),
-          duration: const Duration(seconds: 5),
-          action: SnackBarAction(
-            label: 'Undo',
-            onPressed: () async {
-              await repository.unarchiveDeed(deed.id);
-              await notifications.syncAll(await repository.allDeeds());
-            },
-          ),
-        ),
-      );
+    AppToast.show(
+      context,
+      '"${deed.name}" archived',
+      actionLabel: 'Undo',
+      onAction: () async {
+        await repository.unarchiveDeed(deed.id);
+        await notifications.syncAll(await repository.allDeeds());
+      },
+      duration: const Duration(seconds: 5),
+    );
   }
 
   Future<void> _onTapDeed(
@@ -997,20 +993,13 @@ class _CategorySection extends StatelessWidget {
     String? progress,
   ) {
     HapticFeedback.selectionClick();
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(
-            '${deed.name}: goal met${progress == null ? '' : ' · $progress'}.',
-          ),
-          duration: const Duration(seconds: 5),
-          action: SnackBarAction(
-            label: 'History',
-            onPressed: () => context.push('/deed?id=${deed.id}'),
-          ),
-        ),
-      );
+    AppToast.show(
+      context,
+      '${deed.name}: goal met${progress == null ? '' : ' · $progress'}.',
+      actionLabel: 'History',
+      onAction: () => context.push('/deed?id=${deed.id}'),
+      duration: const Duration(seconds: 5),
+    );
   }
 
   @override

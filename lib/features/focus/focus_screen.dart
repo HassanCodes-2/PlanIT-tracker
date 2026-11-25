@@ -10,6 +10,7 @@ import '../../core/notifications/notification_service.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/icons.dart';
+import '../../core/widgets/app_toast.dart';
 import '../../core/widgets/confetti.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/providers.dart';
@@ -80,12 +81,10 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
     unawaited(
       notifications.ensurePermission().then((allowed) {
         if (allowed == false && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Notifications are off — focus alerts may not appear.',
-              ),
-            ),
+          AppToast.show(
+            context,
+            'Notifications are off — focus alerts may not appear.',
+            duration: const Duration(milliseconds: 3200),
           );
         }
       }),
@@ -127,28 +126,24 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
     }
     await repository.setLog(deed.id, day, LogStatus.done);
     if (!mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.hideCurrentSnackBar();
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text('"${deed.name}" marked done'),
-        duration: const Duration(seconds: 5),
-        action: SnackBarAction(
-          label: 'Undo',
-          onPressed: () async {
-            if (previous == null) {
-              await repository.clearLog(deed.id, day);
-            } else {
-              await repository.setLog(
-                deed.id,
-                day,
-                LogStatus.fromDb(previous.status),
-                reason: previous.reason,
-              );
-            }
-          },
-        ),
-      ),
+    final previousLog = previous;
+    AppToast.show(
+      context,
+      '"${deed.name}" marked done',
+      actionLabel: 'Undo',
+      onAction: () async {
+        if (previousLog == null) {
+          await repository.clearLog(deed.id, day);
+        } else {
+          await repository.setLog(
+            deed.id,
+            day,
+            LogStatus.fromDb(previousLog.status),
+            reason: previousLog.reason,
+          );
+        }
+      },
+      duration: const Duration(seconds: 5),
     );
     if (mounted) context.pop();
   }

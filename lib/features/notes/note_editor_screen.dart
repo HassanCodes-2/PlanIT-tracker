@@ -8,6 +8,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/icons.dart';
+import '../../core/widgets/app_toast.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/providers.dart';
 
@@ -180,20 +181,13 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
       if (popAfter && mounted) {
         context.pop();
       } else if (!silent && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Note saved'),
-            duration: Duration(seconds: 2),
-          ),
-        );
+        AppToast.show(context, 'Note saved',
+            duration: const Duration(milliseconds: 1600));
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not save the note. Try again.'),
-          ),
-        );
+        AppToast.show(context, 'Could not save the note. Try again.',
+            duration: const Duration(milliseconds: 3000));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -233,10 +227,31 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
     );
     if (confirmed != true) return;
     _dirty = false;
-    if (_existing != null) {
-      await ref.read(repositoryProvider).deleteNote(_existing!.id);
+    final repository = ref.read(repositoryProvider);
+    final deleted = _existing;
+    if (deleted != null) {
+      await repository.deleteNote(deleted.id);
     }
-    if (mounted) context.pop();
+    if (mounted) {
+      context.pop();
+      AppToast.show(
+        context,
+        'Note deleted',
+        actionLabel: 'Undo',
+        onAction: () async {
+          if (deleted == null) return;
+          await repository.createNote(
+            db.NotesCompanion(
+              title: Value(deleted.title),
+              body: Value(deleted.body),
+              color: Value(deleted.color),
+              pinned: Value(deleted.pinned),
+            ),
+          );
+        },
+        duration: const Duration(seconds: 5),
+      );
+    }
   }
 
   @override

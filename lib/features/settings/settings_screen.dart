@@ -9,6 +9,7 @@ import '../../core/notifications/notification_service.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/icons.dart';
+import '../../core/widgets/app_toast.dart';
 import '../../data/providers.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -75,26 +76,22 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Future<void> _backup(BuildContext context, WidgetRef ref) async {
-    final messenger = ScaffoldMessenger.of(context);
+    final navigatorContext = context;
     try {
       final result = await ref
           .read(backupServiceProvider)
           .shareBackup(ref.read(repositoryProvider));
+      if (!navigatorContext.mounted) return;
       if (result.status == ShareResultStatus.success) {
-        messenger.showSnackBar(
-          const SnackBar(content: Text('Export shared successfully.')),
-        );
+        AppToast.show(navigatorContext, 'Export shared successfully.');
       } else if (result.status == ShareResultStatus.unavailable) {
-        messenger.showSnackBar(
-          const SnackBar(
-            content: Text('Could not open sharing. Try again.'),
-          ),
-        );
+        AppToast.show(navigatorContext, 'Could not open sharing. Try again.',
+            duration: const Duration(milliseconds: 3000));
       }
     } catch (_) {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Backup failed. Please try again.')),
-      );
+      if (!navigatorContext.mounted) return;
+      AppToast.show(navigatorContext, 'Backup failed. Please try again.',
+          duration: const Duration(milliseconds: 3000));
     }
   }
 
@@ -467,14 +464,12 @@ class SettingsScreen extends ConsumerWidget {
                 final allowed =
                     await NotificationService.instance.ensurePermission();
                 if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      allowed == true
-                          ? 'Notifications are enabled.'
-                          : 'Notifications are off. Enable them in Android settings.',
-                    ),
-                  ),
+                AppToast.show(
+                  context,
+                  allowed == true
+                      ? 'Notifications are enabled.'
+                      : 'Notifications are off. Enable them in Android settings.',
+                  duration: const Duration(milliseconds: 3600),
                 );
               },
             ),
@@ -485,7 +480,7 @@ class SettingsScreen extends ConsumerWidget {
           _InfoTile(
             icon: AppIcons.apps,
             title: 'PlanIT',
-            subtitle: 'Habit & deed tracker v1.7.0',
+            subtitle: 'Habit & deed tracker v1.7.1',
           ),
         ],
       ),

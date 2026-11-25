@@ -7,6 +7,7 @@ import '../../core/notifications/notification_service.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/icons.dart';
+import '../../core/widgets/app_toast.dart';
 import '../../core/widgets/load_error.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/providers.dart';
@@ -24,17 +25,15 @@ class ArchivedDeedsScreen extends ConsumerWidget {
     await repository.unarchiveDeed(deed.id);
     await notifications.syncAll(await repository.allDeeds());
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('"${deed.name}" restored to Today'),
-        action: SnackBarAction(
-          label: 'Undo',
-          onPressed: () async {
-            await repository.archiveDeed(deed.id);
-            await notifications.syncAll(await repository.allDeeds());
-          },
-        ),
-      ),
+    AppToast.show(
+      context,
+      '"${deed.name}" restored to Today',
+      actionLabel: 'Undo',
+      onAction: () async {
+        await repository.archiveDeed(deed.id);
+        await notifications.syncAll(await repository.allDeeds());
+      },
+      duration: const Duration(seconds: 5),
     );
   }
 

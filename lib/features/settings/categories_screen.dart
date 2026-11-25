@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/icons.dart';
+import '../../core/widgets/app_toast.dart';
 import '../../core/widgets/load_error.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/providers.dart';
@@ -164,21 +165,15 @@ class CategoriesScreen extends ConsumerWidget {
         );
       }
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              category == null ? 'Category created.' : 'Category updated.',
-            ),
-          ),
+        AppToast.show(
+          context,
+          category == null ? 'Category created.' : 'Category updated.',
         );
       }
     } catch (_) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not save the category. Try again.'),
-          ),
-        );
+        AppToast.show(context, 'Could not save the category. Try again.',
+            duration: const Duration(milliseconds: 3000));
       }
     }
   }
@@ -214,9 +209,7 @@ class CategoriesScreen extends ConsumerWidget {
     if (confirmed != true) return;
     await ref.read(repositoryProvider).deleteCategory(category.id);
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${category.name} deleted.')),
-      );
+      AppToast.show(context, '${category.name} deleted.');
     }
   }
 
