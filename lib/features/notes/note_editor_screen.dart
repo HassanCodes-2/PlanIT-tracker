@@ -270,21 +270,6 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
           ),
           title: Text(_existing == null ? 'New note' : 'Note'),
           actions: [
-            Padding(
-              padding: const EdgeInsets.only(right: 6),
-              child: Center(
-                child: Text(
-                  _saving
-                      ? 'Saving…'
-                      : (_dirty
-                          ? 'Unsaved'
-                          : (_existing != null ? 'Saved' : '')),
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            ),
             IconButton(
               tooltip: _pinned ? 'Unpin' : 'Pin to top',
               onPressed: () {
@@ -308,6 +293,22 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
         ),
         body: Column(
           children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 2, 20, 0),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  _saving
+                      ? 'Saving…'
+                      : (_dirty
+                          ? 'Unsaved'
+                          : (_existing != null ? 'Saved' : 'Ready')),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ),
             if (!context.appStyle.isDigital)
               Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),

@@ -41,11 +41,13 @@ class CategoriesScreen extends ConsumerWidget {
     int sortOrder = 0,
   }) async {
     final name = TextEditingController(text: category?.name ?? '');
+    final digital = context.appStyle.isDigital;
     var color = category?.color ?? _colors.first;
     final saved = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setDialogState) => AlertDialog(
+          scrollable: true,
           title: Text(category == null ? 'New category' : 'Edit category'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -57,56 +59,71 @@ class CategoriesScreen extends ConsumerWidget {
                 textCapitalization: TextCapitalization.sentences,
                 decoration: const InputDecoration(labelText: 'Category name'),
               ),
-              const SizedBox(height: 18),
-              Text(
-                'COLOR',
-                style: Theme.of(dialogContext).textTheme.labelMedium?.copyWith(
-                      color: Theme.of(dialogContext)
-                          .colorScheme
-                          .onSurfaceVariant,
-                      letterSpacing: 1.2,
-                    ),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: List.generate(_colors.length, (index) {
-                  final value = _colors[index];
-                  final selected = value.toUpperCase() == color.toUpperCase();
-                  return Semantics(
-                    button: true,
-                    selected: selected,
-                    label: '${_colorNames[index]} category color',
-                    child: InkResponse(
-                      onTap: () => setDialogState(() => color = value),
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: colorFromHex(value),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: selected
-                                ? Theme.of(dialogContext).colorScheme.onSurface
-                                : Theme.of(dialogContext)
-                                    .colorScheme
-                                    .outline,
-                            width: selected ? 2.5 : 1,
+              if (!digital) ...[
+                const SizedBox(height: 18),
+                Text(
+                  'COLOR',
+                  style:
+                      Theme.of(dialogContext).textTheme.labelMedium?.copyWith(
+                            color: Theme.of(dialogContext)
+                                .colorScheme
+                                .onSurfaceVariant,
+                            letterSpacing: 1.2,
+                          ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 4,
+                  runSpacing: 4,
+                  children: List.generate(_colors.length, (index) {
+                    final value = _colors[index];
+                    final selected =
+                        value.toUpperCase() == color.toUpperCase();
+                    return Semantics(
+                      button: true,
+                      selected: selected,
+                      label: '${_colorNames[index]} category color',
+                      child: SizedBox(
+                        width: 48,
+                        height: 48,
+                        child: InkResponse(
+                          radius: 24,
+                          onTap: () => setDialogState(() => color = value),
+                          child: Center(
+                            child: Container(
+                              width: 34,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                color: colorFromHex(value),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: selected
+                                      ? Theme.of(dialogContext)
+                                          .colorScheme
+                                          .onSurface
+                                      : Theme.of(dialogContext)
+                                          .colorScheme
+                                          .outline,
+                                  width: selected ? 2.5 : 1,
+                                ),
+                              ),
+                              child: selected
+                                  ? Icon(
+                                      AppIcons.check,
+                                      size: 18,
+                                      color: AppTheme.onColor(
+                                        colorFromHex(value),
+                                      ),
+                                    )
+                                  : null,
+                            ),
                           ),
                         ),
-                        child: selected
-                            ? Icon(
-                                AppIcons.check,
-                                size: 18,
-                                color: AppTheme.onColor(colorFromHex(value)),
-                              )
-                            : null,
                       ),
-                    ),
-                  );
-                }),
-              ),
+                    );
+                  }),
+                ),
+              ],
             ],
           ),
           actions: [
@@ -266,12 +283,16 @@ class CategoriesScreen extends ConsumerWidget {
                       separatorBuilder: (_, _) => const SizedBox(height: 8),
                       itemBuilder: (context, index) {
                         final category = categories[index];
-                        final accent = AppTheme.ensureVisible(
-                          colorFromHex(category.color),
-                          theme.cardTheme.color ?? theme.colorScheme.surface,
-                          theme.brightness,
-                          ratio: 3.2,
-                        );
+                        final digital = context.appStyle.isDigital;
+                        final accent = digital
+                            ? theme.colorScheme.onSurfaceVariant
+                            : AppTheme.ensureVisible(
+                                colorFromHex(category.color),
+                                theme.cardTheme.color ??
+                                    theme.colorScheme.surface,
+                                theme.brightness,
+                                ratio: 3.2,
+                              );
                         final count = deeds
                             .where((deed) => deed.categoryId == category.id)
                             .length;
@@ -317,24 +338,29 @@ class CategoriesScreen extends ConsumerWidget {
                                 color: theme.colorScheme.onSurfaceVariant,
                               ),
                             ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  tooltip: 'Edit category',
-                                  icon: const Icon(AppIcons.edit),
-                                  onPressed: () => _edit(
-                                    context,
-                                    ref,
-                                    category: category,
-                                  ),
+                            trailing: PopupMenuButton<String>(
+                              tooltip: 'Category actions',
+                              icon: const Icon(AppIcons.more),
+                              onSelected: (value) {
+                                if (value == 'edit') {
+                                  _edit(context, ref, category: category);
+                                } else if (value == 'delete') {
+                                  _delete(context, ref, category);
+                                }
+                              },
+                              itemBuilder: (context) => [
+                                const PopupMenuItem(
+                                  value: 'edit',
+                                  child: Text('Edit category'),
                                 ),
-                                IconButton(
-                                  tooltip: 'Delete category',
-                                  icon: const Icon(AppIcons.delete),
-                                  color: theme.colorScheme.error,
-                                  onPressed: () =>
-                                      _delete(context, ref, category),
+                                PopupMenuItem(
+                                  value: 'delete',
+                                  child: Text(
+                                    'Delete category',
+                                    style: TextStyle(
+                                      color: theme.colorScheme.error,
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),

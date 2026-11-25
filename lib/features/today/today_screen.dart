@@ -167,13 +167,11 @@ class TodayScreen extends ConsumerWidget {
                       ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
               )
-            else if (!isFuture &&
-                scheduled.isNotEmpty &&
-                dailyScheduled.isNotEmpty && doneCount < dailyScheduled.length)
+            else if (!isFuture && scheduled.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
                 child: Text(
-                  'Tap a card to log it · long-press for more options',
+                  'Tap a card: done · tap the status: outcomes',
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
@@ -784,10 +782,9 @@ class _DayScrollerState extends State<_DayScroller> {
     final scale = MediaQuery.textScalerOf(context).scale(1);
     final tileWidth = 48.0 * scale;
     final itemExtent = tileWidth + 6;
+    final viewport = _controller.position.viewportDimension;
     final leadingItems =
-        (((MediaQuery.sizeOf(context).width - tileWidth) / 2) / itemExtent)
-            .floor()
-            .toInt();
+        (((viewport - tileWidth) / 2) / itemExtent).floor().toInt();
     final target = ((index - leadingItems) * itemExtent + AppSpacing.screen)
         .clamp(0.0, _controller.position.maxScrollExtent);
     if (animate) {
@@ -1027,12 +1024,15 @@ class _CategorySection extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(
                 AppSpacing.screen, 0, AppSpacing.screen, AppSpacing.sm + 2),
-            child: Text(
-              (category?.name ?? 'Other').toUpperCase(),
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                letterSpacing: 1.2,
-                fontWeight: FontWeight.w600,
+            child: Semantics(
+              header: true,
+              child: Text(
+                (category?.name ?? 'Other').toUpperCase(),
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  letterSpacing: 1.2,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
@@ -1152,6 +1152,7 @@ class _DeedCard extends StatelessWidget {
           ? {
               const CustomSemanticsAction(label: 'Start focus session'):
                   onFocus,
+              const CustomSemanticsAction(label: 'Log outcome'): onLongPress,
             }
           : null,
       excludeSemantics: true,
@@ -1239,53 +1240,78 @@ class _DeedCard extends StatelessWidget {
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
-                  AnimatedContainer(
-                    duration: AppTheme.motion(context, 200),
-                    width: logged ? 56 : 64,
-                    height: double.infinity,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                        colors: [Colors.transparent, tint],
-                      ),
-                    ),
-                    child: icon == null
-                        ? (!canLog
-                            ? Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    AppIcons.calendar,
-                                    size: 18,
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                  const SizedBox(height: 2),
-                                  FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    child: Text(
-                                      'PLAN',
-                                      style: theme.textTheme.labelSmall
-                                          ?.copyWith(
-                                        fontSize: 11,
-                                        letterSpacing: 0.8,
-                                        fontWeight: FontWeight.w700,
+                  Tooltip(
+                    message: canLog ? 'Change outcome' : 'Planned',
+                    child: InkWell(
+                      onTap: canLog ? onLongPress : null,
+                      child: AnimatedContainer(
+                        duration: AppTheme.motion(context, 200),
+                        width: logged ? 56 : 64,
+                        height: double.infinity,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: [Colors.transparent, tint],
+                          ),
+                        ),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            icon == null
+                                ? (!canLog
+                                    ? Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            AppIcons.calendar,
+                                            size: 18,
+                                            color: theme
+                                                .colorScheme.onSurfaceVariant,
+                                          ),
+                                          const SizedBox(height: 2),
+                                          FittedBox(
+                                            fit: BoxFit.scaleDown,
+                                            child: Text(
+                                              'PLAN',
+                                              style: theme
+                                                  .textTheme.labelSmall
+                                                  ?.copyWith(
+                                                fontSize: 11,
+                                                letterSpacing: 0.8,
+                                                fontWeight: FontWeight.w700,
+                                                color: theme.colorScheme
+                                                    .onSurfaceVariant,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : Icon(
+                                        context.appStyle.isDigital
+                                            ? AppIcons.uncheckedSquare
+                                            : AppIcons.circle,
+                                        size: 20,
                                         color: theme
                                             .colorScheme.onSurfaceVariant,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              )
-                            : Icon(
-                                context.appStyle.isDigital
-                                    ? AppIcons.uncheckedSquare
-                                    : Icons.radio_button_unchecked_rounded,
-                                size: 20,
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ))
-                        : Icon(icon, color: iconTint, size: 20),
+                                      ))
+                                : Icon(icon, color: iconTint, size: 20),
+                            if (canLog)
+                              Positioned(
+                                right: logged ? 5 : 9,
+                                bottom: 6,
+                                child: Icon(
+                                  AppIcons.caretDown,
+                                  size: 10,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),

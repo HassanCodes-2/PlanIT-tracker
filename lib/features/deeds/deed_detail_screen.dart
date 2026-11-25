@@ -358,25 +358,34 @@ class DeedDetailScreen extends ConsumerWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        _MiniStat(
-                            label: 'Done',
-                            value: '${stats.done}',
-                            color: AppColors.outcome(LogStatus.done, theme,
-                                digital: digital)),
-                        _MiniStat(
-                            label: 'Late',
-                            value: '${stats.late}',
-                            color: AppColors.outcome(LogStatus.late, theme,
-                                digital: digital)),
-                        _MiniStat(
-                            label: 'Skipped',
-                            value: '${stats.skipped}',
-                            color: AppColors.outcome(LogStatus.skipped, theme,
-                                digital: digital)),
-                        _MiniStat(
-                            label: 'Missed',
-                            value: '${stats.missed}',
-                            color: AppColors.missed(theme, digital: digital)),
+                        Expanded(
+                          child: _MiniStat(
+                              label: 'Done',
+                              value: '${stats.done}',
+                              color: AppColors.outcome(LogStatus.done, theme,
+                                  digital: digital)),
+                        ),
+                        Expanded(
+                          child: _MiniStat(
+                              label: 'Late',
+                              value: '${stats.late}',
+                              color: AppColors.outcome(LogStatus.late, theme,
+                                  digital: digital)),
+                        ),
+                        Expanded(
+                          child: _MiniStat(
+                              label: 'Skipped',
+                              value: '${stats.skipped}',
+                              color: AppColors.outcome(LogStatus.skipped, theme,
+                                  digital: digital)),
+                        ),
+                        Expanded(
+                          child: _MiniStat(
+                              label: 'Missed',
+                              value: '${stats.missed}',
+                              color:
+                                  AppColors.missed(theme, digital: digital)),
+                        ),
                       ],
                     ),
                   ],
@@ -398,7 +407,7 @@ class DeedDetailScreen extends ConsumerWidget {
                             child: Row(
                               children: [
                                 Icon(
-                                  Icons.speaker_notes_off_rounded,
+                                  AppIcons.notePencil,
                                   size: 18,
                                   color: theme.colorScheme.onSurfaceVariant,
                                 ),
@@ -453,9 +462,14 @@ class DeedDetailScreen extends ConsumerWidget {
                                     ),
                                 ),
                                 const SizedBox(width: 10),
-                                Text(
-                                  DateFormat('EEEE, d MMMM').format(log.day),
-                                  style: theme.textTheme.bodyMedium,
+                                Expanded(
+                                  child: Text(
+                                    DateFormat('EEEE, d MMMM')
+                                        .format(log.day),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.bodyMedium,
+                                  ),
                                 ),
                               ],
                             ),
@@ -631,6 +645,9 @@ class _MiniStat extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           label,
+          maxLines: 2,
+          textAlign: TextAlign.center,
+          overflow: TextOverflow.ellipsis,
           style: theme.textTheme.labelSmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -648,12 +665,15 @@ class _Label extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Text(
-      text,
-      style: theme.textTheme.labelMedium?.copyWith(
-        color: theme.colorScheme.onSurfaceVariant,
-        letterSpacing: 1.2,
-        fontWeight: FontWeight.w600,
+    return Semantics(
+      header: true,
+      child: Text(
+        text,
+        style: theme.textTheme.labelMedium?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+          letterSpacing: 1.2,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

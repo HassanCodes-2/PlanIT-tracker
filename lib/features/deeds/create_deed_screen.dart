@@ -235,6 +235,9 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
   }
 
   Future<void> _addCategory() async {
+    final categoryColor = context.appStyle.isDigital
+        ? '#1B6CFF'
+        : _accentHex(ref.read(accentColorProvider));
     final controller = TextEditingController();
     final name = await showDialog<String>(
       context: context,
@@ -266,7 +269,7 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
         .createCategory(
           name: name,
           icon: 'star',
-          color: _accentHex(ref.read(accentColorProvider)),
+          color: categoryColor,
         );
     if (mounted) setState(() => _categoryId = id);
   }
@@ -454,14 +457,16 @@ class _CreateDeedScreenState extends ConsumerState<CreateDeedScreen> {
                   return ChoiceChip(
                     label: Text(category.name),
                     avatar: Icon(
-                      iconForName(category.icon, fallback: Icons.star_rounded),
+                      iconForName(category.icon, fallback: AppIcons.star),
                       size: 18,
-                      color: AppTheme.ensureVisible(
-                        colorFromHex(category.color),
-                        theme.colorScheme.surface,
-                        theme.brightness,
-                        ratio: 3.2,
-                      ),
+                      color: context.appStyle.isDigital
+                          ? theme.colorScheme.onSurfaceVariant
+                          : AppTheme.ensureVisible(
+                              colorFromHex(category.color),
+                              theme.colorScheme.surface,
+                              theme.brightness,
+                              ratio: 3.2,
+                            ),
                     ),
                     selected: selected,
                     onSelected: (_) => setState(() {
@@ -669,12 +674,15 @@ class _Label extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Text(
-      text,
-      style: theme.textTheme.labelMedium?.copyWith(
-        color: theme.colorScheme.onSurfaceVariant,
-        letterSpacing: 1.2,
-        fontWeight: FontWeight.w600,
+    return Semantics(
+      header: true,
+      child: Text(
+        text,
+        style: theme.textTheme.labelMedium?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+          letterSpacing: 1.2,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

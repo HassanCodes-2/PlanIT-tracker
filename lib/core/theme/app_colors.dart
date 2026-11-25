@@ -68,6 +68,12 @@ abstract final class AppColors {
 
   /// Unlogged scheduled days are neutral, never a low-contrast outline-only
   /// cell. The missed glyph provides the non-color cue.
-  static Color missed(ThemeData theme, {required bool digital}) =>
-      theme.colorScheme.onSurfaceVariant;
+  static Color missed(ThemeData theme, {required bool digital}) {
+    if (digital) {
+      return theme.brightness == Brightness.dark
+          ? const Color(0xFF6E6E78)
+          : const Color(0xFF8A8A93);
+    }
+    return theme.colorScheme.onSurfaceVariant;
+  }
 }

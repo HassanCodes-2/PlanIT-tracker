@@ -146,12 +146,15 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Text(
-      text,
-      style: theme.textTheme.labelMedium?.copyWith(
-        color: theme.colorScheme.onSurfaceVariant,
-        letterSpacing: 1.2,
-        fontWeight: FontWeight.w600,
+    return Semantics(
+      header: true,
+      child: Text(
+        text,
+        style: theme.textTheme.labelMedium?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+          letterSpacing: 1.2,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -201,12 +204,23 @@ class _NoteGrid extends StatelessWidget {
           theme.brightness,
           ratio: 3.2,
         );
+        final preview = note.body.trim().isEmpty
+            ? 'No text'
+            : note.body.trim().replaceAll(RegExp(r'\s+'), ' ');
+        final spokenPreview = preview.length > 120
+            ? '${preview.substring(0, 117)}…'
+            : preview;
+        final cardColor = digital
+            ? theme.cardTheme.color
+            : Color.alphaBlend(
+                accent.withValues(alpha: 0.06),
+                theme.cardTheme.color ?? theme.colorScheme.surface,
+              );
         return Semantics(
           button: true,
           label:
               '${note.title.isEmpty ? 'Untitled note' : note.title}${note.pinned ? ', pinned' : ''}. '
-              '${note.body.trim().isEmpty ? 'No text' : note.body.trim().replaceAll(RegExp(r'\s+'), ' ')}. '
-              'Edited ${_relativeTime(note.updatedAt)}.',
+              '$spokenPreview. Edited ${_relativeTime(note.updatedAt)}.',
           onTap: () => onTap(note),
           onLongPress: () => onLongPress(note),
           customSemanticsActions: {
@@ -216,7 +230,7 @@ class _NoteGrid extends StatelessWidget {
           },
           excludeSemantics: true,
           child: Material(
-          color: theme.cardTheme.color,
+          color: cardColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(context.appStyle.cardRadius),
             side: BorderSide(
@@ -320,7 +334,7 @@ class _EmptyNotes extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(40),
         child: Column(
           mainAxisSize: MainAxisSize.min,

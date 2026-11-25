@@ -28,6 +28,7 @@ abstract final class Phosphor {
   static const checkSquare = IconData(0xe186, fontFamily: _f);
   static const clock = IconData(0xe19a, fontFamily: _f);
   static const check = IconData(0xe182, fontFamily: _f);
+  static const circle = IconData(0xe18a, fontFamily: _f);
   static const play = IconData(0xe3d0, fontFamily: _f);
   static const arrowLeft = IconData(0xe058, fontFamily: _f);
   static const arrowRight = IconData(0xe06c, fontFamily: _f);
@@ -57,6 +58,7 @@ abstract final class Phosphor {
   static const minusSquare = IconData(0xed4c, fontFamily: _f);
   static const square = IconData(0xe45e, fontFamily: _f);
   static const caretRight = IconData(0xe13a, fontFamily: _f);
+  static const caretDown = IconData(0xe136, fontFamily: _f);
   static const lightbulb = IconData(0xe2dc, fontFamily: _f);
   static const fire = IconData(0xe242, fontFamily: _f);
   static const trendUp = IconData(0xe4ae, fontFamily: _f);
@@ -79,6 +81,7 @@ abstract final class AppIcons {
   static const missedSquare = Phosphor.minusSquare;
   static const uncheckedSquare = Phosphor.square;
   static const caretRight = Phosphor.caretRight;
+  static const caretDown = Phosphor.caretDown;
   static const lightbulb = Phosphor.lightbulb;
   static const fire = Phosphor.fire;
   static const trendUp = Phosphor.trendUp;
@@ -110,6 +113,7 @@ abstract final class AppIcons {
   static const empty = Phosphor.square;
   static const tag = Phosphor.tag;
   static const check = Phosphor.check;
+  static const circle = Phosphor.circle;
   static const reset = Phosphor.arrowsClockwise;
   static const history = Phosphor.clockCounterClockwise;
   static const archive = Phosphor.archive;

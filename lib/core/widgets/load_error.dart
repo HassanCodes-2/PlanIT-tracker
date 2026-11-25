@@ -13,7 +13,7 @@ class LoadError extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(40),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -39,7 +39,7 @@ class LoadError extends StatelessWidget {
             const SizedBox(height: 20),
             FilledButton.tonalIcon(
               onPressed: onRetry,
-              icon: const Icon(Icons.refresh_rounded),
+              icon: const Icon(AppIcons.refresh),
               label: const Text('Try again'),
             ),
           ],

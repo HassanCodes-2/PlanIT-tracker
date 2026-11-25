@@ -289,28 +289,32 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           duration: AppTheme.motion(context, 250),
                           curve: Curves.easeOutCubic,
                         ),
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () => _pageController.animateToPage(
-                            index,
-                            duration: AppTheme.motion(context, 250),
-                            curve: Curves.easeOutCubic,
-                          ),
-                          child: SizedBox(
-                            width: 48,
-                            height: 48,
-                            child: Center(
-                              child: AnimatedContainer(
-                                duration: AppTheme.motion(context, 200),
-                                margin:
-                                    const EdgeInsets.symmetric(horizontal: 4),
-                                width: active ? 22 : 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: active
-                                      ? theme.colorScheme.primary
-                                      : theme.colorScheme.onSurfaceVariant,
-                                  borderRadius: BorderRadius.circular(4),
+                        child: Material(
+                          type: MaterialType.transparency,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(24),
+                            onTap: () => _pageController.animateToPage(
+                              index,
+                              duration: AppTheme.motion(context, 250),
+                              curve: Curves.easeOutCubic,
+                            ),
+                            child: SizedBox(
+                              width: 48,
+                              height: 48,
+                              child: Center(
+                                child: AnimatedContainer(
+                                  duration: AppTheme.motion(context, 200),
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 4),
+                                  width: active ? 22 : 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: active
+                                        ? theme.colorScheme.primary
+                                        : theme.colorScheme
+                                            .onSurfaceVariant,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
                                 ),
                               ),
                             ),

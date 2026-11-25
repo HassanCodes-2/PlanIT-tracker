@@ -170,7 +170,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
       appBar: AppBar(title: const Text('Stats')),
       body: deeds.isEmpty
           ? Center(
-              child: Padding(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.all(40),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -1009,41 +1009,47 @@ class _SlidingPeriodBar extends StatelessWidget {
                       button: true,
                       selected: period == selected,
                       label: '${period.label} period',
-                      child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => onSelect(period),
-                      child: Center(
-                        child: AnimatedDefaultTextStyle(
-                          duration: reduceMotion
-                              ? Duration.zero
-                              : const Duration(milliseconds: 200),
-                          style: (theme.textTheme.labelMedium ?? const TextStyle())
-                              .copyWith(
-                            fontWeight: period == selected
-                                ? FontWeight.w800
-                                : FontWeight.w600,
-                            color: period == selected
-                                ? theme.colorScheme.onPrimary
-                                : theme.colorScheme.onSurfaceVariant,
-                          ),
-                          child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (period == selected) ...[
-                              Icon(
-                                AppIcons.check,
-                                size: 13,
-                                color: theme.colorScheme.onPrimary,
+                      excludeSemantics: true,
+                      child: Material(
+                        type: MaterialType.transparency,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(18),
+                          onTap: () => onSelect(period),
+                          child: Center(
+                            child: AnimatedDefaultTextStyle(
+                              duration: reduceMotion
+                                  ? Duration.zero
+                                  : const Duration(milliseconds: 200),
+                              style:
+                                  (theme.textTheme.labelMedium ??
+                                          const TextStyle())
+                                      .copyWith(
+                                fontWeight: period == selected
+                                    ? FontWeight.w800
+                                    : FontWeight.w600,
+                                color: period == selected
+                                    ? theme.colorScheme.onPrimary
+                                    : theme.colorScheme.onSurfaceVariant,
                               ),
-                              const SizedBox(width: 3),
-                            ],
-                            Text(period.label),
-                          ],
-                        ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (period == selected) ...[
+                                    Icon(
+                                      AppIcons.check,
+                                      size: 13,
+                                      color: theme.colorScheme.onPrimary,
+                                    ),
+                                    const SizedBox(width: 3),
+                                  ],
+                                  Text(period.label),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
                   ),
                 )
                 .toList(),
@@ -1135,12 +1141,15 @@ class _Label extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Text(
-      text,
-      style: theme.textTheme.labelMedium?.copyWith(
-        color: theme.colorScheme.onSurfaceVariant,
-        letterSpacing: 1.2,
-        fontWeight: FontWeight.w600,
+    return Semantics(
+      header: true,
+      child: Text(
+        text,
+        style: theme.textTheme.labelMedium?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+          letterSpacing: 1.2,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

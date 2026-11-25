@@ -459,27 +459,24 @@ class SettingsScreen extends ConsumerWidget {
               ),
               title: const Text('Notification permission'),
               subtitle: Text(
-                'Needed for deed reminders and focus-timer alerts',
+                'Tap to check deed reminders and focus alerts',
                 style: theme.textTheme.bodySmall
                     ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
-              trailing: TextButton(
-                onPressed: () async {
-                  final allowed =
-                      await NotificationService.instance.ensurePermission();
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        allowed == true
-                            ? 'Notifications are enabled.'
-                            : 'Notifications are off. Enable them in Android settings.',
-                      ),
+              onTap: () async {
+                final allowed =
+                    await NotificationService.instance.ensurePermission();
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      allowed == true
+                          ? 'Notifications are enabled.'
+                          : 'Notifications are off. Enable them in Android settings.',
                     ),
-                  );
-                },
-                child: const Text('Check'),
-              ),
+                  ),
+                );
+              },
             ),
           ),
           const SizedBox(height: 24),
@@ -488,7 +485,7 @@ class SettingsScreen extends ConsumerWidget {
           _InfoTile(
             icon: AppIcons.apps,
             title: 'PlanIT',
-            subtitle: 'Habit & deed tracker v1.6.0',
+            subtitle: 'Habit & deed tracker v1.7.0',
           ),
         ],
       ),
@@ -646,12 +643,15 @@ class _Label extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Text(
-      text,
-      style: theme.textTheme.labelMedium?.copyWith(
-        color: theme.colorScheme.onSurfaceVariant,
-        letterSpacing: 1.2,
-        fontWeight: FontWeight.w600,
+    return Semantics(
+      header: true,
+      child: Text(
+        text,
+        style: theme.textTheme.labelMedium?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+          letterSpacing: 1.2,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

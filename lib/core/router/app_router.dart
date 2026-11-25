@@ -14,6 +14,7 @@ import '../../features/settings/settings_screen.dart';
 import '../../features/shell/app_shell.dart';
 import '../../features/stats/stats_screen.dart';
 import '../../features/today/today_screen.dart';
+import '../../core/widgets/page_frame.dart';
 
 final GoRouter appRouter = _createRouter(onboarded: true);
 
@@ -73,39 +74,47 @@ GoRouter _createRouter({required bool onboarded}) {
       ),
       GoRoute(
         path: '/create-deed',
-        builder: (context, state) => CreateDeedScreen(
-          deedId: int.tryParse(state.uri.queryParameters['id'] ?? ''),
+        builder: (context, state) => PageFrame(
+          child: CreateDeedScreen(
+            deedId: int.tryParse(state.uri.queryParameters['id'] ?? ''),
+          ),
         ),
       ),
       GoRoute(
         path: '/archived',
-        builder: (context, state) => const ArchivedDeedsScreen(),
+        builder: (context, state) => const PageFrame(child: ArchivedDeedsScreen()),
       ),
       GoRoute(
         path: '/categories',
-        builder: (context, state) => const CategoriesScreen(),
+        builder: (context, state) => const PageFrame(child: CategoriesScreen()),
       ),
       GoRoute(
         path: '/note',
-        builder: (context, state) => NoteEditorScreen(
-          noteId: int.tryParse(state.uri.queryParameters['id'] ?? ''),
+        builder: (context, state) => PageFrame(
+          child: NoteEditorScreen(
+            noteId: int.tryParse(state.uri.queryParameters['id'] ?? ''),
+          ),
         ),
       ),
       GoRoute(
         path: '/welcome',
-        builder: (context, state) => const OnboardingScreen(),
+        builder: (context, state) => const PageFrame(child: OnboardingScreen()),
       ),
       GoRoute(
         path: '/focus',
-        builder: (context, state) => FocusScreen(
-          deedId: int.tryParse(state.uri.queryParameters['id'] ?? '') ?? 0,
-          date: DateTime.tryParse(state.uri.queryParameters['day'] ?? ''),
+        builder: (context, state) => PageFrame(
+          child: FocusScreen(
+            deedId: int.tryParse(state.uri.queryParameters['id'] ?? '') ?? 0,
+            date: DateTime.tryParse(state.uri.queryParameters['day'] ?? ''),
+          ),
         ),
       ),
       GoRoute(
         path: '/deed',
-        builder: (context, state) => DeedDetailScreen(
-          deedId: int.tryParse(state.uri.queryParameters['id'] ?? '') ?? 0,
+        builder: (context, state) => PageFrame(
+          child: DeedDetailScreen(
+            deedId: int.tryParse(state.uri.queryParameters['id'] ?? '') ?? 0,
+          ),
         ),
       ),
     ],

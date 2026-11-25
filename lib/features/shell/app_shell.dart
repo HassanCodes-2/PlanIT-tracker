@@ -46,7 +46,7 @@ class AppShell extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final wide = constraints.maxWidth >= 800;
+        final wide = constraints.maxWidth >= 600;
         const content = BoxConstraints(maxWidth: 720);
         return Scaffold(
           body: wide
